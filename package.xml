@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<package>
+    <name>in_hand_manipulation</name>
+    <version>0.0.0</version>
+    <description>Simple stuff for in hand manipulation</description>
+
+    <maintainer email="thermans@cs.utah.edu">Tucker Hermans</maintainer>
+
+    <license>BSD</license>
+
+    <!-- dependencies -->
+    <buildtool_depend>catkin</buildtool_depend>
+    <build_depend>roscpp</build_depend>
+    <build_depend>rospy</build_depend>
+    <build_depend>allegro_hand_driver</build_depend>
+    <build_depend>pykdl_utils</build_depend>
+    <run_depend>libpcan</run_depend>
+    <run_depend>roscpp</run_depend>
+    <run_depend>sensor_msgs</run_depend>
+    <run_depend>allegro_hand_controllers</run_depend>
+    <run_depend>allegro_hand_driver</run_depend>
+    <run_depend>allegro_hand_description</run_depend>
+    <run_depend>allegro_hand_parameters</run_depend>
+    <run_depend>bhand</run_depend>
+    <run_depend>rospy</run_depend>
+    <run_depend>pykdl_utils</run_depend>
+
+
+    <!-- The export tag contains other, unspecified, tags -->
+    <export>
+        <!-- Other tools can request additional information be placed here -->
+
+    </export>
+</package>
