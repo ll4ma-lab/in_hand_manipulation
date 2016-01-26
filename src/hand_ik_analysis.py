@@ -2,6 +2,7 @@
 
 #import rospy
 import roslib
+import rospy
 from urdf_parser_py.urdf import Robot
 from pykdl_utils.kdl_parser import kdl_tree_from_urdf_model
 from pykdl_utils.kdl_kinematics import KDLKinematics
@@ -27,20 +28,19 @@ class HandSimpleModel:
         urdf_file.close()
         self.tree = kdl_tree_from_urdf_model(self.robot)
         print '\nNum segements:',self.tree.getNrOfSegments(),'\n'
+
         # TODO: Get list of base link for all fingers
         base_link = self.robot.get_root()
-        base_link = 'palm_link'
+        # base_link = 'palm_link'
         # TODO: Get list of each finger end-effector
         self.finger_chains = []
         ee_list = ['link_3.0_tip', 'link_7.0_tip', 'link_11.0_tip', 'link_15.0_tip']
-        for ee_name in ee_list:
+
+        for i, ee_name in enumerate(ee_list):
             fc = KDLKinematics(self.robot, base_link, ee_name)
             self.finger_chains.append(fc)
-            print fc.chain.getNrOfJoints()
+            print 'Link', i, 'num joints:',fc.chain.getNrOfJoints()
             # TODO: Set joint limits here
-
-        self.link_l2 = np.array([0.0375, 0, 0.00727,1])
-        self.link_r2 = self.link_l2[:]
 
     def FK(self, Q):
         '''
@@ -88,8 +88,9 @@ class HandSimpleModel:
         # rospy.spin()
 
 def main():
-    model = HandSimpleModel()
     urdf_file_name = roslib.packages.get_pkg_dir('allegro_hand_description') + '/allegro_hand_description_right.urdf'
+    model = HandSimpleModel(urdf_file_name)
+
     model.run()
     return model
 
