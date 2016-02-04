@@ -21,6 +21,12 @@ _INDEX_IDX = 0
 _MIDDLE_IDX = 1
 _RING_IDX = 2
 _THUMB_IDX = 3
+_NUM_FINGERS = 4
+_NUM_FINGER_JOINTS = 4
+
+_TEST_TORQUE_CONTROL=True
+_TEST_IK_CONTROL=False
+
 class HandSimpleModel:
     def __init__(self, urdf_file_name):
         '''
@@ -56,7 +62,9 @@ class HandSimpleModel:
 
         self.joint_cmd_pub = rospy.Publisher('/allegroHand_0/joint_cmd', JointState,
                                              queue_size=100)
-        # TODO: Get / set this from the lib_cmd
+        self.torque_cmd_pub = rospy.Publisher('/allegroHand_0/torque_cmd', JointState,
+                                              queue_size=100)
+        # TODO: Get / set this from the lib_cmd?
         self.active_controller = None
         self.control_type_pub = rospy.Publisher('/allegroHand_0/lib_cmd', String, queue_size=100)
 
@@ -87,61 +95,106 @@ class HandSimpleModel:
         return q_desired_fingers
 
     def joint_state_cb(self, cur_joint_state):
+        '''
+        Callback method on the current hand state
+        cur_joint_state - current joint values for hand
+        '''
+        if cur_joint_state.header.seq % _DISPLAY_RATE == 0:
+            if _TEST_TORQUE_CONTROL:
+                self.test_torque_control(cur_joint_state)
+            elif _TEST_IK_CONTROL:
+                self.test_ik_control(cur_joint_state)
+
+    def test_ik_control(self, cur_joint_state):
+        '''
+        Simple method to solve for IK solutions and then send PD position control
+        to the hand. Serves to show easy interfacing with the hand
+        '''
         # Parse current state into separate finger chains
         finger_qs = []
-        for fi in xrange(4):
+        for fi in xrange(_NUM_FINGERS):
             fi_q = []
-            for j in xrange(4):
+            for j in xrange(_NUM_FINGER_JOINTS):
                 fi_q.append(cur_joint_state.position[fi*4+j])
             finger_qs.append(np.array(fi_q))
+
         # Testing FK and IK functions on each finger chain
         X = self.FK(finger_qs)
         Q = self.IK(X)
+
+        # Test PD position control
         q_desired = JointState()
         q_desired.name = list(cur_joint_state.name[:])
         q_desired.position = list(cur_joint_state.position[:])
 
-        if cur_joint_state.header.seq % _DISPLAY_RATE == 0:
-            q_desired.position[12] += 0.1
-            q_desired.position[13] -= 0.1
-            q_desired.position[14] -= 0.1
-            print np.array(q_desired.position) - np.array(cur_joint_state.position)
-            print cur_joint_state.name
-            print cur_joint_state.name[12]
-            print 'q_desired=',q_desired.position
-            for i in xrange(4):
-                # print _EE_NAMES[i], 'P =\n', X[i][0],'\nR =\n', X[i][1]
-                # print 'Q_solved =\n', Q[i]
-                start_i = i*4
-                end_i = start_i+4
-                # print 'Q_cur =\n', cur_joint_state.position[start_i:end_i]
+        q_desired.position[12] -= 0.25
+        q_desired.position[13] -= 0.2
+        q_desired.position[14] -= 0.1
+        print np.array(q_desired.position) - np.array(cur_joint_state.position)
+        print cur_joint_state.name
+        print cur_joint_state.name[12]
+        print 'q_desired=',q_desired.position
+        for i in xrange(_NUM_FINGERS):
+            # print _EE_NAMES[i], 'P =\n', X[i][0],'\nR =\n', X[i][1]
+            # print 'Q_solved =\n', Q[i]
+            start_i = i*4
+            end_i = start_i+4
+            # print 'Q_cur =\n', cur_joint_state.position[start_i:end_i]
 
 
-            # Get desired thumb pose
-            x_th_des = np.matrix([[0.03],
-                                  [0.0],
-                                  [0.0]])
-            r_th_des = np.matrix(np.eye(3))
-            X_th_des = (x_th_des, r_th_des)
+        # Get desired thumb pose
+        x_th_des = np.matrix([[0.03],
+                              [0.0],
+                              [0.0]])
+        r_th_des = np.matrix(np.eye(3))
+        X_th_des = (x_th_des, r_th_des)
 
-            # try:
-            #     q_des = self.finger_chains[_INDEX_IDX].inverse_wdls(X_th_des)
-            #     print q_des
-            #     print ' '
-            # except (RuntimeError, TypeError, NameError):
-            #     pass
+        # try:
+        #     q_des = self.finger_chains[_INDEX_IDX].inverse_wdls(X_th_des)
+        #     print q_des
+        #     print ' '
+        # except (RuntimeError, TypeError, NameError):
+        #     pass
 
-            self.joint_cmd_pub.publish(q_desired)
+        self.joint_cmd_pub.publish(q_desired)
 
 
-    def Q_to_finger_joints(self, Q):
-        Q_f1 = np.array([Q[-1], Q[0], Q[2]])
-        Q_f2 = np.array([-Q[-1], Q[1], Q[3]])
-        return (Q_f1, Q_f2)
+    def test_torque_control(self, cur_joint_state):
+        '''
+        Simple feedback control test of the torque command for the allegro hand
+        '''
+        finger_qs = []
+        for fi in xrange(_NUM_FINGERS):
+            fi_q = []
+            for j in xrange(_NUM_FINGER_JOINTS):
+                fi_q.append(cur_joint_state.position[fi*4+j])
+            finger_qs.append(np.array(fi_q))
+
+        # Convert desired force to desired torques (tau = J^t F )
+        F_desired = np.matrix([0, 1, -0.4, 0, 0, 0]).T
+        J = self.finger_chains[_INDEX_IDX].jacobian(finger_qs[_INDEX_IDX])
+        tau_d = J.T*F_desired
+        print 'F_d = ',F_desired
+        print 'J = ',J
+        print 'tau = ',tau_d
+
+        # TODO: Convert array response into tau_desired mode
+        tau_desired = JointState()
+        tau_desired.name = list(cur_joint_state.name[:])
+        tau_desired.effort = np.zeros(len(tau_desired.name))
+
+        start_idx = _INDEX_IDX*_NUM_FINGER_JOINTS
+        end_idx = start_idx + _NUM_FINGER_JOINTS
+        tau_desired.effort[start_idx:end_idx] = tau_d.flatten()[0,start_idx:end_idx]
+        # print cur_joint_state,'\n'
+        print tau_desired,'\n'
+
+        self.torque_cmd_pub.publish(tau_desired)
 
     def forward_prediction(self, Q_k, U_k):
         '''
-        Predict estimate of hand pose at next timestep based on current state Q and current command U
+        Predict estimate of hand pose at next timestep based on current state Q and
+        current command U
         '''
         Q_k_plus_1 = Q_k.copy()
 
@@ -156,7 +209,8 @@ class HandSimpleModel:
         rospy.spin()
 
 def main():
-    urdf_file_name = roslib.packages.get_pkg_dir('allegro_hand_description') + '/allegro_hand_description_right.urdf'
+    urdf_file_name = roslib.packages.get_pkg_dir('allegro_hand_description') + \
+                     '/allegro_hand_description_right.urdf'
     model = HandSimpleModel(urdf_file_name)
 
     model.run()
