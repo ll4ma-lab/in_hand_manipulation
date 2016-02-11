@@ -88,7 +88,7 @@ class HandSimpleModel:
         '''
         q_desired_fingers = []
         if finger is not None:
-            # TODO: do this
+            # TODO: solve for a single finger...
             return None
         for i, f_d in enumerate(fingers_desired):
             q_desired_fingers.append(self.finger_chains[i].inverse(f_d))
