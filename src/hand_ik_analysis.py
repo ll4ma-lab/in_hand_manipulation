@@ -24,8 +24,8 @@ _THUMB_IDX = 3
 _NUM_FINGERS = 4
 _NUM_FINGER_JOINTS = 4
 
-_TEST_TORQUE_CONTROL=True
-_TEST_IK_CONTROL=False
+_TEST_TORQUE_CONTROL=False
+_TEST_IK_CONTROL=True
 
 class HandSimpleModel:
     def __init__(self, urdf_file_name):
@@ -42,7 +42,6 @@ class HandSimpleModel:
         urdf_file.close()
         self.tree = kdl_tree_from_urdf_model(self.robot)
         print '\nNum segements:',self.tree.getNrOfSegments(),'\n'
-
 
         task_space_ik_weights = np.diag([1.0, 1.0, 1.0, 0.0, 0.0, 0.0]).tolist()
 
@@ -91,7 +90,8 @@ class HandSimpleModel:
             # TODO: solve for a single finger...
             return None
         for i, f_d in enumerate(fingers_desired):
-            q_desired_fingers.append(self.finger_chains[i].inverse(f_d))
+            q_desired_fingers.append(self.finger_chains[i].inverse_wdls(f_d))
+            # q_desired_fingers.append(self.finger_chains[i].inverse(f_d))
         return q_desired_fingers
 
     def joint_state_cb(self, cur_joint_state):
@@ -120,8 +120,9 @@ class HandSimpleModel:
 
         # Testing FK and IK functions on each finger chain
         X = self.FK(finger_qs)
+        print 'X=',X
         Q = self.IK(X)
-
+        print 'Q=',Q
         # Test PD position control
         q_desired = JointState()
         q_desired.name = list(cur_joint_state.name[:])
@@ -135,11 +136,11 @@ class HandSimpleModel:
         print cur_joint_state.name[12]
         print 'q_desired=',q_desired.position
         for i in xrange(_NUM_FINGERS):
-            # print _EE_NAMES[i], 'P =\n', X[i][0],'\nR =\n', X[i][1]
-            # print 'Q_solved =\n', Q[i]
+            print _EE_NAMES[i], 'P =\n', X[i][0],'\nR =\n', X[i][1]
+            print 'Q_solved =\n', Q[i]
             start_i = i*4
             end_i = start_i+4
-            # print 'Q_cur =\n', cur_joint_state.position[start_i:end_i]
+            print 'Q_cur =\n', cur_joint_state.position[start_i:end_i]
 
 
         # Get desired thumb pose
