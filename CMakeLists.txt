@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   roslib
   sensor_msgs
   std_msgs
+  kdl_parser
 )
 
 ###################################

@@ -6,38 +6,28 @@
 #include <std_msgs/Header.h>
 #include <std_msgs/String.h>
 #include <sensor_msgs/JointState.h>
+ #include <kdl_parser/kdl_parser.hpp>
 
-// from urdf_parser_py.urdf import Robot
 // from pykdl_utils.kdl_parser import kdl_tree_from_urdf_model
 // from pykdl_utils.kdl_kinematics import KDLKinematics
 
-// from std_msgs.msg import String
-
-// import numpy as np
-// import matplotlib.pyplot as plotter
-// import time
-
-#define DISPLAY_RATE 100
-
-using std::string;
-
-string EE_NAMES[4] = {"index_tip", "middle_tip", "ring_tip", "thumb_tip"};
-
-
+std::string EE_NAMES[4] = {"index_tip", "middle_tip", "ring_tip", "thumb_tip"};
 enum FingerIdx { INDEX_IDX = 0,
                  MIDDLE_IDX,
                  RING_IDX,
                  THUMB_IDX,
                  NUM_FINGERS};
-#define _NUM_FINGER_JOINTS  4
-#define TEST_TORQUE_CONTROL false
 
+#define NUM_FINGER_JOINTS  4
+#define TEST_TORQUE_CONTROL false
 // #define TEST_IK_CONTROL true
+#define DISPLAY_RATE 100
 
 // TODO: Replace this with the correct type
 typedef std::vector<float> EEState;
 typedef std::vector<EEState> EEStates;
 typedef std::vector<sensor_msgs::JointState> JointStates;
+using std::string;
 
 class HandSimpleModel
 {
@@ -51,26 +41,28 @@ class HandSimpleModel
   HandSimpleModel(ros::NodeHandle n, string urdf_file_name) : n_(n)
   {
     // Load KDL trees for each hand finger
-    // urdf_file = file(urdf_file_name, 'r');
-    // robot_ = Robot.from_xml_string(urdf_file.read());
-    // urdf_file.close();
-    // tree_ = kdl_tree_from_urdf_model(self.robot);
-    // ROS_INFO_STREAM("\nNum segements:" << tree_.getNrOfSegments() << "\n");
+    if (!kdl_parser::treeFromFile(urdf_file_name, hand_tree_)){
+      ROS_ERROR("Failed to construct kdl tree");
+    }
+    ROS_INFO_STREAM("\nNum segements:" << hand_tree_.getNrOfSegments() << "\n");
 
     // task_space_ik_weights = np.diag([1.0, 1.0, 1.0, 0.0, 0.0, 0.0]).tolist();
 
-    // self.base_link = self.robot.get_root();
-    //self.base_link = 'palm_link';
-    // self.finger_chains = []
-    //     for i, ee_name in enumerate(_EE_NAMES):
-    //         fc = KDLKinematics(self.robot, self.base_link, ee_name)
-    //         fc.set_wdls_weights(weights_ts = task_space_ik_weights)
-    //         fc._ik_wdls_kdl.setLambda(0.003)
-    //         self.finger_chains.push_back(fc)
-    //         print 'Link', i, 'num joints:',fc.chain.getNrOfJoints()
-
+    // TODO: Get this name better, but KDL doesn't easily support this
+    //string base_link = hand_tree_.getRootSegment();//->segment.getName();
+    base_link_ = "palm_link";
+    for (int i = 0; i < NUM_FINGERS; ++i)
+    {
+      string tip_name = EE_NAMES[i];
+      KDL::Chain fc;
+      hand_tree_.getChain(base_link_, tip_name, fc);
+      // fc.set_wdls_weights(weights_ts = task_space_ik_weights)
+      // fc._ik_wdls_kdl.setLambda(0.003)
+      finger_chains_.push_back(fc);
+      ROS_INFO_STREAM("Link " <<  i <<  " num joints: "  << fc.getNrOfJoints());
+    }
     // setup subscribers and publishers
-    joint_sub_ = n_.subscribe("/allegroHand_0/joint_states", 100, &HandSimpleModel::jointStateCB, this);
+    joint_sub_ = n_.subscribe("/allegro_hand_right/joint_states", 100, &HandSimpleModel::jointStateCB, this);
 
     joint_cmd_pub_ = n_.advertise<sensor_msgs::JointState>("/allegroHand_0/joint_cmd", 100);
     torque_cmd_pub_ = n_.advertise<sensor_msgs::JointState>("/allegroHand_0/torque_cmd", 100);
@@ -83,6 +75,13 @@ class HandSimpleModel
   void run(void)
   {
     // TODO: Change draw robot to use klampt / real robot / publish to rviz
+    for (int i = 0; i < finger_chains_.size(); ++i)
+    {
+      int k = finger_chains_[i].getNrOfJoints();
+      ROS_INFO_STREAM("Chain " << i << " has " << k << " joints.");
+      ROS_INFO_STREAM("From " << finger_chains_[i].getSegment(0).getName() << " to " <<
+                      finger_chains_[i].getSegment(k-1).getName());
+    }
     ros::spin();
   }
 
@@ -98,8 +97,8 @@ class HandSimpleModel
     EEStates X;
     for (int i=0; i < finger_qs.size(); ++i) {
       string target_link = EE_NAMES[i];
-      // EEstate fi_x = finger_chains_[i].FK(finger_qs[i]);
-      // X.push_back(fi_x);
+      EEState fi_x; // = finger_chains_[i].FK(finger_qs[i]);
+      X.push_back(fi_x);
     }
     return X;
   }
@@ -150,9 +149,9 @@ class HandSimpleModel
   //     '''
   //     # Parse current state into separate finger chains
   //     finger_qs = []
-  //     for fi in xrange(_NUM_FINGERS):
+  //     for fi in xrange(NUM_FINGERS):
   //         fi_q = []
-  //         for j in xrange(_NUM_FINGER_JOINTS):
+  //         for (int j = 0; j < NUM_FINGER_JOINTS; ++j)
   //             fi_q.push_back(cur_joint_state.position[fi*4+j])
   //         finger_qs.push_back(np.array(fi_q))
 
@@ -173,8 +172,8 @@ class HandSimpleModel
   //     print cur_joint_state.name
   //     print cur_joint_state.name[12]
   //     print 'q_desired=',q_desired.position
-  //     for i in xrange(_NUM_FINGERS):
-  //         print _EE_NAMES[i], 'P =\n', X[i][0],'\nR =\n', X[i][1]
+  //     for i in xrange(NUM_FINGERS):
+  //         print EE_NAMES[i], 'P =\n', X[i][0],'\nR =\n', X[i][1]
   //         print 'Q_solved =\n', Q[i]
   //         start_i = i*4
   //         end_i = start_i+4
@@ -188,19 +187,15 @@ class HandSimpleModel
   //     r_th_des = np.matrix(np.eye(3))
   //     X_th_des = (x_th_des, r_th_des)
 
-  //     # try:
-  //     #     q_des = self.finger_chains[_INDEX_IDX].inverse_wdls(X_th_des)
-  //     #     print q_des
-  //     #     print ' '
-  //     # except (RuntimeError, TypeError, NameError):
-  //     #     pass
+  //     # q_des = finger_chains_[INDEX_IDX].inverse_wdls(X_th_des)
+  //     # print q_des
+  //     # print ' '
 
-  //     self.joint_cmd_pub.publish(q_desired)
+  //     joint_cmd_pub.publish(q_desired)
   }
 
   void testTorqueControl(sensor_msgs::JointState cur_joint_state)
   {
-  //     {
   //     '''
   //     Simple feedback control test of the torque command for the allegro hand
   //     '''
@@ -240,6 +235,9 @@ class HandSimpleModel
   ros::Publisher torque_cmd_pub_;
   ros::Publisher control_type_pub_;
   ros::Subscriber joint_sub_;
+  std::vector<KDL::Chain> finger_chains_;
+  KDL::Tree hand_tree_;
+  string base_link_;
 };
 
 int main(int argc, char** argv)

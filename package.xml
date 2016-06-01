@@ -17,12 +17,15 @@
     <build_depend>pykdl_utils</build_depend>
     <build_depend>std_msgs</build_depend>
     <build_depend>sensor_msgs</build_depend>
+    <build_depend>orocos_kdl</build_depend>
+    <build_depend>kdl_parser</build_depend>
 
     <run_depend>libpcan</run_depend>
     <run_depend>roscpp</run_depend>
     <run_depend>roslib</run_depend>
     <run_depend>sensor_msgs</run_depend>
     <run_depend>std_msgs</run_depend>
+    <run_depend>kdl_parser</run_depend>
     <run_depend>allegro_hand_controllers</run_depend>
     <run_depend>allegro_hand_driver</run_depend>
     <run_depend>allegro_hand_description</run_depend>
