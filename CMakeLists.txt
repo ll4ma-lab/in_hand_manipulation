@@ -7,6 +7,9 @@ project(in_hand_manipulation)
 find_package(catkin REQUIRED COMPONENTS
   rospy
   roscpp
+  roslib
+  sensor_msgs
+  std_msgs
 )
 
 ###################################
@@ -19,10 +22,10 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES reflex
-#  CATKIN_DEPENDS reflex_msgs rospy takktile_ros
-#  DEPENDS system_lib
+  # INCLUDE_DIRS include
+  # LIBRARIES in_hand_manipulation
+  CATKIN_DEPENDS std_msgs roscpp sensor_msgs
+  DEPENDS system_lib
 )
 
 ###########
@@ -42,11 +45,11 @@ include_directories(
 # )
 
 ## Declare a cpp executable
-## add_executable(reflex_tf_broadcaster src/reflex_tf_broadcaster.cpp)
+add_executable(hand_ik_control_node src/hand_ik_control_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(reflex_node reflex_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-## target_link_libraries(reflex_tf_broadcaster ${catkin_LIBRARIES})
+target_link_libraries(hand_ik_control_node ${catkin_LIBRARIES})
