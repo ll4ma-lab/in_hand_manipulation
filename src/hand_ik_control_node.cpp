@@ -19,14 +19,15 @@ enum FingerIdx { INDEX_IDX = 0,
                  NUM_FINGERS};
 
 #define NUM_FINGER_JOINTS  4
-#define TEST_TORQUE_CONTROL false
-// #define TEST_IK_CONTROL true
-#define DISPLAY_RATE 100
+// #define TEST_TORQUE_CONTROL 1
+#define TEST_IK_CONTROL 1
+#define DISPLAY_RATE 1
 
 // TODO: Replace this with the correct type
 typedef std::vector<float> EEState;
 typedef std::vector<EEState> EEStates;
-typedef std::vector<sensor_msgs::JointState> JointStates;
+typedef std::vector<float> FingerJointState;
+typedef std::vector<FingerJointState> FingerJointStates;
 using std::string;
 
 class HandSimpleModel
@@ -64,12 +65,13 @@ class HandSimpleModel
     // setup subscribers and publishers
     joint_sub_ = n_.subscribe("/allegro_hand_right/joint_states", 100, &HandSimpleModel::jointStateCB, this);
 
-    joint_cmd_pub_ = n_.advertise<sensor_msgs::JointState>("/allegroHand_0/joint_cmd", 100);
-    torque_cmd_pub_ = n_.advertise<sensor_msgs::JointState>("/allegroHand_0/torque_cmd", 100);
-    control_type_pub_ = n_.advertise<std_msgs::String>("/allegroHand_0/lib_cmd", 100);
+    joint_cmd_pub_ = n_.advertise<sensor_msgs::JointState>("/allegro_hand_right/joint_cmd", 100);
+    torque_cmd_pub_ = n_.advertise<sensor_msgs::JointState>("/allegro_hand_right/torque_cmd", 100);
+    control_type_pub_ = n_.advertise<std_msgs::String>("/allegro_hand_right/lib_cmd", 100);
 
     // # TODO: Get / set this from the lib_cmd?
     // self.active_controller = None
+    sign_ = 1;
   }
 
   void run(void)
@@ -92,7 +94,7 @@ class HandSimpleModel
    *
    * @return end effector state of the finger chain
    */
-  EEStates FK(JointStates finger_qs)
+  EEStates FK(FingerJointStates finger_qs)
   {
     EEStates X;
     for (int i=0; i < finger_qs.size(); ++i) {
@@ -111,9 +113,9 @@ class HandSimpleModel
    *
    * @return a list of lists of pyhton arrays of finger joint configurations
    */
-  JointStates IK(EEStates fingers_desired, FingerIdx finger)
+  FingerJointStates IK(EEStates fingers_desired, FingerIdx finger)
   {
-    JointStates q_desired_fingers;
+    FingerJointStates q_desired_fingers;
     for (int i = 0; i < fingers_desired.size(); i++)
     {
       // q_desired_fingers.push_back(finger_chains_[i].inverse_wdls(fingers_desired[i]));
@@ -141,57 +143,75 @@ class HandSimpleModel
     }
   }
 
+  /**
+   * Simple method to solve for IK solutions and then send PD position control
+   * to the hand. Serves to show easy interfacing with the hand
+   *
+   * @param cur_joint_state  Current joint state of the hand
+   */
   void testIKControl(sensor_msgs::JointState cur_joint_state)
   {
-  //     '''
-  //     Simple method to solve for IK solutions and then send PD position control
-  //     to the hand. Serves to show easy interfacing with the hand
-  //     '''
-  //     # Parse current state into separate finger chains
-  //     finger_qs = []
-  //     for fi in xrange(NUM_FINGERS):
-  //         fi_q = []
-  //         for (int j = 0; j < NUM_FINGER_JOINTS; ++j)
-  //             fi_q.push_back(cur_joint_state.position[fi*4+j])
-  //         finger_qs.push_back(np.array(fi_q))
+    // Parse current state into separate finger chains
+    FingerJointStates finger_qs;
+    for (int i = 0; i < NUM_FINGERS; ++i)
+    {
+      FingerJointStates fi_q;
+      //         for (int j = 0; j < NUM_FINGER_JOINTS; ++j)
+      //             fi_q.push_back(cur_joint_state.position[fi*4+j])
+      //         finger_qs.push_back(np.array(fi_q))
+    }
+    // Testing FK and IK functions on each finger chain
+    // X = FK(finger_qs);
+    // ROS_INFO_STREAM("X= " << X);
+    // Q = IK(X);
+    // ROS_INFO_STREAM("Q= ",Q);
 
-  //     # Testing FK and IK functions on each finger chain
-  //     X = self.FK(finger_qs)
-  //     print 'X=',X
-  //     Q = self.IK(X)
-  //     print 'Q=',Q
-  //     # Test PD position control
-  //     q_desired = sensor_msgs::JointState()
-  //     q_desired.name = list(cur_joint_state.name[:])
-  //     q_desired.position = list(cur_joint_state.position[:])
+    // Test PD position control
+    sensor_msgs::JointState q_desired;
+    q_desired.name = cur_joint_state.name;
+    q_desired.position = cur_joint_state.position;
 
-  //     q_desired.position[12] -= 0.25
-  //     q_desired.position[13] -= 0.2
-  //     q_desired.position[14] -= 0.1
-  //     print np.array(q_desired.position) - np.array(cur_joint_state.position)
-  //     print cur_joint_state.name
-  //     print cur_joint_state.name[12]
-  //     print 'q_desired=',q_desired.position
-  //     for i in xrange(NUM_FINGERS):
-  //         print EE_NAMES[i], 'P =\n', X[i][0],'\nR =\n', X[i][1]
-  //         print 'Q_solved =\n', Q[i]
-  //         start_i = i*4
-  //         end_i = start_i+4
-  //         print 'Q_cur =\n', cur_joint_state.position[start_i:end_i]
+    // HACK: Set values directly here
+    if (cur_joint_state.header.seq % 50 == 0)
+    {
+      q_desired.position[0] = 0.0;
+      sign_ *= -1;
+    }
+    else
+    {
+      q_desired.position[0] += 0.2;
+    }
+    for (int i = 0; i < q_desired.name.size(); ++i)
+    {
+      q_desired.position[i] += sign_*0.2;
+      ROS_INFO_STREAM(cur_joint_state.name[i] << " " << q_desired.position[i]);
+    }
+    ROS_INFO_STREAM("");
+    // q_desired.position[13] += sign_*0.15;
+    // q_desired.position[14] += sign_*0.1;
+    // q_desired.position[15] += sign_*0.05;
+    // ROS_INFO_STERAM("Joint error = " <<  q_desired.position - cur_joint_state.position);
+    for (int i = 0; i < NUM_FINGERS; ++i)
+    {
+      // ROS_INFO_STREAM(EE_NAMES[i] <<  " P =\n" <<  X[i][0] << "\nR =\n" <<  X[i][1]);
+      // ROS_INFO_STREAM("Q_solved =\n" << Q[i]);
+      // int start_i = i*4;
+      // int end_i = start_i+4;
+      // print 'Q_cur =\n', cur_joint_state.position[start_i:end_i]
+    }
 
+    // Get desired thumb pose
+    // x_th_des = np.matrix([[0.03],
+    //                       [0.0],
+    //                       [0.0]])
+    // r_th_des = np.matrix(np.eye(3))
+    // X_th_des = (x_th_des, r_th_des)
 
-  //     # Get desired thumb pose
-  //     x_th_des = np.matrix([[0.03],
-  //                           [0.0],
-  //                           [0.0]])
-  //     r_th_des = np.matrix(np.eye(3))
-  //     X_th_des = (x_th_des, r_th_des)
+    // q_des = finger_chains_[INDEX_IDX].inverse_wdls(X_th_des)
+    //  print q_des
+    // print ' '
 
-  //     # q_des = finger_chains_[INDEX_IDX].inverse_wdls(X_th_des)
-  //     # print q_des
-  //     # print ' '
-
-  //     joint_cmd_pub.publish(q_desired)
+    joint_cmd_pub_.publish(q_desired);
   }
 
   void testTorqueControl(sensor_msgs::JointState cur_joint_state)
@@ -199,7 +219,7 @@ class HandSimpleModel
   //     '''
   //     Simple feedback control test of the torque command for the allegro hand
   //     '''
-  //     JointStates finger_qs;
+  //     FingerJointStates finger_qs;
   //     for fi in xrange(_NUM_FINGERS):
   //         fi_q = []
   //         for j in xrange(_NUM_FINGER_JOINTS):
@@ -238,6 +258,7 @@ class HandSimpleModel
   std::vector<KDL::Chain> finger_chains_;
   KDL::Tree hand_tree_;
   string base_link_;
+  int sign_;
 };
 
 int main(int argc, char** argv)
