@@ -5,6 +5,7 @@
 #include <ros/package.h>
 #include <std_msgs/Header.h>
 #include <std_msgs/String.h>
+#include <std_msgs/Char.h>
 #include <sensor_msgs/JointState.h>
  #include <kdl_parser/kdl_parser.hpp>
 
@@ -67,11 +68,14 @@ class HandSimpleModel
 
     joint_cmd_pub_ = n_.advertise<sensor_msgs::JointState>("/allegro_hand_right/joint_cmd", 100);
     torque_cmd_pub_ = n_.advertise<sensor_msgs::JointState>("/allegro_hand_right/torque_cmd", 100);
-    control_type_pub_ = n_.advertise<std_msgs::String>("/allegro_hand_right/lib_cmd", 100);
+    control_type_pub_ = n_.advertise<std_msgs::Char>("/allegro_hand_right/control_type", 100);
 
     // # TODO: Get / set this from the lib_cmd?
     // self.active_controller = None
     sign_ = 1;
+    std_msgs::Char control_cmd;
+    control_cmd.data='p';
+    control_type_pub_.publish(control_cmd);
   }
 
   void run(void)
@@ -168,6 +172,7 @@ class HandSimpleModel
 
     // Test PD position control
     sensor_msgs::JointState q_desired;
+    // TODO: Remove joint names that aren't to do with the hand
     q_desired.name = cur_joint_state.name;
     q_desired.position = cur_joint_state.position;
 

@@ -1,0 +1,9 @@
+<launch>
+  <node name="allegro_hand_ik_control" pkg="in_hand_manipulation" type="hand_ik_control_node" respawn="true" output="screen">
+    <remap from="/allegro_hand_right/joint_cmd" to= "/lbr4_allegro/allegro_hand_right/joint_cmd"/>
+    <remap from="/allegro_hand_right/torque_cmd" to= "/lbr4_allegro/allegro_hand_right/torque_cmd"/>
+    <remap from="/allegro_hand_right/control_type" to= "/lbr4_allegro/allegro_hand_right/control_type"/>
+
+    <remap from="/allegro_hand_right/joint_states" to= "/lbr4_allegro/joint_states"/>
+  </node>
+</launch>
