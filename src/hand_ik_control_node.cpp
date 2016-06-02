@@ -7,7 +7,20 @@
 #include <std_msgs/String.h>
 #include <std_msgs/Char.h>
 #include <sensor_msgs/JointState.h>
- #include <kdl_parser/kdl_parser.hpp>
+
+// KDL
+#include <kdl_parser/kdl_parser.hpp>
+#include <kdl/chain.hpp>
+#include <kdl/chainfksolver.hpp>
+#include <kdl/chainfksolverpos_recursive.hpp>
+#include <kdl/chainiksolvervel_wdls.hpp>
+#include <kdl/chainiksolverpos_nr.hpp>
+#include <kdl/chainiksolverpos_nr_jl.hpp>
+#include <kdl/frames_io.hpp>
+
+// Boost
+#include <boost/shared_ptr.hpp>
+
 
 // from pykdl_utils.kdl_parser import kdl_tree_from_urdf_model
 // from pykdl_utils.kdl_kinematics import KDLKinematics
@@ -18,17 +31,22 @@ enum FingerIdx { INDEX_IDX = 0,
                  RING_IDX,
                  THUMB_IDX,
                  NUM_FINGERS};
+enum ControlType {TORQUE_CONTROL,
+                  POSITION_CONTROL,
+                  IK_CONTROL};
 
-#define NUM_FINGER_JOINTS  4
-// #define TEST_TORQUE_CONTROL 1
-#define TEST_IK_CONTROL 1
-#define DISPLAY_RATE 1
+const int NUM_FINGER_JOINTS = 4;
+const int DISPLAY_RATE = 10;
 
-// TODO: Replace this with the correct type
-typedef std::vector<float> EEState;
+typedef KDL::Frame EEState;
 typedef std::vector<EEState> EEStates;
-typedef std::vector<float> FingerJointState;
+typedef KDL::JntArray FingerJointState;
 typedef std::vector<FingerJointState> FingerJointStates;
+typedef KDL::ChainFkSolverPos_recursive FKSolver;
+typedef KDL::ChainIkSolverVel_wdls IKSolver;
+typedef boost::shared_ptr<FKSolver> FKSolverPtr;
+typedef boost::shared_ptr<IKSolver> IKSolverPtr;
+
 using std::string;
 
 class HandSimpleModel
@@ -40,15 +58,27 @@ class HandSimpleModel
    *
    * @param urdf_file_name model file to load
    */
-  HandSimpleModel(ros::NodeHandle n, string urdf_file_name) : n_(n)
+  HandSimpleModel(ros::NodeHandle n, string urdf_file_name, ControlType control_type=IK_CONTROL) :
+      n_(n), control_type_(control_type), q_min_(NUM_FINGER_JOINTS), q_max_(NUM_FINGER_JOINTS)
   {
     // Load KDL trees for each hand finger
     if (!kdl_parser::treeFromFile(urdf_file_name, hand_tree_)){
       ROS_ERROR("Failed to construct kdl tree");
     }
-    ROS_INFO_STREAM("\nNum segements:" << hand_tree_.getNrOfSegments() << "\n");
+    // Setup Joint Limits
+    for (int i = 0; i < NUM_FINGER_JOINTS; ++i)
+    {
+      q_min_(i) = -2*M_PI;
+      q_max_(i) = 2*M_PI;
+    }
 
-    // task_space_ik_weights = np.diag([1.0, 1.0, 1.0, 0.0, 0.0, 0.0]).tolist();
+    // Set task space weights
+    Eigen::MatrixXd weights_ts(6,6);
+    for (int i = 0; i < 3; ++i)
+    {
+      weights_ts(i,i) = 1.0;
+      weights_ts(i+3, i+3) = 0.003;
+    }
 
     // TODO: Get this name better, but KDL doesn't easily support this
     //string base_link = hand_tree_.getRootSegment();//->segment.getName();
@@ -58,16 +88,22 @@ class HandSimpleModel
       string tip_name = EE_NAMES[i];
       KDL::Chain fc;
       hand_tree_.getChain(base_link_, tip_name, fc);
-      // fc.set_wdls_weights(weights_ts = task_space_ik_weights)
-      // fc._ik_wdls_kdl.setLambda(0.003)
       finger_chains_.push_back(fc);
+      fk_.push_back(FKSolverPtr(new FKSolver(fc)));
+      ik_.push_back(IKSolverPtr(new IKSolver(fc)));
+      ik_.back()->setLambda(0.003);
+      ik_.back()->setWeightTS(weights_ts);
+
       ROS_INFO_STREAM("Link " <<  i <<  " num joints: "  << fc.getNrOfJoints());
     }
     // setup subscribers and publishers
-    joint_sub_ = n_.subscribe("/allegro_hand_right/joint_states", 100, &HandSimpleModel::jointStateCB, this);
+    joint_sub_ = n_.subscribe("/allegro_hand_right/joint_states", 100,
+                              &HandSimpleModel::jointStateCB, this);
 
-    joint_cmd_pub_ = n_.advertise<sensor_msgs::JointState>("/allegro_hand_right/joint_cmd", 100);
-    torque_cmd_pub_ = n_.advertise<sensor_msgs::JointState>("/allegro_hand_right/torque_cmd", 100);
+    joint_cmd_pub_ = n_.advertise<sensor_msgs::JointState>("/allegro_hand_right/joint_cmd",
+                                                           100);
+    torque_cmd_pub_ = n_.advertise<sensor_msgs::JointState>("/allegro_hand_right/torque_cmd",
+                                                            100);
     control_type_pub_ = n_.advertise<std_msgs::Char>("/allegro_hand_right/control_type", 100);
 
     // # TODO: Get / set this from the lib_cmd?
@@ -103,7 +139,8 @@ class HandSimpleModel
     EEStates X;
     for (int i=0; i < finger_qs.size(); ++i) {
       string target_link = EE_NAMES[i];
-      EEState fi_x; // = finger_chains_[i].FK(finger_qs[i]);
+      EEState fi_x;
+      fk_[i]->JntToCart(finger_qs[i], fi_x);
       X.push_back(fi_x);
     }
     return X;
@@ -117,13 +154,20 @@ class HandSimpleModel
    *
    * @return a list of lists of pyhton arrays of finger joint configurations
    */
-  FingerJointStates IK(EEStates fingers_desired, FingerIdx finger)
+  FingerJointStates IK(EEStates fingers_desired)
   {
     FingerJointStates q_desired_fingers;
     for (int i = 0; i < fingers_desired.size(); i++)
     {
-      // q_desired_fingers.push_back(finger_chains_[i].inverse_wdls(fingers_desired[i]));
-      // q_desired_fingers.push_back(finger_chains_[i].inverse(fingers_desired[i]));
+      FingerJointState q_i(finger_chains_[i].getNrOfJoints());
+      FingerJointState q_init(finger_chains_[i].getNrOfJoints());
+      //Maximum 100 iterations, stop at accuracy 1e-6
+      KDL::ChainIkSolverPos_NR_JL iksolver(finger_chains_[i], q_min_, q_max_,
+                                           *fk_[i],*ik_[i],100,1e-6);
+
+      iksolver.CartToJnt(q_init, fingers_desired[i], q_i);
+      q_desired_fingers.push_back(q_i);
+
     }
     return q_desired_fingers;
   }
@@ -137,13 +181,18 @@ class HandSimpleModel
   {
     if (cur_joint_state.header.seq % DISPLAY_RATE == 0)
     {
-#ifdef TEST_TORQUE_CONTROL
-      testTorqueControl(cur_joint_state);
-#else
-#ifdef TEST_IK_CONTROL
-      testIKControl(cur_joint_state);
-#endif // TEST_IK_CONTROL
-#endif // TEST_TORQUE_CONTORL
+      switch(control_type_)
+      {
+        case TORQUE_CONTROL:
+          testTorqueControl(cur_joint_state);
+          break;
+        case IK_CONTROL:
+          testIKControl(cur_joint_state);
+          break;
+        case POSITION_CONTROL:
+          testPositionControl(cur_joint_state);
+          break;
+      }
     }
   }
 
@@ -159,24 +208,59 @@ class HandSimpleModel
     FingerJointStates finger_qs;
     for (int i = 0; i < NUM_FINGERS; ++i)
     {
-      FingerJointStates fi_q;
-      //         for (int j = 0; j < NUM_FINGER_JOINTS; ++j)
-      //             fi_q.push_back(cur_joint_state.position[fi*4+j])
-      //         finger_qs.push_back(np.array(fi_q))
+      FingerJointState fi_q(NUM_FINGER_JOINTS);
+      for (int j = 0; j < NUM_FINGER_JOINTS; ++j)
+      {
+        fi_q(j) = cur_joint_state.position[i*NUM_FINGER_JOINTS+j];
+      }
+      finger_qs.push_back(fi_q);
     }
+
     // Testing FK and IK functions on each finger chain
-    // X = FK(finger_qs);
-    // ROS_INFO_STREAM("X= " << X);
-    // Q = IK(X);
-    // ROS_INFO_STREAM("Q= ",Q);
+    EEStates X = FK(finger_qs);
+    FingerJointStates Q = IK(X);
 
     // Test PD position control
     sensor_msgs::JointState q_desired;
     // TODO: Remove joint names that aren't to do with the hand
     q_desired.name = cur_joint_state.name;
-    q_desired.position = cur_joint_state.position;
+    q_desired.position.resize(q_desired.name.size(), 0.0);
+    // Translate IK result back into the message format
+    for (int i = 0; i < NUM_FINGERS; ++i)
+    {
+      ROS_INFO_STREAM("Finger " << EE_NAMES[i]);
+      ROS_INFO_STREAM("Cur joints\n [" << finger_qs[i](0) << ", "<< finger_qs[i](1) << ", "<<
+                      finger_qs[i](2) << ", "<< finger_qs[i](3) << "]");
+      ROS_INFO_STREAM("FK results\n " << X[i]);
+      ROS_INFO_STREAM("IK results\n [" << Q[i](0) << ", "<< Q[i](1) << ", "<<
+                      Q[i](2) << ", "<< Q[i](3) << "]\n");
 
+      for (int j = 0; j < NUM_FINGER_JOINTS; ++j)
+      {
+        q_desired.position[i*4+j] = Q[i](j);
+      }
+    }
+
+    // TODO: Get desired thumb pose
+    // x_th_des = np.matrix([[0.03],
+    //                       [0.0],
+    //                       [0.0]])
+    // r_th_des = np.matrix(np.eye(3))
+    // X_th_des = (x_th_des, r_th_des)
+    // q_des = finger_chains_[INDEX_IDX].inverse_wdls(X_th_des)
+
+    joint_cmd_pub_.publish(q_desired);
+  }
+
+
+  void testPositionControl(sensor_msgs::JointState cur_joint_state)
+  {
     // HACK: Set values directly here
+    // Test PD position control
+    sensor_msgs::JointState q_desired;
+    // TODO: Remove joint names that aren't to do with the hand
+    q_desired.name = cur_joint_state.name;
+    q_desired.position = cur_joint_state.position;
     if (cur_joint_state.header.seq % 50 == 0)
     {
       q_desired.position[0] = 0.0;
@@ -192,31 +276,9 @@ class HandSimpleModel
       ROS_INFO_STREAM(cur_joint_state.name[i] << " " << q_desired.position[i]);
     }
     ROS_INFO_STREAM("");
-    // q_desired.position[13] += sign_*0.15;
-    // q_desired.position[14] += sign_*0.1;
-    // q_desired.position[15] += sign_*0.05;
-    // ROS_INFO_STERAM("Joint error = " <<  q_desired.position - cur_joint_state.position);
-    for (int i = 0; i < NUM_FINGERS; ++i)
-    {
-      // ROS_INFO_STREAM(EE_NAMES[i] <<  " P =\n" <<  X[i][0] << "\nR =\n" <<  X[i][1]);
-      // ROS_INFO_STREAM("Q_solved =\n" << Q[i]);
-      // int start_i = i*4;
-      // int end_i = start_i+4;
-      // print 'Q_cur =\n', cur_joint_state.position[start_i:end_i]
-    }
-
-    // Get desired thumb pose
-    // x_th_des = np.matrix([[0.03],
-    //                       [0.0],
-    //                       [0.0]])
-    // r_th_des = np.matrix(np.eye(3))
-    // X_th_des = (x_th_des, r_th_des)
-
-    // q_des = finger_chains_[INDEX_IDX].inverse_wdls(X_th_des)
-    //  print q_des
-    // print ' '
 
     joint_cmd_pub_.publish(q_desired);
+
   }
 
   void testTorqueControl(sensor_msgs::JointState cur_joint_state)
@@ -261,9 +323,14 @@ class HandSimpleModel
   ros::Publisher control_type_pub_;
   ros::Subscriber joint_sub_;
   std::vector<KDL::Chain> finger_chains_;
+  std::vector<FKSolverPtr> fk_;
+  std::vector<IKSolverPtr> ik_;
   KDL::Tree hand_tree_;
   string base_link_;
   int sign_;
+  ControlType control_type_;
+  KDL::JntArray q_min_;
+  KDL::JntArray q_max_;
 };
 
 int main(int argc, char** argv)
