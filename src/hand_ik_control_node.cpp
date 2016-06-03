@@ -36,7 +36,7 @@ enum ControlType {TORQUE_CONTROL,
                   IK_CONTROL};
 
 const int NUM_FINGER_JOINTS = 4;
-const int DISPLAY_RATE = 10;
+const int DISPLAY_RATE = 1;
 
 typedef KDL::Frame EEState;
 typedef std::vector<EEState> EEStates;
@@ -48,6 +48,9 @@ typedef boost::shared_ptr<FKSolver> FKSolverPtr;
 typedef boost::shared_ptr<IKSolver> IKSolverPtr;
 
 using std::string;
+
+// Debugs
+// #define DEBUG_FK_IK 1
 
 class HandSimpleModel
 {
@@ -116,13 +119,9 @@ class HandSimpleModel
 
   void run(void)
   {
-    // TODO: Change draw robot to use klampt / real robot / publish to rviz
     for (int i = 0; i < finger_chains_.size(); ++i)
     {
       int k = finger_chains_[i].getNrOfJoints();
-      ROS_INFO_STREAM("Chain " << i << " has " << k << " joints.");
-      ROS_INFO_STREAM("From " << finger_chains_[i].getSegment(0).getName() << " to " <<
-                      finger_chains_[i].getSegment(k-1).getName());
     }
     ros::spin();
   }
@@ -147,6 +146,21 @@ class HandSimpleModel
   }
 
   /**
+   * Perform forward kinematics for a single finger
+   *
+   * @param q Joint configuration of the finger
+   * @param finger which finger to perform FK on
+   *
+   * @return Position of the finger end effector
+   */
+  EEState FK(FingerJointState q, FingerIdx finger)
+  {
+    EEState x;
+    fk_[finger]->JntToCart(q, x);
+    return x;
+  }
+
+  /**
    * Get inverse kinematics for desired finger poses of all fingers
    *
    * @param fingers_desired a vector of desired finger tip poses in order of finger_chains[]
@@ -159,17 +173,34 @@ class HandSimpleModel
     FingerJointStates q_desired_fingers;
     for (int i = 0; i < fingers_desired.size(); i++)
     {
-      FingerJointState q_i(finger_chains_[i].getNrOfJoints());
-      FingerJointState q_init(finger_chains_[i].getNrOfJoints());
-      //Maximum 100 iterations, stop at accuracy 1e-6
-      KDL::ChainIkSolverPos_NR_JL iksolver(finger_chains_[i], q_min_, q_max_,
-                                           *fk_[i],*ik_[i],100,1e-6);
-
-      iksolver.CartToJnt(q_init, fingers_desired[i], q_i);
-      q_desired_fingers.push_back(q_i);
-
+      // FingerJointState q_i(finger_chains_[i].getNrOfJoints());
+      // FingerJointState q_init(finger_chains_[i].getNrOfJoints());
+      // //Maximum 100 iterations, stop at accuracy 1e-6
+      // KDL::ChainIkSolverPos_NR_JL iksolver(finger_chains_[i], q_min_, q_max_,
+      //                                      *fk_[i],*ik_[i],100,1e-6);
+      // iksolver.CartToJnt(q_init, fingers_desired[i], q_i);
+      q_desired_fingers.push_back(IK(fingers_desired[i], (FingerIdx)i));
     }
     return q_desired_fingers;
+  }
+
+  /**
+   * Perform IK for a single finger
+   *
+   * @param x_d Desired end effector position of the finger
+   * @param finger Which finger to perform IK on
+   *
+   * @return Desired joint configuration of the finger
+   */
+  FingerJointState IK(EEState x_d, FingerIdx finger)
+  {
+    FingerJointState q_d(finger_chains_[finger].getNrOfJoints());
+    FingerJointState q_init(finger_chains_[finger].getNrOfJoints());
+    //Maximum 100 iterations, stop at accuracy 1e-6
+    KDL::ChainIkSolverPos_NR_JL iksolver(finger_chains_[finger], q_min_, q_max_,
+                                         *fk_[finger],*ik_[finger],100,1e-6);
+    iksolver.CartToJnt(q_init, x_d, q_d);
+    return q_d;
   }
 
   /**
@@ -228,26 +259,35 @@ class HandSimpleModel
     // Translate IK result back into the message format
     for (int i = 0; i < NUM_FINGERS; ++i)
     {
-      ROS_INFO_STREAM("Finger " << EE_NAMES[i]);
-      ROS_INFO_STREAM("Cur joints\n [" << finger_qs[i](0) << ", "<< finger_qs[i](1) << ", "<<
-                      finger_qs[i](2) << ", "<< finger_qs[i](3) << "]");
-      ROS_INFO_STREAM("FK results\n " << X[i]);
-      ROS_INFO_STREAM("IK results\n [" << Q[i](0) << ", "<< Q[i](1) << ", "<<
-                      Q[i](2) << ", "<< Q[i](3) << "]\n");
-
       for (int j = 0; j < NUM_FINGER_JOINTS; ++j)
       {
         q_desired.position[i*4+j] = Q[i](j);
       }
+#ifdef DEBUG_FK_IK
+      ROS_INFO_STREAM("Finger " << EE_NAMES[i]);
+      ROS_INFO_STREAM("Cur joints\n [" << finger_qs[i](0) << ", "<< finger_qs[i](1) << ", "<<
+          finger_qs[i](2) << ", "<< finger_qs[i](3) << "]");
+      ROS_INFO_STREAM("FK results\n " << X[i]);
+      ROS_INFO_STREAM("IK results\n [" << Q[i](0) << ", "<< Q[i](1) << ", "<<
+          Q[i](2) << ", "<< Q[i](3) << "]\n");
+#endif // DEBUG_FK_IK
     }
 
     // TODO: Get desired thumb pose
-    // x_th_des = np.matrix([[0.03],
-    //                       [0.0],
-    //                       [0.0]])
-    // r_th_des = np.matrix(np.eye(3))
-    // X_th_des = (x_th_des, r_th_des)
-    // q_des = finger_chains_[INDEX_IDX].inverse_wdls(X_th_des)
+    KDL::Vector x_th_pos_des(0.03, 0.0, 0.0);
+    x_th_pos_des(0) += (cur_joint_state.header.seq%2)*0.3;
+    KDL::Rotation x_th_rot_des(1.0, 0.0, 0.0,
+                               0.0, 1.0, 0.0,
+                               0.0, 0.0, 1.0);
+    EEState x_th_des(x_th_rot_des, x_th_pos_des);
+    FingerJointState q_des = IK(x_th_des, THUMB_IDX);
+    ROS_INFO_STREAM("q_des = [" << q_des(0) << ", " << q_des(1) << ", "
+                                << q_des(2) << ", " << q_des(3) << "] "
+                                << " for x_des = " << x_th_des );
+    for (int i = 0; i < NUM_FINGER_JOINTS; ++i)
+    {
+      q_desired.position[THUMB_IDX*NUM_FINGER_JOINTS+i] = q_des(i);
+    }
 
     joint_cmd_pub_.publish(q_desired);
   }
