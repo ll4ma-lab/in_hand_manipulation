@@ -33,14 +33,20 @@ class jointPublisher:
                         0.0, 0.0, 0.0, 0.0]
         self.jc=jc
 
-    def publish_joint_positions(self,joint_pos_arr):
+    def publish_grasp(self,joint_pos_arr):
         self.jc.position=joint_pos_arr
         while not rospy.is_shutdown():
-            for i in range(100):
+            for i in range(10):
                 self.robot_joint_cmd_pub.publish(self.jc)
                 self.loop_rate.sleep()
             break
-
+    def publish_joint_trajectory(self,joint_pos_traj):
+        while not rospy.is_shutdown():
+            for i in range(len(joint_pos_traj)):
+                self.jc.position=joint_pos_arr
+                self.loop_rate.sleep()
+            break
+        print 'Finished running trajectory'
 class controlSwitch:
     def __init__(self,node_name='allegro_controller_switcher',publish_prefix='/allegro_hand_right',rate=100.0):
         rospy.init_node(node_name)

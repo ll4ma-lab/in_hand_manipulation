@@ -28,15 +28,15 @@ class ObjectReachList:
                 fing=np.array(map(int, line[3].split(',')))
                 des=np.array(map(float, line[10:]))
                 #des=[]
-                initial_pose=[]
+                initial_pose=np.array(map(float, line[4:10]))
                 if name==prev_name:
                     q+=1                  
                 else:
                     prev_name=name
                     q=tr_start
-                f_name=self.folder+name+'_'+str(q)                 
+                f_name=name+'_'+str(q)                 
 
-                self.arr.append(ObjectModel(name,grasp,offset,des,fing,i,f_name,initial_pose))
+                self.arr.append(ObjectModel(name,grasp,offset,des,fing,i,f_name,folder,initial_pose))
                 i+=1
         print "Read "+str(i)+" objects"
             
@@ -49,6 +49,17 @@ class ObjectReachList:
                 data=list(row)+list_sol
                 i+=1
                 writer.writerow(data)
+    def write_sol_from_tjo(self,file_w):
+        i=0
+        with open(file_w,'w') as f:
+            writer= csv.writer(f)
+            for i in range(len(self.arr)):
+                obj=self.arr[i]
+                row=[obj.name,','.join(map(str,obj.offset)),','.join(map(str,obj.grasp)),','.join(map(str,obj.fing))]+list(obj.initial_pose)+list(obj.sol)
+                data=row
+                i+=1
+                writer.writerow(data)
+
     def write_weights(self,file_w):
         i=0
         with open(file_w,'w') as f:
@@ -61,7 +72,7 @@ class ObjectReachList:
 
 
 class ObjectModel:
-    def __init__(self,name,grasp,offset,x_des,fing,i,f_name,folder,initial_pose,solution=[],weights=[]):
+    def __init__(self,name,grasp,offset,x_des,fing,i,f_name,folder,initial_pose,solution=[],weights=[],trial=0):
         self.grasp=grasp
         self.offset=offset
         self.name=name
@@ -73,6 +84,28 @@ class ObjectModel:
         self.sol=solution
         self.folder=folder
         self.weights=weights
+        self.trial=trial
+class TrialList:
+    '''Reading trial csv file'''
+    def __init__(self,csv_file,folder,n_trials):
+        self.arr=[]
+        with open(csv_file,'r') as csvfile:
+            csvreader=csv.reader(csvfile,delimiter=',',quotechar='"')
+            for row in csvreader:
+                name=line[0]
+                f_name=line[1]
+                grasp=np.array(map(float, line[2].split(',')))
+                weights=np.array(map(float, line[4].split(',')))
+                offset=np.array(line[3].split(','))                               
+                initial_pose=np.array(map(float, line[5:5+6]))
+                des=np.array(map(float, line[11:11+6]))
+                solution=np.array(map(float, line[17:17+6]))
+                trial_no=line[24]
+                folder=folder
+                fing=[]
+                self.arr.append(ObjectModel(name,grasp,offset,des,fing,csvreader.line_num,f_name,folder,initial_pose,solution,weights,trial_no))
+
+
 class TrajList:
     ''' Reading  solution.csv file'''
     def __init__(self,csv_file,folder,tr_start=0):
@@ -96,7 +129,18 @@ class TrajList:
                 folder=folder
                 
                 self.arr.append(ObjectModel(name,grasp,offset,des,fing,csvreader.line_num,f_name,folder,initial_pose,solution,weights))
-        
+    def write_trial_list(self,n_trials,f_name):
+        ''' create csv file with name f_name and n_trials per trajectory'''
+        file_w=obj.arr[0].folder+f_name
+        with open(file_w,'w') as f:
+            writer= csv.writer(f)
+            for i in range(len(self.arr)):
+                obj=self.arr[i]
+                row=[obj.name,obj.f_name,','.join(map(str,obj.grasp)),','.join(map(str,obj.offset)),','.join(map(str,obj.weights))]+list(obj.initial_pose)+list(obj.des)+list(obj.sol)
+                for k in range(n_trials):
+                    data=row+k
+                    #write to csv file
+                    writer.writerow(data)
 
 class ObjectList:
     def __init__(self,csv_file,folder,tr_start=0):
