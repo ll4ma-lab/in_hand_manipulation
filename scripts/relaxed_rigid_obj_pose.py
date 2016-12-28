@@ -7,7 +7,7 @@ from object_list import *
 delta_t=1.0/60
 T=10
 def main():
-    file="../data/goal_poses/waypoint_goal_joint_angles.csv"
+    file="../data/goal_poses/exp_2_goal_joint_angles.csv"
     folder_to_write=""
     obj_list=ObjectReachList(file,folder_to_write)  
 
@@ -22,7 +22,7 @@ def main():
         obj_list.arr[q].sol=row[0]
         tr+=1
 
-    obj_list.write_sol_from_tjo('../data/goal_poses/waypoint_goal_poses.csv')
+    obj_list.write_sol_from_tjo('../data/goal_poses/exp_2_goal_poses.csv')
 
 def multi_obj(obj):
 

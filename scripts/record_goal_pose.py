@@ -12,7 +12,7 @@ if __name__=='__main__':
 
 
     # read file and store as object list
-    objects=read_objects('../data/object_grasps/waypoint_initial_poses.csv',' ')
+    objects=read_objects('../data/object_grasps/remaining_initial_poses.csv',' ')
     repeat=1
     
     while(repeat==1):
@@ -22,7 +22,7 @@ if __name__=='__main__':
         print 'Object: '+objects.arr[t_no].name
         # Publishing joint positions to robot
         allegroStates.position_mode()
-        allegroStates.publish_joint_positions(objects.arr[t_no].grasp)
+        allegroStates.publish_grasp(objects.arr[t_no].grasp)
     
         raw_input('Moved to initial grasp, press enter to activate grav. comp. mode ')
         # Switching to gravity compensation
@@ -38,6 +38,6 @@ if __name__=='__main__':
         repeat=int(input(' Press 1-to get more goal poses.\n Press 2- to write to file and exit.\n '))
     
     
-    objects.write_sol_from_tjo('../data/goal_poses/waypoint_goal_joint_angles.csv')
+    objects.write_sol_from_tjo('../data/goal_poses/remaining_goal_joint_angles.csv')
 
 

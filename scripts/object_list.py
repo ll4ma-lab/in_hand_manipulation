@@ -85,13 +85,16 @@ class ObjectModel:
         self.folder=folder
         self.weights=weights
         self.trial=trial
+
 class TrialList:
     '''Reading trial csv file'''
     def __init__(self,csv_file,folder,n_trials):
         self.arr=[]
-        with open(csv_file,'r') as csvfile:
+        f_name=folder+csv_file
+        with open(f_name,'r') as csvfile:
             csvreader=csv.reader(csvfile,delimiter=',',quotechar='"')
             for row in csvreader:
+                line=row
                 name=line[0]
                 f_name=line[1]
                 grasp=np.array(map(float, line[2].split(',')))
@@ -100,10 +103,11 @@ class TrialList:
                 initial_pose=np.array(map(float, line[5:5+6]))
                 des=np.array(map(float, line[11:11+6]))
                 solution=np.array(map(float, line[17:17+6]))
-                trial_no=line[24]
+                trial_no=line[23]
                 folder=folder
                 fing=[]
                 self.arr.append(ObjectModel(name,grasp,offset,des,fing,csvreader.line_num,f_name,folder,initial_pose,solution,weights,trial_no))
+
 
 
 class TrajList:
@@ -127,18 +131,22 @@ class TrajList:
                 solution=np.array(map(float, line[17:17+6]))
                 fing=[0,1,3]
                 folder=folder
-                
                 self.arr.append(ObjectModel(name,grasp,offset,des,fing,csvreader.line_num,f_name,folder,initial_pose,solution,weights))
+
     def write_trial_list(self,n_trials,f_name):
         ''' create csv file with name f_name and n_trials per trajectory'''
-        file_w=obj.arr[0].folder+f_name
+        file_w=self.arr[0].folder+f_name
+        trial_arr=range(n_trials)
         with open(file_w,'w') as f:
             writer= csv.writer(f)
             for i in range(len(self.arr)):
                 obj=self.arr[i]
                 row=[obj.name,obj.f_name,','.join(map(str,obj.grasp)),','.join(map(str,obj.offset)),','.join(map(str,obj.weights))]+list(obj.initial_pose)+list(obj.des)+list(obj.sol)
-                for k in range(n_trials):
-                    data=row+k
+                
+                
+                
+                for k in trial_arr:
+                    data=row+[k]
                     #write to csv file
                     writer.writerow(data)
 
@@ -194,7 +202,8 @@ class ObjectList:
                 k2=float(row[1])
                 k3=float(row[2])
                 k4=float(row[3])
-                weights=np.array([k1,k2,k3,k4])
+                max_iter=int(row[4])
+                weights=np.array([k1,k2,k3,k4,max_iter])
                 for i in range(traj_count):
                     self.arr[i+(csvreader.line_num-1)*(len(initial_arr))].weights=weights
 

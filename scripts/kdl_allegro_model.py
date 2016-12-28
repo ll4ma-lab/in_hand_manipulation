@@ -42,6 +42,7 @@ class allegroKinematics:
         f_T_o[0:3,0:3]=f_R_t
         f_T_o[0:3,3]=D
         return np.matrix(f_T_o)
+    
     def add_object_frame(self,D,joints,finger=3):
         # Adds object frame at a distance D from finger 0 and creates frame transformations to this frame from other fingertips
         f_T_o=self.object_frame_init(D,joints,finger) 
@@ -82,6 +83,29 @@ class allegroKinematics:
         return object_frames
   
     
+    def object_frame_init_trinkle(self,joints):
+        # Get initial object pose
+        t_X_O=self.object_pose(joints)
+        t_T_O=np.eye(4)
+        # Match initial rotation to palm fram
+        R=PyKDL.Rotation()
+        R.RPY(t_X_O[3],t_X_O[4],t_X_O[5])
+        for k in range(3):
+            for l in range(3):
+                t_T_O[k,l]=R[k,l]
+        t_T_O[0:3,3]=t_X_O[0:3]
+        # Built object contact point frames
+        contact_frames=[[np.eye(4)]for i in range(4)]
+        t_T_f=np.eye(4)
+        for finger in self.fingers:
+            t_T_f[0:3,3]=self.end_effector_pose(joints[finger*4:finger*4+4],finger)[0:3,3].T
+            # Frame from object to finger tip
+            contact_frames[finger]=np.matrix(inv(t_T_O))*np.matrix(t_T_f)
+            
+
+        self.contact_frames=contact_frames
+
+    '''
     def contact_points(self,joints,obj_frames):
         #finger=0
         for finger in range(4):        
@@ -89,7 +113,48 @@ class allegroKinematics:
             t_T_o=t_T_0*inv(obj_frames[finger])
             print t_T_o
         return 0
+    '''
+    def contact_points(self,des_obj_mat):
+       
+        des_contact_frames=[[np.eye(4)]for i in range(4)]
+        des_contact_points=[[np.zeros(3)] for i in range(4)]
+        for i in self.fingers:
+            cp=np.zeros(4)
+            cp[3]=1.0
+            cp[0:3]=np.ravel(self.contact_frames[i][0:3,3])
+            des_contact_frames[i]=des_obj_mat*self.contact_frames[i]
+            des_contact_points[i]=(np.matrix(des_obj_mat)*np.matrix(cp).T)[0:3]
+        self.des_contact_frames=des_contact_frames
+        self.des_contact_points=des_contact_points
+
+    def sampling_contact_points(self,des_obj_pose,init_obj_pose):
+        T=self.T
+
+        time_contacts=[]
+        for k in range(T):
+            sample_pose=init_obj_pose+(des_obj_pose-init_obj_pose)*float(k)/T
+            # Building transformation matrix:
+            x_des_mat=np.eye(4)
+            x_des_mat[0:3,3]=sample_pose[0:3]
+            R=PyKDL.Rotation.RPY(sample_pose[3],sample_pose[4],sample_pose[5])
+            for i in range(3):
+                for j in range(3):
+                    x_des_mat[i,j]=R[i,j]
         
+
+            des_contact_frames=[[np.eye(4)]for i in range(4)]
+            des_contact_points=[[np.zeros(3)] for i in range(4)]
+            
+            for i in self.fingers:
+                cp=np.zeros(4)
+                cp[3]=1.0
+                cp[0:3]=np.ravel(self.contact_frames[i][0:3,3])
+                des_contact_frames[i]=x_des_mat*self.contact_frames[i]
+                des_contact_points[i]=(np.matrix(x_des_mat)*np.matrix(cp).T)[0:3]
+            time_contacts.append(des_contact_frames)
+        
+        self.time_contacts=time_contacts
+
     def object_pose(self,joints,finger=3,get_quat=False):
         obj_T=self.end_effector_pose(joints[finger*4:finger*4+4],finger)*self.object_frames[finger]
         if get_quat:
