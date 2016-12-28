@@ -50,10 +50,7 @@ def multi_obj(obj):
         robot_model.wp=obj.weights[0]
         robot_model.wr=obj.weights[1]/float(T)
         robot_model.wo=obj.weights[2]/float(T)
-        if(obj. weights[3]!=0.0):
-            robot_model.wl=obj.weights[3]/float(T)
-        else:
-            robot_model.wl=0.0
+        robot_model.wl=obj.weights[3]/float(T)
         u0=joints.copy()
 
         max_iter=int(obj.weights[4])

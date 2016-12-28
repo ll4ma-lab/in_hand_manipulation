@@ -16,6 +16,7 @@ import seaborn as sns
 safeuiall=['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00']
 twoui=['#a6611a','#dfc27d','#f5f5f5','#80cdc1','#018571']
 safeui=['#fdcc8a','#377eb8']
+singleui=['#696969','#696969','#696969','#696969']
 #sns.color_palette(safeui)
 #sns.palplot(sns.color_palette(safeui))
 
@@ -41,9 +42,11 @@ def compute_errors(obj):
         #position error:
         pos_err=np.linalg.norm(des_pose[0:3]-reached_pose[0:3],ord=2)
         err=[pos_err,R_err]
-        obj[i].err=err
+        
         if(pos_err>0.010):
             names.append(obj[i].f_name)
+            #err=[0.0,0.0]
+        obj[i].err=err    
     return obj,names
 
 def plot_convergence(obj):
@@ -58,18 +61,25 @@ def plot_convergence(obj):
         r_err.append(obj[i].err[1])
         names.append(obj[i].name)
         if(i<50):
-            weight.append(1)
-        else:
-            weight.append(obj[i].weights[-1])
-
+            weight.append('no bias-cost(5k)')
+        elif(50<=i<50*2):
+            weight.append('bias-cost(5k)')
+        elif(50*2<=i<50*3):
+            weight.append('no bias-cost(20k)')
+        elif(50*3<=i<50*4):
+            weight.append('bias-cost(20k)')
 
     # Adding an additional label for all objects   
     for i in range(len(obj)):
         names.append('All objects')
         if(i<50):
-            weight.append(1)
-        else:
-            weight.append(obj[i].weights[-1])
+            weight.append('no bias-cost(5k)')
+        elif(50<=i<50*2):
+            weight.append('bias-cost(5k)')
+        elif(50*2<=i<50*3):
+            weight.append('no bias-cost(20k)')
+        elif(50*3<=i<50*4):
+            weight.append('bias-cost(20k)')
         p_err.append(obj[i].err[0])
         r_err.append(obj[i].err[1])
 
@@ -77,31 +87,107 @@ def plot_convergence(obj):
     data['position']=p_err
     data['orientation']=r_err
     data['object']=names
+    #data['method']=method
     data['weight']=weight
 
     # Plot using the amazing seaborn:
-    plt.figure(figsize=(27,10))
+    plt.figure(figsize=(8,14))
        
     
     sns.set(font_scale=1.45)
     sns.set_style("whitegrid")
 
-    ax=sns.boxplot(y="position",x="object",hue='weight',data=data,orient="v",linewidth=1,palette=twoui,whis=10.0)
-    ax=sns.swarmplot(y='position',x='object',data=data,hue='weight',orient="v",linewidth=1,palette=safeuiall,split=True)
-    ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.07),ncol=5, fancybox=False, shadow=False)
-
-    #plt.savefig('position_error_1.eps', bbox_inches='tight')
-    plt.show()
+    ax=sns.boxplot(x="position",y="object",data=data,orient="h",hue='weight',linewidth=1,palette=safeuiall,whis=10.0)
+    ax=sns.swarmplot(x='position',y='object',data=data,orient="h",hue='weight',linewidth=1,palette=singleui,split=True,edgecolor='black')
+    ax.set(ylabel='Objects', xlabel='Position Error')
+    handles, labels = ax.get_legend_handles_labels()
+    
+    ax.legend(handles[0:4], labels[0:4],title='bias cost(max. iterations)',loc='upper center', bbox_to_anchor=(0.5, 1.11),ncol=2, fancybox=False, shadow=False)
+    plt.xlim(0)
+    plt.savefig('convergence_exp_1_position_error.eps', bbox_inches='tight')
+    #plt.show()
  
+def plot_convergence_method(obj,n=0):
+    #Load data into pandas
+    p_err=[]
+    r_err=[]
+    names=[]
+    method=[]
+    
+    for i in range(len(obj)):
+        p_err.append(obj[i].err[0])
+        r_err.append(obj[i].err[1])
+        names.append(obj[i].name)
+        if(i<n):
+            method.append('IK-rigid')
+        elif(n<=i and i<2*n):
+            method.append('Trinkle')
+        elif(2*n<=i and  i<3*n):
+            method.append('Relaxed-position')
+        elif(3*n<=i and i<4*n):
+            method.append('Relaxed-full')
+
+    '''
+    # Adding an additional label for all objects   
+    for i in range(len(obj)):
+        names.append('All objects')
+        if(i<n):
+            method.append('IK-rigid')
+        elif(n<=i and i<2*n):
+            method.append('Trinkle')
+        elif(2*n<=i and i<3*n):
+            method.append('Relaxed-position')
+        elif(3*n<=i and i<4*n):
+            method.append('Relaxed-full')
+
+
+        p_err.append(obj[i].err[0])
+        r_err.append(obj[i].err[1])
+    '''
+    data = pd.DataFrame()
+    data['position']=p_err
+    data['orientation']=r_err
+    data['object']=names
+    data['method']=method
+
+    # Plot using seaborn:
+    plt.figure(figsize=(8,15))
+       
+    
+    sns.set(font_scale=1.45)
+    sns.set_style("whitegrid")
+
+    ax=sns.boxplot(x="position",y="object",data=data,hue="method",orient="h",linewidth=1,palette=safeuiall,whis=10.0)
+    #ax=sns.swarmplot(x='position',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles[0:4], labels[0:4],title='Method',loc='upper center', bbox_to_anchor=(0.5, 1.07),ncol=5, fancybox=False, shadow=False)
+    ax.set(xlabel='Position Error', ylabel='Objects')
+        
+    #plt.savefig('convergence_exp_2_position_error.eps', bbox_inches='tight')
+    plt.show()
+
         
 
 if __name__=='__main__':
-    file_name="../data/trajectories/waypoint_solution_20k.csv"
-    obj=TrajList(file_name,folder='')
-    obj_1=TrajList('../data/trajectories/waypoint_solution_5k.csv','')
-    obj_all=obj.arr+obj_1.arr
+
+
+    '''
+    obj_3=TrajList("../data/trajectories/exp_2_relaxed-full-updated_solution.csv",folder='')
+    traj_n=len(obj_3.arr)
+    '''
+    obj_2=TrajList('../data/trajectories/exp_2_relaxed-position_solution.csv','')
+    obj_0=TrajList('../data/trajectories/exp_2_ik-rigid_solution.csv','')
+    obj_1=TrajList('../data/trajectories/exp_2_trinkle_solution.csv','')
+    obj_3=TrajList("../data/trajectories/exp_2_relaxed-full_solution.csv",folder='')
+    traj_n=len(obj_3.arr)
+    obj_all=obj_0.arr+obj_1.arr+obj_3.arr+obj_3.arr
+
+    #obj_all=TrajList("../data/trajectories/waypoint_solution.csv",'').arr
+    
     obj,n=compute_errors(obj_all)
+    #print n
+    #plot_convergence(obj)
     print n
-    plot_convergence(obj)
+    plot_convergence_method(obj,traj_n)
 
     

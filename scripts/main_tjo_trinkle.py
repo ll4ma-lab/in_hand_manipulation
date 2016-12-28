@@ -16,7 +16,7 @@ def main():
     file="../data/goal_poses/exp_2_goal_poses.csv"
     folder_to_write="../data/trajectories/exp_2/"+method+"/"
     obj_list=ObjectList(file,folder_to_write)  
-    obj_list.get_weights('../data/weights/exp_2.csv')
+    obj_list.get_weights('../data/weights/exp_2_ik_trinkle.csv')
     print len(obj_list.arr)
     sc_pool=Pool()
     sta_t = time.time()

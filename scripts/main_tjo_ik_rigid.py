@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #from cost_relaxed_rigid_obj_sampled import *
-from cost_trinkle import *
+from cost_ik_rigid import *
 from kdl_allegro_model import *
 import traj_opt as tjO
 from interpolate_traj import *
@@ -16,12 +16,12 @@ def main():
     file="../data/goal_poses/exp_2_goal_poses.csv"
     folder_to_write="../data/trajectories/exp_2/"+method+"/"
     obj_list=ObjectList(file,folder_to_write)  
-    obj_list.get_weights('../data/weights/exp_2.csv')
+    obj_list.get_weights('../data/weights/exp_2_ik_trinkle.csv')
     print len(obj_list.arr)
     sc_pool=Pool()
     sta_t = time.time()
     tr=0
-    for res in sc_pool.imap_unordered(multi_obj,obj_list.arr,chunksize=1):
+    for res in sc_pool.imap_unordered(multi_obj,obj_list.arr,chunksize=10):
         row=res
         q=row[-1]
         obj_list.arr[q].sol=row[0]
