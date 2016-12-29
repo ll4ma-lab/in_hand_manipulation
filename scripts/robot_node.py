@@ -15,7 +15,7 @@ class robotStates:
 
         rospy.Subscriber(listen_prefix+'/joint_states',JointState,self.joint_state_cb)
         if(listen_aruco):
-            listener = tf.TransformListener()
+            self.listener = tf.TransformListener()
             
         print 'Initialized robot node'
         self.loop_rate=rospy.Rate(rate)
@@ -31,7 +31,18 @@ class robotStates:
                       0.0, 0.0, 0.0, 0.0]
         self.jc=jc
 
-        
+    def tf_pose_pub(self,pose,target_frame,base_frame='palm_link'):
+        tf_pose=tf.TransformBroadcaster()
+        if(len(pose)==3):
+            pose.extend([0.0,0.0,0.0])
+        tf_pose.sendTransform((pose[0],pose[1],pose[2]),tf.transformations.quaternion_from_euler(pose[3],pose[4],pose[5]),rospy.Time.now(),target_frame,base_frame)
+
+    def tf_find_transform(self,target_frame,base_frame='palm_link'):
+        (trans_2,rot_2)= self.listener.lookupTransform('/palm_link', target_frame, rospy.Time(0))
+        final_pose=np.zeros(6)
+        final_pose[0:3]=trans_2
+        final_pose[3:6]=tf.transformations.euler_from_quaternion(rot_2)
+        return final_pose
 
     def joint_state_cb(self,joint_state):
         self.joint_states=joint_state
@@ -46,7 +57,6 @@ class robotStates:
                 self.loop_rate.sleep()
             break
     def publish_joint_trajectory(self,joint_pos_traj):
-        print len(joint_pos_traj)
         while not rospy.is_shutdown():
             for i in range(len(joint_pos_traj)):
                 self.jc.position=joint_pos_traj[i]

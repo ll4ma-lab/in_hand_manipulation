@@ -163,8 +163,8 @@ def plot_convergence_method(obj,n=0):
     ax.legend(handles[0:4], labels[0:4],title='Method',loc='upper center', bbox_to_anchor=(0.5, 1.07),ncol=5, fancybox=False, shadow=False)
     ax.set(xlabel='Position Error', ylabel='Objects')
         
-    #plt.savefig('convergence_exp_2_position_error.eps', bbox_inches='tight')
-    plt.show()
+    plt.savefig('convergence_exp_2_position_error.eps', bbox_inches='tight')
+    #plt.show()
 
         
 

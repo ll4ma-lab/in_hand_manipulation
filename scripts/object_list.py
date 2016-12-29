@@ -72,7 +72,7 @@ class ObjectReachList:
 
 
 class ObjectModel:
-    def __init__(self,name,grasp,offset,x_des,fing,i,f_name,folder,initial_pose,solution=[],weights=[],trial=0):
+    def __init__(self,name,grasp,offset,x_des,fing,i,f_name,folder,initial_pose,solution=[],reached=[],weights=[],trial=0):
         self.grasp=grasp
         self.offset=offset
         self.name=name
@@ -85,6 +85,7 @@ class ObjectModel:
         self.folder=folder
         self.weights=weights
         self.trial=trial
+        self.reached=reached
 
 class TrialList:
     '''Reading trial csv file'''
@@ -106,9 +107,21 @@ class TrialList:
                 trial_no=line[23]
                 folder=folder
                 fing=[]
-                self.arr.append(ObjectModel(name,grasp,offset,des,fing,csvreader.line_num,f_name,folder,initial_pose,solution,weights,trial_no))
+                line_length=len(line)
+                if(line_length>24):
+                    reached=map(str,line[24:line_length])
+                else:
+                    reached=[]
+                self.arr.append(ObjectModel(name,grasp,offset,des,fing,csvreader.line_num,f_name,folder,initial_pose,solution,reached,weights,trial_no))
 
+    def write_reached_pose(self,file_w):
 
+        with open(file_w,'w') as f:
+            writer= csv.writer(f)
+            for i in range(len(self.arr)):
+                obj=self.arr[i]
+                row=[obj.name,obj.f_name,','.join(map(str,obj.grasp)),','.join(map(str,obj.offset)),','.join(map(str,obj.weights))]+list(obj.initial_pose)+list(obj.des)+list(obj.reached)
+                writer.writerow(row)
 
 class TrajList:
     ''' Reading  solution.csv file'''
@@ -131,7 +144,7 @@ class TrajList:
                 solution=np.array(map(float, line[17:17+6]))
                 fing=[0,1,3]
                 folder=folder
-                self.arr.append(ObjectModel(name,grasp,offset,des,fing,csvreader.line_num,f_name,folder,initial_pose,solution,weights))
+                self.arr.append(ObjectModel(name,grasp,offset,des,fing,csvreader.line_num,f_name,folder,initial_pose,solution,weights=weights))
 
     def write_trial_list(self,n_trials,f_name):
         ''' create csv file with name f_name and n_trials per trajectory'''
@@ -142,9 +155,6 @@ class TrajList:
             for i in range(len(self.arr)):
                 obj=self.arr[i]
                 row=[obj.name,obj.f_name,','.join(map(str,obj.grasp)),','.join(map(str,obj.offset)),','.join(map(str,obj.weights))]+list(obj.initial_pose)+list(obj.des)+list(obj.sol)
-                
-                
-                
                 for k in trial_arr:
                     data=row+[k]
                     #write to csv file
