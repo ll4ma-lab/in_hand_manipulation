@@ -74,9 +74,9 @@ if __name__=='__main__':
                 for row in lines:
                     if(i>0):
                         if(obj_no+1==i):
-                            list_data=[obj_list[i-1].name,obj_list[i-1].fing,obj_list[i-1].aruco_st,obj_list[i-1].joints,','.join(map(str,obj_list[i-1].offset))]
+                            list_data=[obj_list[i-1].name,obj_list[i-1].fing,obj_list[i-1].aruco_st,obj_list[i-1].joints,','.join(map(str,obj_list[i-1].offset)),','.join(map(str,obj_list[i-1].aruco))]
                         else:
-                            list_data=[obj_list[i-1].name,obj_list[i-1].fing,obj_list[i-1].aruco_st,obj_list[i-1].joints,obj_list[i-1].offset]
+                            list_data=[obj_list[i-1].name,obj_list[i-1].fing,obj_list[i-1].aruco_st,obj_list[i-1].joints,obj_list[i-1].offset,','.join(map(str,obj_list[i-1].aruco))]
                         data=list_data
                     else:
                         data=list(row)

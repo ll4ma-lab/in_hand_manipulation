@@ -100,7 +100,7 @@ class TrialList:
                 f_name=line[1]
                 grasp=np.array(map(float, line[2].split(',')))
                 weights=np.array(map(float, line[4].split(',')))
-                offset=np.array(line[3].split(','))                               
+                offset=np.array(map(float,line[3].split(',')))                               
                 initial_pose=np.array(map(float, line[5:5+6]))
                 des=np.array(map(float, line[11:11+6]))
                 solution=np.array(map(float, line[17:17+6]))
@@ -114,13 +114,23 @@ class TrialList:
                     reached=[]
                 self.arr.append(ObjectModel(name,grasp,offset,des,fing,csvreader.line_num,f_name,folder,initial_pose,solution,reached,weights,trial_no))
 
-    def write_reached_pose(self,file_w):
+    def add_aruco_centroid_locations(self,f_name):
+        with open(f_name,'r') as csvfile:
+            csvreader=csv.reader(csvfile,delimiter=',',quotechar='"')
+            for row in csvreader:
+                obj_name=row[0]
+                obj_centroid=np.array(map(float, row[1].split(',')))
+                for i in range(len(self.arr)):
+                    if(self.arr[i].name==obj_name):
+                        self.arr[i].aruco=obj_centroid
 
+
+    def write_reached_pose(self,file_w):
         with open(file_w,'w') as f:
             writer= csv.writer(f)
             for i in range(len(self.arr)):
                 obj=self.arr[i]
-                row=[obj.name,obj.f_name,','.join(map(str,obj.grasp)),','.join(map(str,obj.offset)),','.join(map(str,obj.weights))]+list(obj.initial_pose)+list(obj.des)+list(obj.reached)
+                row=[obj.name,obj.f_name,','.join(map(str,obj.grasp)),','.join(map(str,obj.offset)),','.join(map(str,obj.weights))]+list(obj.initial_pose)+list(obj.des)+list(obj.sol)+list(obj.trial)+list(obj.reached)
                 writer.writerow(row)
 
 class TrajList:

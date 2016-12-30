@@ -2,11 +2,14 @@
 import robot_node as robot
 from object_list import *
 from subprocess import Popen
-
+import subprocess
+import os
+import signal
+import time
 n_trials=5
 MAKE_TRIAL_LIST=False
-ARUCO_=False
-RECORD_BAG_=False
+ARUCO_=True
+RECORD_BAG_=True
 
 EXP_NAME='exp_1_waypoint'
 def read_objects(file,folder):
@@ -20,8 +23,8 @@ if __name__=='__main__':
     trial_name='waypoint_5.csv'
     folder='../data/trials/'
     traj_folder='../data/trajectories/waypoint/'
-
-    bag_folder='/media/bala/Experiments_urlg/icra_2016_in_grasp/rss-experiments-bag/waypoint-exp1'
+    
+    bag_folder='/media/bala/Experiments_urlg/icra_2016_in_grasp/rss-experiments-bag/waypoint-exp1/'
     if(MAKE_TRIAL_LIST):
         ''' RUN only once'''
         # read file and store as object list
@@ -29,52 +32,59 @@ if __name__=='__main__':
         # Make trial list from object list
         obj_.write_trial_list(n_trials,trial_name)
 
+   
+   
+    #bag_process.terminate()
     # Read trial list
     objects=TrialList(trial_name,folder,n_trials)
-
+    objects.add_aruco_centroid_locations('../data/object_grasps/object_centroids.csv')
 
     repeat=1
-    t_no=0
-    trial_no=0
+    t_no=-1
+    trial_no=-1
     while(repeat<2):
         if(repeat==1):
-            t_no_input=raw_input('Trajectory number ('+str(t_no)+'): ')
+            t_no_input=raw_input('Trajectory number ('+str(t_no+1)+'): ')
             if(t_no_input!=''):
                 t_no=int(t_no_input)
             else:
                 t_no+=1
             # Get Object
-            print 'Object: '+objects.arr[t_no].name
-            trial_no=0
-        trial_no_input=raw_input('Trial number('+str(trial_no)+'): ')
+            print 'Object: '+objects.arr[t_no*n_trials].name
+            trial_no=-1
+        trial_no_input=raw_input('Trial number('+str(trial_no+1)+'): ')
         if(trial_no_input!=''):
             trial_no=int(trial_no_input)
         else:
             trial_no+=1
-        index=t_no+trial_no
+        index=t_no*n_trials+trial_no
 
         # Publishing joint positions to robot
         allegroStates.position_mode()
         allegroStates.publish_grasp(objects.arr[index].grasp)
-        raw_input('Placed object?')
+    
         if(ARUCO_):
-            allegroStates.tf_pose_pub(objects.arr[index].initial_pose,'i') 
-            allegroStates.tf_pose_pub(objects.arr[index].offset,'rigid')
-            allegroStates.tf_pose_pub(objects.arr[index].des,'G')
-            raw_input('Aligned initial frames?')
 
+            P_=[] # list of subprocesses
+            P_.append(allegroStates.tf_pose_pub_process(objects.arr[index].aruco,'obj_ar','ar') )
+            P_.append(allegroStates.tf_pose_pub_process(objects.arr[index].initial_pose,'i') )
+            P_.append(allegroStates.tf_pose_pub_process(objects.arr[index].offset,'rigid','thumb_tip'))
+            P_.append(allegroStates.tf_pose_pub_process(objects.arr[index].des,'G'))
+            
+            raw_input('Placed Object and Aligned initial frames?')
+            
             # Setup initial frame
-            initial_frame=allegroStates.tf_find_transform('/ar','/i')
-            allegroStates.tf_pose_pub(initial_frame,'/obj','/ar')          
-        
-            raw_input('Initial Frame obtained, Press enter to run trajectory')
+            initial_frame=allegroStates.tf_find_transform('/i','/obj_ar')
+            #palm_rotation=allegroStates.tf_find_transform('/palm_link','/obj_ar')
+            P_.append(allegroStates.tf_pose_pub_process(initial_frame,'/obj','/obj_ar'))
+            time.sleep(1)
 
+            
             if(RECORD_BAG_):
                 # recording bag file
-                bag_name=bag_folder+objects.arr[index].name+'_'+str(index)
-                
-                bag_process=Popen(["/bin/bash","bag_record.sh",bag_name])
-                sleep(2)
+                bag_name=bag_folder+objects.arr[index].name+'_'+str(t_no)+'_'+str(trial_no)
+                bag_process=allegroStates.record_bag_process(bag_name)
+                time.sleep(2)
 
         # Run trajectory       
         joint_traj=np.loadtxt(open(traj_folder+objects.arr[index].f_name,'r'))
@@ -82,22 +92,36 @@ if __name__=='__main__':
 
         allegroStates.publish_joint_trajectory(joint_traj)
         if(ARUCO_):
-            suc=int(raw_input('Press 1 - store final pose \n Press 2 - to store as failure '))
-            reached_pose=allegroStates.tf_find_transform('obj')
-            if(RECORD_BAG_):
-                bag_process.terminate()
-            if(suc==1):
+            suc=raw_input('Press Enter - store final pose \n Press F to store as failure ')
+
+
+            if(suc==''):
                 # Get object pose from aruco marker
                 
                 # Get final joint angles
-                joint_angles=allegroStates.joint_states.position
+                #joint_angles=allegroStates.joint_states.position
                 # Get final object pose
-                objects.arr[t_no].reached=[[joint_angles],reached_pose]
+                reached_pose=allegroStates.tf_find_transform('obj')
+                objects.arr[index].reached=reached_pose
             else:
                 # Store failure
-                objects.arr[t_no].reached='F'
+                objects.arr[index].reached='F'
+
+            if(RECORD_BAG_):
+                bag_process.send_signal(subprocess.signal.SIGINT)
         
-                objects.write_reached_pose(folder+trial_name)
-    
-        repeat=int(input('Press 0- to run another trial \nPress 1-to run different trajectory.\nPress 2- to exit program\n '))
+            objects.write_reached_pose(folder+trial_name)
+
+            for i in P_:
+                i.send_signal(subprocess.signal.SIGINT)
+                #i.kill()
+
+        next_=raw_input('Press Enter- to run another trial \nPress 1-to run different trajectory.\nPress 2- to exit program\n ')
+        if(next_==''):
+            repeat=0
+        else:
+            repeat=int(next_)
+        
+        
+        
 
