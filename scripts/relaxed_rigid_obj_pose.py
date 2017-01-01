@@ -11,11 +11,17 @@ def main():
     folder_to_write=""
     obj_list=ObjectReachList(file,folder_to_write)  
 
+    for i in range(len(obj_list.arr)):
+        grasp=obj_list.arr[i].grasp
+        grasp[1]+=0.1
+        grasp[5]+=0.1
+        obj_list.arr[i].grasp=grasp
+
     sc_pool=Pool()
     sta_t = time.time()
     tr=0
 
-    for res in sc_pool.imap_unordered(multi_obj,obj_list.arr,chunksize=1):
+    for res in sc_pool.imap_unordered(multi_obj,obj_list.arr,chunksize=10):
         
         row=res
         q=row[-1]

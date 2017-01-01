@@ -7,7 +7,7 @@ from subprocess import Popen
 import subprocess
 import numpy as np
 class robotStates:
-    def __init__(self,node_name='allegro_node',publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right',rate=60.0,listen_aruco=False):
+    def __init__(self,node_name='allegro_node',publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right',rate=100.0,listen_aruco=False):
         rospy.init_node(node_name)
         self.rate=rospy.Rate(rate)
         self.switch_cmd=rospy.Publisher(publish_prefix+'/control_type',Int8,queue_size=10)
@@ -44,7 +44,7 @@ class robotStates:
                 self.loop_rate.sleep()
             break
     
-    def tf_pose_pub_process(self,pose,target_frame,base_frame='palm_link',rate=10):
+    def tf_pose_pub_process(self,pose,target_frame,base_frame='palm_link',rate=100):
         tf_pose=tf.TransformBroadcaster()
         pose=pose.tolist()
         if(len(pose)==3):

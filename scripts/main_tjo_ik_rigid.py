@@ -81,9 +81,6 @@ def multi_obj(obj):
 
         u_input=np.array([joints.copy() for k in range(T+1)]) 
 
-        u_input[-1]=np.array([0.2, 0.1, 1.3, 1.52,0.2, 0.2, 1.4, 1.4,0.0, 0.0, 0.0, 0.0,1.3, -0.2, 0.2, 1.7])
-        u_input[-1][0:12]=joints[0:12]
-
         x_d=np.array(list(np.array([x_des for k in range(T)])))
         
         

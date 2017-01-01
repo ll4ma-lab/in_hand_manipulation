@@ -61,9 +61,9 @@ def plot_convergence(obj):
         r_err.append(obj[i].err[1])
         names.append(obj[i].name)
         if(i<50):
-            weight.append('no bias-cost(5k)')
-        elif(50<=i<50*2):
             weight.append('bias-cost(5k)')
+        elif(50<=i<50*2):
+            weight.append('no bias-cost(20k)')
         elif(50*2<=i<50*3):
             weight.append('no bias-cost(20k)')
         elif(50*3<=i<50*4):
@@ -73,9 +73,9 @@ def plot_convergence(obj):
     for i in range(len(obj)):
         names.append('All objects')
         if(i<50):
-            weight.append('no bias-cost(5k)')
-        elif(50<=i<50*2):
             weight.append('bias-cost(5k)')
+        elif(50<=i<50*2):
+            weight.append('no bias-cost(20k)')
         elif(50*2<=i<50*3):
             weight.append('no bias-cost(20k)')
         elif(50*3<=i<50*4):
@@ -102,10 +102,10 @@ def plot_convergence(obj):
     ax.set(ylabel='Objects', xlabel='Position Error')
     handles, labels = ax.get_legend_handles_labels()
     
-    ax.legend(handles[0:4], labels[0:4],title='bias cost(max. iterations)',loc='upper center', bbox_to_anchor=(0.5, 1.11),ncol=2, fancybox=False, shadow=False)
+    ax.legend(handles[0:2], labels[0:2],title='bias cost(max. iterations)',loc='upper center', bbox_to_anchor=(0.5, 1.11),ncol=2, fancybox=False, shadow=False)
     plt.xlim(0)
-    plt.savefig('convergence_exp_1_position_error.eps', bbox_inches='tight')
-    #plt.show()
+    #plt.savefig('/home/bala/Dropbox/convergence_exp_1_position_error.png', bbox_inches='tight')
+    plt.show()
  
 def plot_convergence_method(obj,n=0):
     #Load data into pandas
@@ -171,8 +171,8 @@ def plot_convergence_method(obj,n=0):
 if __name__=='__main__':
 
 
-    '''
-    obj_3=TrajList("../data/trajectories/exp_2_relaxed-full-updated_solution.csv",folder='')
+    
+    obj_3=TrajList("../data/trajectories/waypoint_solution.csv",folder='')
     traj_n=len(obj_3.arr)
     '''
     obj_2=TrajList('../data/trajectories/exp_2_relaxed-position_solution.csv','')
@@ -181,13 +181,13 @@ if __name__=='__main__':
     obj_3=TrajList("../data/trajectories/exp_2_relaxed-full_solution.csv",folder='')
     traj_n=len(obj_3.arr)
     obj_all=obj_0.arr+obj_1.arr+obj_3.arr+obj_3.arr
-
+    '''
     #obj_all=TrajList("../data/trajectories/waypoint_solution.csv",'').arr
     
-    obj,n=compute_errors(obj_all)
-    #print n
-    #plot_convergence(obj)
+    obj,n=compute_errors(obj_3.arr)
     print n
-    plot_convergence_method(obj,traj_n)
+    plot_convergence(obj)
+    #print n
+    #plot_convergence_method(obj,traj_n)
 
     

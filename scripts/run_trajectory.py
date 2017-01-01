@@ -8,8 +8,9 @@ import signal
 import time
 n_trials=5
 MAKE_TRIAL_LIST=False
-ARUCO_=True
-RECORD_BAG_=True
+#MAKE_TRIAL_LIST=True
+ARUCO_=False
+RECORD_BAG_=False
 
 EXP_NAME='exp_1_waypoint'
 def read_objects(file,folder):
@@ -18,11 +19,11 @@ def read_objects(file,folder):
 
 
 if __name__=='__main__':
-    allegroStates=robot.robotStates(listen_aruco=ARUCO_)
-    f_name='../data/trajectories/waypoint_solution_exp.csv'
-    trial_name='waypoint_5.csv'
+
+    f_name='../data/trajectories/random_solution.csv'
+    trial_name='random_1.csv'
     folder='../data/trials/'
-    traj_folder='../data/trajectories/waypoint/'
+    traj_folder='../data/trajectories/random/'
     
     bag_folder='/media/bala/Experiments_urlg/icra_2016_in_grasp/rss-experiments-bag/waypoint-exp1/'
     if(MAKE_TRIAL_LIST):
@@ -31,9 +32,9 @@ if __name__=='__main__':
         obj_=TrajList(f_name,folder)
         # Make trial list from object list
         obj_.write_trial_list(n_trials,trial_name)
-
+        exit()
    
-   
+    allegroStates=robot.robotStates(listen_aruco=ARUCO_)   
     #bag_process.terminate()
     # Read trial list
     objects=TrialList(trial_name,folder,n_trials)
@@ -66,13 +67,14 @@ if __name__=='__main__':
         if(ARUCO_):
 
             P_=[] # list of subprocesses
-            P_.append(allegroStates.tf_pose_pub_process(objects.arr[index].aruco,'obj_ar','ar') )
             P_.append(allegroStates.tf_pose_pub_process(objects.arr[index].initial_pose,'i') )
             P_.append(allegroStates.tf_pose_pub_process(objects.arr[index].offset,'rigid','thumb_tip'))
             P_.append(allegroStates.tf_pose_pub_process(objects.arr[index].des,'G'))
             
+            P_.append(allegroStates.tf_pose_pub_process(objects.arr[index].aruco,'obj_ar','ar') )
+
             raw_input('Placed Object and Aligned initial frames?')
-            
+            allegroStates.loop_rate.sleep()
             # Setup initial frame
             initial_frame=allegroStates.tf_find_transform('/i','/obj_ar')
             #palm_rotation=allegroStates.tf_find_transform('/palm_link','/obj_ar')
@@ -84,7 +86,9 @@ if __name__=='__main__':
                 # recording bag file
                 bag_name=bag_folder+objects.arr[index].name+'_'+str(t_no)+'_'+str(trial_no)
                 bag_process=allegroStates.record_bag_process(bag_name)
-                time.sleep(2)
+                time.sleep(1)
+        else:
+            raw_input('Placed Object and Aligned initial frames?')
 
         # Run trajectory       
         joint_traj=np.loadtxt(open(traj_folder+objects.arr[index].f_name,'r'))

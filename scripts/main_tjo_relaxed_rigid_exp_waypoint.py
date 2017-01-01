@@ -7,12 +7,12 @@ import time
 from multiprocessing import Pool
 
 from object_list import *
-delta_t=1.0/60
+delta_t=1.0/60.0
 T=10
 def main():
     #method='relaxed-full'
-    file="../data/goal_poses/waypoint_goal_poses.csv"
-    folder_to_write="../data/trajectories/waypoint/"
+    file="../data/goal_poses/waypoint_goal_poses_small.csv"
+    folder_to_write="../data/trajectories/waypoint_100/"
     obj_list=ObjectList(file,folder_to_write)  
     obj_list.get_weights('../data/weights/waypoint_exp.csv')
     print len(obj_list.arr)
@@ -27,7 +27,7 @@ def main():
     
     elap=time.time()-sta_t
     print "Time to compute(seconds): "+str(elap)
-    obj_list.write_sol_from_tjo("../data/trajectories/waypoint_solution.csv")
+    obj_list.write_sol_from_tjo("../data/trajectories/waypoint_solution_100.csv")
 
 def multi_obj(obj):
 
@@ -44,7 +44,7 @@ def multi_obj(obj):
         robot_model.object_frames=robot_model.add_object_frame(D,joints,finger=3)    
 
         robot_model.obj_dim_weights=np.array([1.0,1.0,1.0,-1.0,-1.0,1.0])
-
+        robot_model.final_obj_dim_weights=np.array([100.0,100.0,100.0,-1.0,-1.0,1.0])
         robot_model.psi=[0.0,1.0,0.0]
         #print obj.weights
         robot_model.wp=obj.weights[0]

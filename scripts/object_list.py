@@ -26,8 +26,10 @@ class ObjectReachList:
                 name=line[0]
                 grasp=np.array(map(float, line[2].split(',')))
                 fing=np.array(map(int, line[3].split(',')))
-                des=np.array(map(float, line[10:]))
-                #des=[]
+                if(len(line)>11):
+                    des=np.array(map(float, line[10:]))
+                else:
+                    des=[]
                 initial_pose=np.array(map(float, line[4:10]))
                 if name==prev_name:
                     q+=1                  
@@ -119,10 +121,10 @@ class TrialList:
             csvreader=csv.reader(csvfile,delimiter=',',quotechar='"')
             for row in csvreader:
                 obj_name=row[0]
-                obj_centroid=np.array(map(float, row[1].split(',')))
+                obj_tf=np.array(map(float, row[1].split(',')))
                 for i in range(len(self.arr)):
                     if(self.arr[i].name==obj_name):
-                        self.arr[i].aruco=obj_centroid
+                        self.arr[i].aruco=obj_tf
 
 
     def write_reached_pose(self,file_w):
@@ -269,3 +271,5 @@ class ObjectList:
                 obj=self.arr[i]
                 data=[obj.name]+list(obj.weights)+list(obj.des)+obj.sol
                 writer.writerow(data)
+
+ 
