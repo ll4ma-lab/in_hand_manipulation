@@ -7,7 +7,7 @@ import os
 import signal
 import time
 n_trials=5
-MAKE_TRIAL_LIST=False
+MAKE_TRIAL_LIST=True
 #MAKE_TRIAL_LIST=True
 ARUCO_=False
 RECORD_BAG_=False
@@ -32,7 +32,7 @@ if __name__=='__main__':
         obj_=TrajList(f_name,folder)
         # Make trial list from object list
         obj_.write_trial_list(n_trials,trial_name)
-        exit()
+        #exit()
    
     allegroStates=robot.robotStates(listen_aruco=ARUCO_)   
     #bag_process.terminate()
