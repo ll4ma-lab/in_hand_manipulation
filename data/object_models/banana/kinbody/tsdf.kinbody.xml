@@ -1,0 +1,8 @@
+<KinBody name="melissa_doug_farm_fresh_fruit_banana">
+  <Body type="static" name="melissa_doug_farm_fresh_fruit_banana">
+    <Geom type="trimesh">
+      <Render>../meshes/tsdf_mesh.stl</Render>
+      <Data>../meshes/tsdf_mesh.stl</Data>
+    </Geom>
+  </Body>
+</KinBody>
