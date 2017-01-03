@@ -20,10 +20,10 @@ def read_objects(file,folder):
 
 if __name__=='__main__':
 
-    f_name='../data/trajectories/random_solution.csv'
-    trial_name='random_1.csv'
+    f_name='../data/trajectories/exp_2_relaxed-full_solution.csv'
+    trial_name='relaxed_rigid_1.csv'
     folder='../data/trials/'
-    traj_folder='../data/trajectories/random/'
+    traj_folder='../data/trajectories/exp_2/relaxed-full/'
     
     bag_folder='/media/bala/Experiments_urlg/icra_2016_in_grasp/rss-experiments-bag/waypoint-exp1/'
     if(MAKE_TRIAL_LIST):

@@ -43,7 +43,9 @@ def multi_obj(obj):
         robot_model.joints=joints
         robot_model.object_frames=robot_model.add_object_frame(D,joints,finger=3)    
 
-        robot_model.obj_dim_weights=np.array([1.0,1.0,1.0,-1.0,-1.0,1.0])
+        robot_model.final_obj_dim_weights=np.array([100.0,100.0,100.0,-1.0,-1.0,1.0])
+
+        robot_model.obj_dim_weights=np.array([100.0,100.0,100.0,-1.0,-1.0,1.0])
 
         robot_model.psi=[0.0,1.0,0.0]
         #print obj.weights

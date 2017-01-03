@@ -172,7 +172,7 @@ if __name__=='__main__':
 
 
     
-    obj_3=TrajList("../data/trajectories/waypoint_solution.csv",folder='')
+    obj_3=TrajList("../data/trajectories/exp_2_relaxed-full_solution.csv",folder='')
     traj_n=len(obj_3.arr)
     '''
     obj_2=TrajList('../data/trajectories/exp_2_relaxed-position_solution.csv','')

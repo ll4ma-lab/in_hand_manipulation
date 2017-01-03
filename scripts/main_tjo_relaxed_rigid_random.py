@@ -11,7 +11,7 @@ delta_t=1.0/60.0
 T=10
 def main():
     #method='relaxed-full'
-    file="../data/goal_poses/random_goal_poses_1.csv"
+    file="../data/goal_poses/random_goal_poses.csv"
     folder_to_write="../data/trajectories/random/"
     obj_list=ObjectList(file,folder_to_write)  
     obj_list.get_weights('../data/weights/random_poses.csv')
@@ -43,8 +43,8 @@ def multi_obj(obj):
         robot_model.joints=joints
         robot_model.object_frames=robot_model.add_object_frame(D,joints,finger=3)    
 
-        robot_model.obj_dim_weights=np.array([1.0,1.0,1.0,-1.0,-1.0,1.0])
-        robot_model.final_obj_dim_weights=np.array([1.0,1.0,1.0,-1.0,-1.0,1.0])
+        robot_model.obj_dim_weights=np.array([100.0,100.0,100.0,-1.0,-1.0,1.0])
+        robot_model.final_obj_dim_weights=np.array([100.0,100.0,100.0,-1.0,-1.0,1.0])
         robot_model.psi=[0.0,1.0,0.0]
         #print obj.weights
         robot_model.wp=obj.weights[0]

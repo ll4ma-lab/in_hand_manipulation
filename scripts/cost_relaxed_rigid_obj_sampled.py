@@ -1,4 +1,4 @@
-# The cost functions are combined into a single function to allow for faster computation
+3# The cost functions are combined into a single function to allow for faster computation
 import numpy as np
 from numpy.linalg import inv
 import PyKDL
@@ -70,10 +70,10 @@ def cost_gradient(x_des,u,dyn_model,t_step=-1):
         gradient_fk[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF]+=np.ravel(np.matrix(const_vec)*inv_f0[0:3,0:3]*dyn_model.jacobian_full(u[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)[0:3,:])
        
         # for finger f0:
-        T_mat=inv_f1*f0_mat
-        dist=np.ravel(T_mat[0:3,3])+dyn_model.finger_dist[i]
-        const_vec=wr*2.0*dist*dyn_model.obj_dim_weights[0:3]
-        gradient_fk[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF]+=np.ravel(np.matrix(const_vec)*inv_f1[0:3,0:3]*dyn_model.jacobian_full(u[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0)[0:3,:])
+        #T_mat=inv_f1*f0_mat
+        #dist=np.ravel(T_mat[0:3,3])+dyn_model.finger_dist[i]
+        #const_vec=wr*2.0*dist*dyn_model.obj_dim_weights[0:3]
+        #gradient_fk[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF]+=np.ravel(np.matrix(const_vec)*inv_f1[0:3,0:3]*dyn_model.jacobian_full(u[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0)[0:3,:])
         
         # orientation cost
         a=dyn_model.end_effector_pose_array(u[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0)[3:6]
@@ -81,7 +81,7 @@ def cost_gradient(x_des,u,dyn_model,t_step=-1):
         diff=a-b
         diff=np.multiply(diff-dyn_model.orient_rig[i],dyn_model.psi)*dyn_model.obj_dim_weights[3:6]
       
-        gradient_fk[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF]+=2.0*wo*np.ravel(np.matrix(-diff)*dyn_model.jacobian_full(u[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0)[3:6,:])
+        #gradient_fk[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF]+=2.0*wo*np.ravel(np.matrix(-diff)*dyn_model.jacobian_full(u[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0)[3:6,:])
         gradient_fk[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF]+=2.0*wo*np.ravel(np.matrix(diff)*dyn_model.jacobian_full(u[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)[3:6,:])
 
     gradient=gradient_fk
@@ -161,10 +161,10 @@ def final_cost_gradient(x_des,u,dyn_model):
         gradient_fk[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF]+=np.ravel(np.matrix(const_vec)*inv_f0[0:3,0:3]*dyn_model.jacobian_full(u[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)[0:3,:])
        
         # for finger 0:
-        T_mat=inv_f1*f0_mat
-        dist=np.ravel(T_mat[0:3,3])+dyn_model.finger_dist[i]
-        const_vec=wr*2.0*dist*dyn_model.obj_dim_weights[0:3]
-        gradient_fk[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF]+=np.ravel(np.matrix(const_vec)*inv_f1[0:3,0:3]*dyn_model.jacobian_full(u[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0)[0:3,:])
+        #T_mat=inv_f1*f0_mat
+        #dist=np.ravel(T_mat[0:3,3])+dyn_model.finger_dist[i]
+        #const_vec=wr*2.0*dist*dyn_model.obj_dim_weights[0:3]
+        #gradient_fk[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF]+=np.ravel(np.matrix(const_vec)*inv_f1[0:3,0:3]*dyn_model.jacobian_full(u[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0)[0:3,:])
        
         # orientation cost
   
@@ -174,7 +174,7 @@ def final_cost_gradient(x_des,u,dyn_model):
         diff=np.multiply(diff-dyn_model.orient_rig[i],dyn_model.psi)*dyn_model.obj_dim_weights[3:6]
       
 
-        gradient_fk[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF]+=2.0*wo*np.ravel(np.matrix(-diff)*dyn_model.jacobian_full(u[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0)[3:6,:])
+        #gradient_fk[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF]+=2.0*wo*np.ravel(np.matrix(-diff)*dyn_model.jacobian_full(u[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0)[3:6,:])
         gradient_fk[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF]+=2.0*wo*np.ravel(np.matrix(diff)*dyn_model.jacobian_full(u[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)[3:6,:])
         
     gradient=gradient_fk
