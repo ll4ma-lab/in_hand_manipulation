@@ -20,12 +20,12 @@ def read_objects(file,folder):
 
 if __name__=='__main__':
 
-    f_name='../data/trajectories/exp_2_relaxed-full_solution.csv'
-    trial_name='relaxed-full.csv'
+    f_name='../data/trajectories/exp_2_relaxed-position_solution.csv'
+    trial_name='relaxed-position.csv'
     folder='../data/trials/'
-    traj_folder='../data/trajectories/exp_2/relaxed-full/'
+    traj_folder='../data/trajectories/exp_2/relaxed-position/'
     
-    bag_folder='/media/bala/Experiments_urlg/icra_2016_in_grasp/rss-experiments-bag/exp2/relaxed-full/'
+    bag_folder='/media/bala/Experiments_urlg/icra_2016_in_grasp/rss-experiments-bag/exp2/relaxed-position/'
     if(MAKE_TRIAL_LIST):
         ''' RUN only once'''
         # read file and store as object list
@@ -122,7 +122,7 @@ if __name__=='__main__':
 
         next_=raw_input('Press Enter- to run another trial \nPress 1-to run different trajectory.\nPress 2- to exit program\n ')
         if(next_==''):
-            repeat=1
+            repeat=0
         else:
             repeat=int(next_)
         
