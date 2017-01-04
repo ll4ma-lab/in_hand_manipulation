@@ -7,12 +7,12 @@ import os
 import signal
 import time
 n_trials=5
-MAKE_TRIAL_LIST=True
+MAKE_TRIAL_LIST=False
 #MAKE_TRIAL_LIST=True
-ARUCO_=False
-RECORD_BAG_=False
+ARUCO_=True
+RECORD_BAG_=True
 
-EXP_NAME='exp_1_waypoint'
+#EXP_NAME='exp_1_waypoint'
 def read_objects(file,folder):
     obj_list=TrajList(file,folder)
     return obj_list
@@ -21,18 +21,18 @@ def read_objects(file,folder):
 if __name__=='__main__':
 
     f_name='../data/trajectories/exp_2_relaxed-full_solution.csv'
-    trial_name='relaxed_rigid_1.csv'
+    trial_name='relaxed-full.csv'
     folder='../data/trials/'
     traj_folder='../data/trajectories/exp_2/relaxed-full/'
     
-    bag_folder='/media/bala/Experiments_urlg/icra_2016_in_grasp/rss-experiments-bag/waypoint-exp1/'
+    bag_folder='/media/bala/Experiments_urlg/icra_2016_in_grasp/rss-experiments-bag/exp2/relaxed-full/'
     if(MAKE_TRIAL_LIST):
         ''' RUN only once'''
         # read file and store as object list
         obj_=TrajList(f_name,folder)
         # Make trial list from object list
         obj_.write_trial_list(n_trials,trial_name)
-        #exit()
+        exit()
    
     allegroStates=robot.robotStates(listen_aruco=ARUCO_)   
     #bag_process.terminate()
@@ -122,7 +122,7 @@ if __name__=='__main__':
 
         next_=raw_input('Press Enter- to run another trial \nPress 1-to run different trajectory.\nPress 2- to exit program\n ')
         if(next_==''):
-            repeat=0
+            repeat=1
         else:
             repeat=int(next_)
         

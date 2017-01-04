@@ -22,6 +22,31 @@ singleui=['#696969','#696969','#696969','#696969']
 
 
 
+def compute_initial_errors(obj):
+    names=[]
+    # Compute errors:
+    for i in range(len(obj)):
+        des_pose=obj[i].des
+        reached_pose=obj[i].initial_pose
+        
+        R_des=PyKDL.Rotation.RPY(des_pose[3],des_pose[4],des_pose[5])
+        R_reach=PyKDL.Rotation.RPY(reached_pose[3],reached_pose[4],reached_pose[5])
+
+            
+        des=np.array(R_des.GetQuaternion())
+        reach=np.array(R_reach.GetQuaternion())
+        q_sum=np.linalg.norm(des+reach,ord=2)
+        q_diff=np.linalg.norm(des-reach,ord=2)
+            
+        R_err=np.min([q_sum,q_diff])
+        #position error:
+        pos_err=np.linalg.norm(des_pose[0:3]-reached_pose[0:3],ord=2)
+        err=[pos_err,R_err]        
+        obj[i].init_err=err
+
+        
+    return obj,names
+
 def compute_errors(obj):
     names=[]
     # Compute errors:
@@ -41,13 +66,12 @@ def compute_errors(obj):
         R_err=np.min([q_sum,q_diff])
         #position error:
         pos_err=np.linalg.norm(des_pose[0:3]-reached_pose[0:3],ord=2)
-        err=[pos_err,R_err]
+        err=[pos_err,R_err]        
+        obj[i].err=err
+
         
-        if(pos_err>0.010):
-            names.append(obj[i].f_name)
-            #err=[0.0,0.0]
-        obj[i].err=err    
     return obj,names
+
 
 def plot_convergence(obj):
     #Load data into pandas
@@ -127,7 +151,7 @@ def plot_convergence_method(obj,n=0):
         elif(3*n<=i and i<4*n):
             method.append('Relaxed-full')
 
-    '''
+
     # Adding an additional label for all objects   
     for i in range(len(obj)):
         names.append('All objects')
@@ -143,7 +167,6 @@ def plot_convergence_method(obj,n=0):
 
         p_err.append(obj[i].err[0])
         r_err.append(obj[i].err[1])
-    '''
     data = pd.DataFrame()
     data['position']=p_err
     data['orientation']=r_err
@@ -158,36 +181,107 @@ def plot_convergence_method(obj,n=0):
     sns.set_style("whitegrid")
 
     ax=sns.boxplot(x="position",y="object",data=data,hue="method",orient="h",linewidth=1,palette=safeuiall,whis=10.0)
-    #ax=sns.swarmplot(x='position',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
+    ax=sns.swarmplot(x='position',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles[0:4], labels[0:4],title='Method',loc='upper center', bbox_to_anchor=(0.5, 1.07),ncol=5, fancybox=False, shadow=False)
     ax.set(xlabel='Position Error', ylabel='Objects')
         
     plt.savefig('convergence_exp_2_position_error.eps', bbox_inches='tight')
-    #plt.show()
+    plt.show()
 
         
 
-if __name__=='__main__':
-
-
+def plot_convergence_initial(obj,n=0):
+    #Load data into pandas
+    p_err=[]
+    r_err=[]
+    names=[]
+    method=[]
     
+    for i in range(len(obj)):
+        p_err.append(obj[i].init_err[0])
+        r_err.append(obj[i].init_err[1])
+        names.append(obj[i].name)
+        method.append('Initial Pose')
+        p_err.append(obj[i].err[0])
+        r_err.append(obj[i].err[1])
+        names.append(obj[i].name)
+        method.append('Reached Pose')
+
+    # Adding an additional label for all objects   
+    for i in range(len(obj)):
+
+        p_err.append(obj[i].init_err[0])
+        r_err.append(obj[i].init_err[1])
+        names.append('All objects')
+
+        method.append('Initial Pose')
+        p_err.append(obj[i].err[0])
+        r_err.append(obj[i].err[1])
+        names.append('All objects')
+
+        method.append('Reached Pose')
+
+    data = pd.DataFrame()
+    data['position']=p_err
+    data['orientation']=r_err
+    data['object']=names
+    data['method']=method
+
+    # Plot using seaborn:
+    plt.figure(figsize=(8,15))
+       
+    
+    sns.set(font_scale=1.45)
+    sns.set_style("whitegrid")
+
+    ax=sns.boxplot(x="position",y="object",data=data,hue="method",orient="h",linewidth=1,palette=safeuiall,whis=10.0)
+    ax=sns.swarmplot(x='position',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles[0:2], labels[0:2],title='Method',loc='upper center', bbox_to_anchor=(0.5, 1.07),ncol=5, fancybox=False, shadow=False)
+    ax.set(xlabel='Position Error', ylabel='Objects')
+        
+    #plt.savefig('convergence_exp_2_position_error.eps', bbox_inches='tight')
+    plt.show()
+
+        
+    
+
+def plot_single():
     obj_3=TrajList("../data/trajectories/exp_2_relaxed-full_solution.csv",folder='')
     traj_n=len(obj_3.arr)
-    '''
+    obj,n=compute_errors(obj_3.arr)
+    print n
+    plot_convergence_method(obj,traj_n) 
+   
+    
+    
+
+def plot_method():
     obj_2=TrajList('../data/trajectories/exp_2_relaxed-position_solution.csv','')
     obj_0=TrajList('../data/trajectories/exp_2_ik-rigid_solution.csv','')
     obj_1=TrajList('../data/trajectories/exp_2_trinkle_solution.csv','')
     obj_3=TrajList("../data/trajectories/exp_2_relaxed-full_solution.csv",folder='')
-    traj_n=len(obj_3.arr)
-    obj_all=obj_0.arr+obj_1.arr+obj_3.arr+obj_3.arr
-    '''
-    #obj_all=TrajList("../data/trajectories/waypoint_solution.csv",'').arr
-    
-    obj,n=compute_errors(obj_3.arr)
-    print n
-    plot_convergence(obj)
-    #print n
-    #plot_convergence_method(obj,traj_n)
+    obj_4=TrajList("../data/trials/orient_cost.csv",'')
+    print len(obj_4.arr)
+    traj_n=5
+    obj_all=obj_0.arr+obj_1.arr+obj_2.arr+obj_3.arr
+    obj,n=compute_errors(obj_4.arr)
 
+    plot_convergence_method(obj,traj_n)
+
+def plot_initial():
     
+    obj_0=TrajList('../data/trials/random_5.csv','')
+    obj_all=obj_0.arr
+    obj,n=compute_errors(obj_all)
+    obj,n=compute_initial_errors(obj_all)
+
+    plot_convergence_initial(obj)
+
+
+if __name__=='__main__':
+
+    #plot_single()
+    #plot_initial()
+    plot_method()
