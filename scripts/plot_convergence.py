@@ -121,9 +121,9 @@ def plot_convergence(obj):
     sns.set(font_scale=1.45)
     sns.set_style("whitegrid")
 
-    ax=sns.boxplot(x="position",y="object",data=data,orient="h",hue='weight',linewidth=1,palette=safeuiall,whis=10.0)
-    ax=sns.swarmplot(x='position',y='object',data=data,orient="h",hue='weight',linewidth=1,palette=singleui,split=True,edgecolor='black')
-    ax.set(ylabel='Objects', xlabel='Position Error')
+    ax=sns.boxplot(x="orientation",y="object",data=data,orient="h",hue='weight',linewidth=1,palette=safeuiall,whis=10.0)
+    ax=sns.swarmplot(x='orientation',y='object',data=data,orient="h",hue='weight',linewidth=1,palette=singleui,split=True,edgecolor='black')
+    ax.set(ylabel='Objects', xlabel='Orientation Error')
     handles, labels = ax.get_legend_handles_labels()
     
     ax.legend(handles[0:2], labels[0:2],title='bias cost(max. iterations)',loc='upper center', bbox_to_anchor=(0.5, 1.11),ncol=2, fancybox=False, shadow=False)
@@ -143,30 +143,32 @@ def plot_convergence_method(obj,n=0):
         r_err.append(obj[i].err[1])
         names.append(obj[i].name)
         if(i<n):
-            method.append('IK-rigid')
-        elif(n<=i and i<2*n):
-            method.append('Trinkle')
+            method.append('Relaxed-position')
+        else:#if(n<=i and i<2*n):
+            method.append('Relaxed-full')
+        '''
         elif(2*n<=i and  i<3*n):
             method.append('Relaxed-position')
         elif(3*n<=i and i<4*n):
             method.append('Relaxed-full')
-
-
+        '''
+        
     # Adding an additional label for all objects   
     for i in range(len(obj)):
         names.append('All objects')
         if(i<n):
-            method.append('IK-rigid')
-        elif(n<=i and i<2*n):
-            method.append('Trinkle')
+            method.append('Relaxed-position')
+        else:#if(n<=i and i<2*n):
+            method.append('Relaxed-full')
+        '''
         elif(2*n<=i and i<3*n):
             method.append('Relaxed-position')
         elif(3*n<=i and i<4*n):
             method.append('Relaxed-full')
-
-
+        '''
         p_err.append(obj[i].err[0])
         r_err.append(obj[i].err[1])
+    
     data = pd.DataFrame()
     data['position']=p_err
     data['orientation']=r_err
@@ -180,13 +182,13 @@ def plot_convergence_method(obj,n=0):
     sns.set(font_scale=1.45)
     sns.set_style("whitegrid")
 
-    ax=sns.boxplot(x="position",y="object",data=data,hue="method",orient="h",linewidth=1,palette=safeuiall,whis=10.0)
+    ax=sns.boxplot(x="position",y="object",data=data,hue="method",orient="h",linewidth=1,palette=safeuiall,whis=100.0)
     ax=sns.swarmplot(x='position',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
     handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles[0:4], labels[0:4],title='Method',loc='upper center', bbox_to_anchor=(0.5, 1.07),ncol=5, fancybox=False, shadow=False)
+    ax.legend(handles[0:2], labels[0:2],title='Method',loc='upper center', bbox_to_anchor=(0.5, 1.07),ncol=5, fancybox=False, shadow=False)
     ax.set(xlabel='Position Error', ylabel='Objects')
         
-    plt.savefig('convergence_exp_2_position_error.eps', bbox_inches='tight')
+    #plt.savefig('convergence_exp_2_position_error.eps', bbox_inches='tight')
     plt.show()
 
         
@@ -248,8 +250,9 @@ def plot_convergence_initial(obj,n=0):
     
 
 def plot_single():
-    obj_3=TrajList("../data/trajectories/exp_2_relaxed-full_solution.csv",folder='')
-    traj_n=len(obj_3.arr)
+    obj_3=TrajList("../data/trials/temp.csv",folder='')
+    print len(obj_3.arr) 
+    traj_n=125
     obj,n=compute_errors(obj_3.arr)
     print n
     plot_convergence_method(obj,traj_n) 
@@ -272,7 +275,7 @@ def plot_method():
 
 def plot_initial():
     
-    obj_0=TrajList('../data/trials/random_5.csv','')
+    obj_0=TrajList('../data/trials/test.csv','')
     obj_all=obj_0.arr
     obj,n=compute_errors(obj_all)
     obj,n=compute_initial_errors(obj_all)
@@ -282,6 +285,6 @@ def plot_initial():
 
 if __name__=='__main__':
 
-    #plot_single()
+    plot_single()
     #plot_initial()
-    plot_method()
+    #plot_method()

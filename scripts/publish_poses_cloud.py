@@ -77,4 +77,4 @@ def file_import(f):
         g_pose_pub.publish(markerArray)
         rate.sleep()
 if __name__=='__main__':
-    file_import('../data/goal_poses/exp_2_goal_poses.csv')
+    file_import('../data/goal_poses/random_goal_poses_2.csv')
