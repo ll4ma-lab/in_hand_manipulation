@@ -12,9 +12,9 @@ T=10
 def main():
     method='relaxed-position'
     file="../data/goal_poses/exp_2_goal_poses.csv"
-    folder_to_write="../data/trajectories/exp_2/"+method+"/"
+    folder_to_write="../data/trajectories/exp_2/"+method+"_1/"
     obj_list=ObjectList(file,folder_to_write)  
-    obj_list.get_weights('../data/weights/exp_2_relaxed_position.csv')
+    obj_list.get_weights('../data/weights/exp_2_relaxed_position_1.csv')
     print len(obj_list.arr)
     sc_pool=Pool()
     sta_t = time.time()
@@ -27,7 +27,7 @@ def main():
     
     elap=time.time()-sta_t
     print "Time to compute(seconds): "+str(elap)
-    obj_list.write_sol_from_tjo("../data/trajectories/exp_2_"+method+"_solution.csv")
+    obj_list.write_sol_from_tjo("../data/trajectories/exp_2_"+method+"_1_solution.csv")
 
 def multi_obj(obj):
 

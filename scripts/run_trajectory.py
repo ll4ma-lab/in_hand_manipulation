@@ -9,8 +9,8 @@ import time
 n_trials=5
 MAKE_TRIAL_LIST=False
 #MAKE_TRIAL_LIST=True
-ARUCO_=True
-RECORD_BAG_=True
+ARUCO_=False
+RECORD_BAG_=False
 
 #EXP_NAME='exp_1_waypoint'
 def read_objects(file,folder):
@@ -20,10 +20,10 @@ def read_objects(file,folder):
 
 if __name__=='__main__':
 
-    f_name='../data/trajectories/exp_2_relaxed-position_solution.csv'
-    trial_name='relaxed-position.csv'
+    f_name='../data/trajectories/random_solution.csv'
+    trial_name='random_1.csv'
     folder='../data/trials/'
-    traj_folder='../data/trajectories/exp_2/relaxed-position/'
+    traj_folder='../data/trajectories/random_1/'
     
     bag_folder='/media/bala/Experiments_urlg/icra_2016_in_grasp/rss-experiments-bag/exp2/relaxed-position/'
     if(MAKE_TRIAL_LIST):

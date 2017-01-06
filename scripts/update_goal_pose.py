@@ -12,7 +12,7 @@ if __name__=='__main__':
 
 
     # read file and store as object list
-    objects=read_objects('../data/goal_poses/updated_joint_angles.csv',' ')
+    objects=read_objects('../data/goal_poses/feas_goal_joint_angles.csv',' ')
     repeat=1
     update_objects=[]
     while(repeat==1):
