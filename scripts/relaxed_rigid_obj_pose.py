@@ -21,7 +21,7 @@ def main():
     sta_t = time.time()
     tr=0
 
-    for res in sc_pool.imap_unordered(multi_obj,obj_list.arr,chunksize=10):
+    for res in sc_pool.imap_unordered(multi_obj,obj_list.arr,chunksize=1):
         
         row=res
         q=row[-1]
