@@ -184,8 +184,8 @@ def plot_convergence_method(obj,n=0):
     sns.set(font_scale=1.45)
     sns.set_style("whitegrid")
 
-    ax=sns.boxplot(x="orientation",y="object",data=data,hue="method",orient="h",linewidth=1,palette=safeuiall,whis=100.0)
-    ax=sns.swarmplot(x='orientation',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
+    ax=sns.boxplot(x="position",y="object",data=data,hue="method",orient="h",linewidth=1,palette=safeuiall,whis=100.0)
+    ax=sns.swarmplot(x='position',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles[0:2], labels[0:2],title='Method',loc='upper center', bbox_to_anchor=(0.5, 1.07),ncol=5, fancybox=False, shadow=False)
     ax.set(xlabel='Position Error', ylabel='Objects')
@@ -263,8 +263,8 @@ def plot_single():
     
 
 def plot_method():
-    obj_0=TrajList('../data/trajectories/exp_2_relaxed-full_2_solution.csv','')
-    #obj_0=TrajList('../data/trajectories/exp_2_ik-rigid_solution.csv','')
+    obj_0=TrajList('../data/trajectories/goal_relaxed-full_3_solution.csv','')
+    #obj_1=TrajList('../data/trajectories/exp_2_relaxed-full_3_solution.csv','')
     #obj_1=TrajList('../data/trajectories/exp_2_trinkle_solution.csv','')
     #obj_3=TrajList("../data/trajectories/exp_2_relaxed-full_3_solution.csv",folder='')
     #obj_1=TrajList("../data/trajectories/exp_2_relaxed-full_solution.csv",folder='')
@@ -272,7 +272,7 @@ def plot_method():
     #obj_4=TrajList("../data/trials/orient_cost.csv",'')
     print len(obj_0.arr)
     traj_n=len(obj_0.arr)
-    obj_all=obj_0.arr#+obj_3.arr#+obj_2.arr+obj_3.arr
+    obj_all=obj_0.arr#+obj_1.arr#+obj_2.arr+obj_3.arr
     obj,n=compute_errors(obj_all)
 
     plot_convergence_method(obj,traj_n)

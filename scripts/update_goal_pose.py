@@ -39,7 +39,7 @@ if __name__=='__main__':
         repeat=int(input(' Press 1-to get more goal poses.\n Press 2- to write to file and exit.\n '))
     
     
-    objects.write_sol_from_tjo('../data/goal_poses/new_goal_joint_angles.csv')
+    objects.write_sol_from_tjo('../data/goal_poses/goal_joint_angles.csv')
     objects.arr=update_objects
     objects.write_sol_from_tjo('../data/goal_poses/new_updated_goal_joint_angles.csv')
 
