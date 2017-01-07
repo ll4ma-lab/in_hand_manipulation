@@ -144,30 +144,29 @@ def plot_convergence_method(obj,n=0):
         p_err.append(obj[i].err[0])
         r_err.append(obj[i].err[1])
         names.append(obj[i].name)
+        
         if(i<n):
-            method.append('Relaxed-position')
-        else:#if(n<=i and i<2*n):
-            method.append('Relaxed-full')
-        '''
+            method.append('IK-rigid')
+        if(n<=i and i<2*n):
+            method.append('PC')
         elif(2*n<=i and  i<3*n):
             method.append('Relaxed-position')
         elif(3*n<=i and i<4*n):
             method.append('Relaxed-full')
-        '''
         
     # Adding an additional label for all objects   
     for i in range(len(obj)):
         names.append('All objects')
+        
         if(i<n):
-            method.append('Relaxed-position')
-        else:#if(n<=i and i<2*n):
-            method.append('Relaxed-full')
-        '''
-        elif(2*n<=i and i<3*n):
+            method.append('IK-rigid')
+        if(n<=i and i<2*n):
+            method.append('PC')
+        elif(2*n<=i and  i<3*n):
             method.append('Relaxed-position')
         elif(3*n<=i and i<4*n):
             method.append('Relaxed-full')
-        '''
+        
         p_err.append(obj[i].err[0])
         r_err.append(obj[i].err[1])
     
@@ -185,9 +184,9 @@ def plot_convergence_method(obj,n=0):
     sns.set_style("whitegrid")
 
     ax=sns.boxplot(x="position",y="object",data=data,hue="method",orient="h",linewidth=1,palette=safeuiall,whis=100.0)
-    ax=sns.swarmplot(x='position',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
+    #ax=sns.swarmplot(x='position',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
     handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles[0:2], labels[0:2],title='Method',loc='upper center', bbox_to_anchor=(0.5, 1.07),ncol=5, fancybox=False, shadow=False)
+    ax.legend(handles[0:4], labels[0:4],title='Method',loc='upper center', bbox_to_anchor=(0.5, 1.07),ncol=5, fancybox=False, shadow=False)
     ax.set(xlabel='Position Error', ylabel='Objects')
         
     #plt.savefig('convergence_exp_2_position_error.eps', bbox_inches='tight')
@@ -240,9 +239,9 @@ def plot_convergence_initial(obj,n=0):
     sns.set_style("whitegrid")
 
     ax=sns.boxplot(x="position",y="object",data=data,hue="method",orient="h",linewidth=1,palette=safeuiall,whis=10.0)
-    ax=sns.swarmplot(x='position',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
+    #ax=sns.swarmplot(x='position',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
     handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles[0:2], labels[0:2],title='Method',loc='upper center', bbox_to_anchor=(0.5, 1.07),ncol=5, fancybox=False, shadow=False)
+    ax.legend(handles[0:4], labels[0:4],title='Method',loc='upper center', bbox_to_anchor=(0.5, 1.07),ncol=5, fancybox=False, shadow=False)
     ax.set(xlabel='Position Error', ylabel='Objects')
         
     #plt.savefig('convergence_exp_2_position_error.eps', bbox_inches='tight')
@@ -262,17 +261,28 @@ def plot_single():
     
     
 
+def plot_random_method():
+    obj_0=TrajList('../data/trajectories/random_position_solution.csv','')
+    obj_1=TrajList('../data/trajectories/random_full_solution.csv','')
+
+    print len(obj_0.arr)
+    traj_n=len(obj_0.arr)
+    obj_all=obj_0.arr+obj_1.arr#+obj_2.arr+obj_3.arr
+    obj,n=compute_errors(obj_all)
+
+    plot_convergence_method(obj,traj_n)
+
 def plot_method():
-    obj_0=TrajList('../data/trajectories/goal_relaxed-full_3_solution.csv','')
-    #obj_1=TrajList('../data/trajectories/exp_2_relaxed-full_3_solution.csv','')
-    #obj_1=TrajList('../data/trajectories/exp_2_trinkle_solution.csv','')
-    #obj_3=TrajList("../data/trajectories/exp_2_relaxed-full_3_solution.csv",folder='')
+    obj_0=TrajList('../data/trajectories/exp_2_ik-rigid_solution.csv','')
+    obj_1=TrajList('../data/trajectories/exp_2_trinkle_solution.csv','')
+    obj_2=TrajList('../data/trajectories/exp_2_relaxed-position_solution.csv','')
+    obj_3=TrajList("../data/trajectories/exp_2_relaxed-full_solution.csv",folder='')
     #obj_1=TrajList("../data/trajectories/exp_2_relaxed-full_solution.csv",folder='')
     
     #obj_4=TrajList("../data/trials/orient_cost.csv",'')
     print len(obj_0.arr)
     traj_n=len(obj_0.arr)
-    obj_all=obj_0.arr#+obj_1.arr#+obj_2.arr+obj_3.arr
+    obj_all=obj_0.arr+obj_1.arr+obj_2.arr+obj_3.arr
     obj,n=compute_errors(obj_all)
 
     plot_convergence_method(obj,traj_n)
@@ -291,4 +301,5 @@ if __name__=='__main__':
 
     #plot_single()
     #plot_initial()
-    plot_method()
+    #plot_method()
+    plot_random_method()
