@@ -110,8 +110,8 @@ class TrialList:
                 folder=folder
                 fing=[]
                 line_length=len(line)
-                if(line_length>24):
-                    reached=map(str,line[24:line_length])
+                if(line_length>25 and line[25]!=''):
+                    reached=map(float,line[24:line_length])
                 else:
                     reached=[]
                 self.arr.append(ObjectModel(name,grasp,offset,des,fing,csvreader.line_num,f_name,folder,initial_pose,solution,reached,weights,trial_no))
@@ -123,7 +123,7 @@ class TrialList:
                 obj_name=row[0]
                 obj_tf=np.array(map(float, row[1].split(',')))
                 for i in range(len(self.arr)):
-                    if(self.arr[i].name==obj_name):
+                    if(self.arr[i].f_name==obj_name):
                         self.arr[i].aruco=obj_tf
 
 

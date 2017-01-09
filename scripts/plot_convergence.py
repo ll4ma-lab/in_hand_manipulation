@@ -3,6 +3,8 @@ import numpy as np
 import csv
 import PyKDL
 from object_list import TrajList
+
+from object_list import TrialList
 import pandas as pd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -51,29 +53,61 @@ def compute_errors(obj):
     names=[]
     # Compute errors:
     for i in range(len(obj)):
-        des_pose=obj[i].des
-        reached_pose=obj[i].sol
+        if(obj[i].sol!=[]):
+            des_pose=obj[i].des
+            reached_pose=obj[i].sol
         
-        R_des=PyKDL.Rotation.RPY(des_pose[3],des_pose[4],des_pose[5])
-        R_reach=PyKDL.Rotation.RPY(reached_pose[3],reached_pose[4],reached_pose[5])
+            R_des=PyKDL.Rotation.RPY(des_pose[3],des_pose[4],des_pose[5])
+            R_reach=PyKDL.Rotation.RPY(reached_pose[3],reached_pose[4],reached_pose[5])
 
             
-        des=np.array(R_des.GetQuaternion())
-        reach=np.array(R_reach.GetQuaternion())
-        q_sum=np.linalg.norm(des+reach,ord=2)
-        q_diff=np.linalg.norm(des-reach,ord=2)
+            des=np.array(R_des.GetQuaternion())
+            reach=np.array(R_reach.GetQuaternion())
+            q_sum=np.linalg.norm(des+reach,ord=2)
+            q_diff=np.linalg.norm(des-reach,ord=2)
             
-        R_err=np.min([q_sum,q_diff])
-        #position error:
-        pos_err=np.linalg.norm(des_pose[0:3]-reached_pose[0:3],ord=2)
-        err=[pos_err,R_err]        
-        obj[i].err=err
-        if(pos_err>0.01):
-            names.append(obj[i].f_name)
+            R_err=np.min([q_sum,q_diff])
+            #position error:
+            pos_err=np.linalg.norm(des_pose[0:3]-reached_pose[0:3],ord=2)
+            err=[pos_err,R_err]        
+            obj[i].err=err
+            if(pos_err>0.013):
+                names.append(obj[i].f_name)
+        else:
+            obj[i].err=[0.0,0.0]
     print names
         
     return obj,names
 
+def compute_reached_errors(obj):
+    names=[]
+    # Compute errors:
+    for i in range(len(obj)):
+        if(obj[i].reached!=[]):
+            des_pose=obj[i].des
+            reached_pose=obj[i].reached
+        
+            R_des=PyKDL.Rotation.RPY(des_pose[3],des_pose[4],des_pose[5])
+            R_reach=PyKDL.Rotation.RPY(reached_pose[3],reached_pose[4],reached_pose[5])
+
+            
+            des=np.array(R_des.GetQuaternion())
+            reach=np.array(R_reach.GetQuaternion())
+            q_sum=np.linalg.norm(des+reach,ord=2)
+            q_diff=np.linalg.norm(des-reach,ord=2)
+            
+            R_err=np.min([q_sum,q_diff])
+            #position error:
+            pos_err=np.linalg.norm(des_pose[0:3]-reached_pose[0:3],ord=2)
+            err=[pos_err,R_err]        
+            obj[i].err=err
+            if(pos_err>0.01):
+                names.append(obj[i].f_name)
+        else:
+            obj[i].err=[0.0,0.0]
+    print names
+        
+    return obj,names
 
 def plot_convergence(obj):
     #Load data into pandas
@@ -94,7 +128,7 @@ def plot_convergence(obj):
             weight.append('no bias-cost(20k)')
         elif(50*3<=i<50*4):
             weight.append('bias-cost(20k)')
-
+    '''
     # Adding an additional label for all objects   
     for i in range(len(obj)):
         names.append('All objects')
@@ -108,7 +142,7 @@ def plot_convergence(obj):
             weight.append('bias-cost(20k)')
         p_err.append(obj[i].err[0])
         r_err.append(obj[i].err[1])
-
+    '''
     data = pd.DataFrame()
     data['position']=p_err
     data['orientation']=r_err
@@ -133,7 +167,7 @@ def plot_convergence(obj):
     #plt.savefig('/home/bala/Dropbox/convergence_exp_1_position_error.png', bbox_inches='tight')
     plt.show()
  
-def plot_convergence_method(obj,n=0):
+def plot_convergence_method(obj,n=0,names_=['IK-rigid','PC','relaxed-position','relaxed-full']):
     #Load data into pandas
     p_err=[]
     r_err=[]
@@ -146,30 +180,30 @@ def plot_convergence_method(obj,n=0):
         names.append(obj[i].name)
         
         if(i<n):
-            method.append('IK-rigid')
+            method.append(names_[0])
         if(n<=i and i<2*n):
-            method.append('PC')
+            method.append(names_[1])
         elif(2*n<=i and  i<3*n):
-            method.append('Relaxed-position')
+            method.append(names_[2])
         elif(3*n<=i and i<4*n):
-            method.append('Relaxed-full')
-        
+            method.append(names_[3])
+    '''    
     # Adding an additional label for all objects   
     for i in range(len(obj)):
         names.append('All objects')
         
         if(i<n):
-            method.append('IK-rigid')
+            method.append(names_[0])
         if(n<=i and i<2*n):
-            method.append('PC')
+            method.append(names_[1])
         elif(2*n<=i and  i<3*n):
-            method.append('Relaxed-position')
+            method.append(names_[2])
         elif(3*n<=i and i<4*n):
-            method.append('Relaxed-full')
+            method.append(names_[3])
         
         p_err.append(obj[i].err[0])
         r_err.append(obj[i].err[1])
-    
+    '''
     data = pd.DataFrame()
     data['position']=p_err
     data['orientation']=r_err
@@ -184,7 +218,7 @@ def plot_convergence_method(obj,n=0):
     sns.set_style("whitegrid")
 
     ax=sns.boxplot(x="position",y="object",data=data,hue="method",orient="h",linewidth=1,palette=safeuiall,whis=100.0)
-    #ax=sns.swarmplot(x='position',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
+    #ax=sns.swarmplot(x='orientation',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles[0:4], labels[0:4],title='Method',loc='upper center', bbox_to_anchor=(0.5, 1.07),ncol=5, fancybox=False, shadow=False)
     ax.set(xlabel='Position Error', ylabel='Objects')
@@ -197,7 +231,7 @@ def plot_convergence_method(obj,n=0):
 def plot_convergence_initial(obj,n=0):
     #Load data into pandas
     p_err=[]
-    r_err=[]
+    R_err=[]
     names=[]
     method=[]
     
@@ -280,12 +314,25 @@ def plot_method():
     #obj_1=TrajList("../data/trajectories/exp_2_relaxed-full_solution.csv",folder='')
     
     #obj_4=TrajList("../data/trials/orient_cost.csv",'')
-    print len(obj_0.arr)
-    traj_n=len(obj_0.arr)
+    #print len(obj_0.arr)
+    traj_n=len(obj_3.arr)
     obj_all=obj_0.arr+obj_1.arr+obj_2.arr+obj_3.arr
     obj,n=compute_errors(obj_all)
 
     plot_convergence_method(obj,traj_n)
+
+def plot_reached():
+    obj_1=TrialList('../data/trials/trinkle.csv','',5)
+    obj_2=TrialList('../data/trials/relaxed-position.csv','',5)
+
+    obj_3=TrialList('../data/trials/relaxed-full.csv','',5)
+    #obj_4=TrialList("../data/trials/old/relaxed-full.csv",'',5)
+
+    traj_n=len(obj_2.arr)
+    obj_all=obj_1.arr+obj_2.arr+obj_3.arr#+obj_4.arr
+    obj,n=compute_reached_errors(obj_all)
+
+    plot_convergence_method(obj,traj_n,names_=['trinkle','relaxed-position','relaxed-full','old'])
 
 def plot_initial():
     
@@ -301,5 +348,6 @@ if __name__=='__main__':
 
     #plot_single()
     #plot_initial()
-    #plot_method()
-    plot_random_method()
+    plot_method()
+    #plot_random_method()
+    #plot_reached()
