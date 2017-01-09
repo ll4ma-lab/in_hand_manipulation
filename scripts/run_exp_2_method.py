@@ -113,7 +113,7 @@ if __name__=='__main__':
 
             if(RECORD_BAG_):
                 bag_process.send_signal(subprocess.signal.SIGINT)
-        
+                time.sleep(0.5)
             objects.write_reached_pose(folder+trial_name)
 
             for i in P_:

@@ -44,7 +44,7 @@ class robotStates:
                 self.loop_rate.sleep()
             break
     
-    def tf_pose_pub_process(self,pose,target_frame,base_frame='palm_link',rate=100):
+    def tf_pose_pub_process(self,pose,target_frame,base_frame='palm_link',rate=500):
         tf_pose=tf.TransformBroadcaster()
         pose=pose.tolist()
         if(len(pose)==3):
