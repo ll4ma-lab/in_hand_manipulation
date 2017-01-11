@@ -2,6 +2,14 @@
 import trimesh
 import numpy as np
 import pcl
+from collections import Iterable
+def flatten(lis):
+     for item in lis:
+         if isinstance(item, Iterable) and not isinstance(item, basestring):
+             for x in flatten(item):
+                 yield x
+         else:        
+             yield item
 
 from pathos.multiprocessing import ProcessingPool as Pool
 class object:
@@ -35,22 +43,66 @@ class grasp:
     def load_object(self,obj_mesh):
         self.object=object(obj_mesh)
 
-    def contact_surface_(self,data):
+
+    def contact_surface_generation(self,data):
         return [data[0],data[1].intersection(data[2],engine='scad')]
     
-    def generate_contact_surfaces(self):
-        self.map=Pool().map
-
-        # Find intersection surfaces:
+    def generate_contact_surfaces(self,load_from_file=False):
+        
         contact_surfaces=[[] for i in range(max(self.fingers)+1)]
-        data=[]
-        for i in self.fingers:
-            data.append([i,self.finger_meshes[i],self.object.mesh])
+        cs=['f0.stl','f1.stl','f2.stl','f3.stl']
+        if(not load_from_file):
+            self.map=Pool().map
+
+            # Find intersection surfaces:
+            data=[]
+            for i in self.fingers:
+                data.append([i,self.finger_meshes[i],self.object.mesh])
        
-        #contact_surface_(data[0])
-        for res in self.map(self.contact_surface_,data,chunksize=1):
-            row=res
-            contact_surfaces[row[0]]=row[1]
+        
+            for res in self.map(self.contact_surface_generation,data,chunksize=1):
+                row=res
+                contact_surfaces[row[0]]=row[1]
+            for i in self.fingers:
+                trimesh.io.export.export_mesh(contact_surfaces[i],cs[i], file_type='stl')
+ 
+        else:
+            for i in self.fingers:
+                contact_surfaces[i]=trimesh.load_mesh(cs[i])
+        #Removing points that are inside the object:
+        obj=trimesh.proximity.ProximityQuery(self.object.mesh)
+
+        for i in self.fingers:
+            points=contact_surfaces[i].vertices                
+            dist=obj.signed_distance(points)
+            index=[]
+            vertices=[]
+            face_index=[]
+            bad_points=[]
+            for k in range(len(dist)):
+                if(dist[k]<0.000001):
+                    index.append(k)
+                    vertices.append(np.array(contact_surfaces[i].vertices[k]))
+
+            contact_surfaces[i].vertices=vertices
+            # Remeshing using new vertices by making faces with 3 closest points since trimesh requires faces to use any of its functions:
+
+            tree=contact_surfaces[i].kdtree()
+            d,indices=tree.query(contact_surfaces[i].vertices,3)
+
+            faces=indices
+            
+           
+            
+            contact_surfaces[i].faces=faces
+           
+            contact_surfaces[i].fill_holes()
+
+            '''
+            p = pcl.PointCloud()
+            p.from_array(np.array(vertices, dtype=np.float32))
+            pcl.save(p,"contact_surface.ply")
+            '''
         self.contact_surfaces=contact_surfaces
 
     def generate_grasp(self,threshold,n):
@@ -84,3 +136,12 @@ class grasp:
         p.from_array(np.array(good_grasps, dtype=np.float32))
         pcl.save(p,"grasps.ply")
         '''
+
+    def closest_point(self,finger,point):
+        '''
+        Gives the closest point on the contact surface for a query point
+        '''
+        surface_point=trimesh.proximity.closest_point(self.contact_surfaces[finger],point)
+        return surface_point
+
+

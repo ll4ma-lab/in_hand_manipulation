@@ -7,9 +7,13 @@ def initialize():
     grasp_gait=grasp([0,1,2,3],robot_meshes)
     grasp_gait.load_object(obj_mesh)
     grasp_gait.object.transform([0,0, -3.14/2.0-0.5],[0.1,0.0,-0.05])
-    trimesh.io.export.export_mesh(grasp_gait.object.mesh,'banana.stl', file_type='stl')
-    grasp_gait.generate_contact_surfaces()
-    grasp_gait.generate_grasp(0.001,10000)
-    return grasp_gait
+    #trimesh.io.export.export_mesh(grasp_gait.object.mesh,'banana.stl', file_type='stl') 
+    grasp_gait.generate_contact_surfaces(load_from_file=True)   
 
-#initialize()
+    #trimesh.io.export.export_mesh(grasp_gait.contact_surfaces[0],'inter.stl', file_type='stl')
+    
+    grasp_gait.generate_grasp(0.001,10000)
+    print grasp_gait.closest_point(0,[[0.0,0.0,0.0]])
+    return grasp_gait
+    
+initialize()
