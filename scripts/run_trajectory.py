@@ -91,10 +91,10 @@ if __name__=='__main__':
             raw_input('Placed Object and Aligned initial frames?')
 
         # Run trajectory       
-        #joint_traj=np.loadtxt(open(traj_folder+objects.arr[index].f_name,'r'))
+        joint_traj=np.loadtxt(open(traj_folder+objects.arr[index].f_name,'r'))
         
 
-        #allegroStates.publish_joint_trajectory(joint_traj)
+        allegroStates.publish_joint_trajectory(joint_traj)
         if(ARUCO_):
             suc=raw_input('Press Enter - store final pose \n Press F to store as failure ')
 

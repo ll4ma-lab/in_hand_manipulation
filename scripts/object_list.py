@@ -194,12 +194,16 @@ class ObjectList:
                 des=np.array(map(float, line[10:16]))
                 #initial_pose=[]
                 initial_pose=np.array(map(float,line[4:10]))
-                if name==prev_name:
-                    q+=1                  
+                if len(line)>16:
+                    f_name=line[16]
+
                 else:
-                    prev_name=name
-                    q=tr_start
-                f_name=name+'_'+str(q)                 
+                    if name==prev_name:
+                        q+=1                  
+                    else:
+                        prev_name=name
+                        q=tr_start
+                    f_name=name+'_'+str(q)                 
                 
                 self.arr.append(ObjectModel(name,grasp,offset,des,fing,i,f_name,folder,initial_pose))
                 i+=1

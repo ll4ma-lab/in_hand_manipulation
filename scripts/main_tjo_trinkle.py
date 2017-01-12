@@ -29,7 +29,7 @@ def main():
     
     elap=time.time()-sta_t
     print "Time to compute(seconds): "+str(elap)
-    obj_list.write_sol_from_tjo("../data/trajectories/new_goal_"+method+"_solution.csv")
+    obj_list.write_sol_from_tjo("../data/trajectories/fork_"+method+"_solution.csv")
 
 def multi_obj(obj):
 

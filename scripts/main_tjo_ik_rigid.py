@@ -13,7 +13,7 @@ T=10
 def main():
     method='ik-rigid'
 
-    file="../data/goal_poses/new_goal_poses.csv"
+    file="../data/goal_poses/exp_2_goal_poses.csv"
     folder_to_write="../data/trajectories/new_goal/"+method+"/"
     obj_list=ObjectList(file,folder_to_write)  
     obj_list.get_weights('../data/weights/exp_2_ik_trinkle.csv')

@@ -1,18 +1,23 @@
 from object_list import *
 
+
 if __name__=='__main__':
-    trial_name='../data/trials/trinkle.csv'
-    solution_name='../data/trajectories/exp_2_trinkle_solution.csv'
+    method='relaxed-position'
+    trial_name='../data/trials/'+method+'.csv'
+    solution_name='../data/trajectories/fork_relaxed-position_solution.csv'
     obj=TrajList(solution_name,'')
     trial=TrialList(trial_name,'',5)
-    new_traj_names=['Fork_4_44', 'Fork_6_46', 'Fork_9_49', 'Plane_3_63', 'Screwdriver_1_71', 'Screwdriver_4_74', 'Spatula_4_84', 'Cube-2f_1_121']
+    #new_traj_names=['Fork','Cube-2f','Lego-2f','Spatula','Jello-2f']
 
     for i in range(len(obj.arr)):
         for j in range(len(trial.arr)):
-            for k in new_traj_names:                
-                if trial.arr[j].f_name==k and obj.arr[i].f_name==k:
+                if trial.arr[j].f_name==obj.arr[i].f_name:
                     trial.arr[j].sol=obj.arr[i].sol
                     trial.arr[j].des=obj.arr[i].des
+                    trial.arr[j].grasp=obj.arr[i].grasp
+                    #print k
+                    print obj.arr[i].f_name
+        
 
-    trial.write_reached_pose('../data/trials/trinkle.csv')
+    trial.write_reached_pose('../data/trials/relaxed-position.csv')
 
