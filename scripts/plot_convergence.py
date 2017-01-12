@@ -101,8 +101,8 @@ def compute_reached_errors(obj):
             pos_err=np.linalg.norm(des_pose[0:3]-reached_pose[0:3],ord=2)
             err=[pos_err,R_err]        
             obj[i].err=err
-            if(R_err>0.15):
-                names.append(obj[i].f_name+'_'+obj[i].trial+'_'+str(R_err))
+            if(pos_err>0.02):
+                names.append(obj[i].f_name+'_'+obj[i].trial+'_'+str(pos_err))
         else:
             obj[i].err=[0.0,0.0]
     #print names
@@ -243,7 +243,7 @@ def plot_convergence_method(obj,n,names_=['IK-rigid','PC','relaxed-position','re
     sns.set_style("whitegrid")
 
     ax=sns.boxplot(x="position",y="object",data=data,hue="method",orient="h",linewidth=1,palette=safeuiall,whis=100.0)
-    #ax=sns.swarmplot(x='orientation',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
+    #ax=sns.swarmplot(x='position',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles[0:4], labels[0:4],title='Method',loc='upper center', bbox_to_anchor=(0.5, 1.07),ncol=5, fancybox=False, shadow=False)
     ax.set(xlabel='Position Error', ylabel='Objects')
@@ -367,7 +367,7 @@ def plot_reached():
     obj_2=TrialList('../data/trials/relaxed-position.csv','',5)
 
     obj_3=TrialList('../data/trials/relaxed-full.csv','',5)
-    #obj_4=TrialList("../data/trials/old/relaxed-full.csv",'',5)
+    obj_4=TrialList("../data/trials/relaxed-full-linear.csv",'',5)
 
 
     #obj_all=obj_1.arr+obj_2.arr+obj_3.arr#+obj_4.arr
@@ -376,10 +376,12 @@ def plot_reached():
     obj_2,_=compute_reached_errors(obj_2.arr)
     #obj_2=compute_reached_errors_mean(obj_2)
     obj_3,n=compute_reached_errors(obj_3.arr)
-    print n
+
     #obj_3=compute_reached_errors_mean(obj_3)
-    obj=obj_1+obj_2+obj_3
-    plot_convergence_method(obj,[len(obj_1),len(obj_2),len(obj_3)],names_=['trinkle','relaxed-position','relaxed-full'])
+    obj_4,n=compute_reached_errors(obj_4.arr)
+    print n
+    obj=obj_1+obj_2+obj_3+obj_4
+    plot_convergence_method(obj,[len(obj_1),len(obj_2),len(obj_3),len(obj_4)],names_=['trinkle','relaxed-position','relaxed-full','relaxed-full-linear'])
 
 def plot_initial():
     

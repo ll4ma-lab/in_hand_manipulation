@@ -8,7 +8,7 @@ import signal
 import time
 import sys
 n_trials=5
-MAKE_TRIAL_LIST=True
+MAKE_TRIAL_LIST=False
 #MAKE_TRIAL_LIST=True
 ARUCO_=True
 RECORD_BAG_=True
@@ -30,7 +30,7 @@ if __name__=='__main__':
     if(MAKE_TRIAL_LIST):
         ''' RUN only once'''
         # read file and store as object list
-        obj_=TrajLi(f_name,folder)
+        obj_=TrajList(f_name,folder)
         # Make trial list from object list
         obj_.write_trial_list(n_trials,trial_name)
         exit()
@@ -69,7 +69,7 @@ if __name__=='__main__':
             P_=[] # list of subprocesses
             P_.append(allegroStates.tf_pose_pub_process(objects.arr[index].initial_pose,'i') )
             P_.append(allegroStates.tf_pose_pub_process(objects.arr[index].offset,'rigid','thumb_tip'))
-            P_.append(allegroStates.tf_pose_pub_process(objects.arr[index].sol,'G'))
+            P_.append(allegroStates.tf_pose_pub_process(objects.arr[index].des,'G'))
             
             P_.append(allegroStates.tf_pose_pub_process(objects.arr[index].aruco,'obj_ar','ar') )
 
