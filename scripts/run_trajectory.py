@@ -20,10 +20,11 @@ def read_objects(file,folder):
 
 if __name__=='__main__':
 
-    f_name='../data/goal_poses/exp_2_goal_poses.csv'
-    trial_name='relaxed_full.csv'
+    f_name='../data/goal_poses/random_goal_poses.csv'
+    f_name='../data/trajectories/random_full_linear_solution.csv'
+    trial_name='random.csv'
     folder='../data/trials/'
-    traj_folder='../data/trajectories/exp_2/relaxed-full/'
+    traj_folder='../data/trajectories/random_full/'
     
     bag_folder='/media/bala/Experiments_urlg/icra_2016_in_grasp/rss-experiments-bag/exp2/relaxed-full/'
     if(MAKE_TRIAL_LIST):
@@ -37,7 +38,7 @@ if __name__=='__main__':
     allegroStates=robot.robotStates(listen_aruco=ARUCO_)   
     #bag_process.terminate()
     # Read trial list
-    objects=TrajList(f_name,folder)
+    objects=TrialList(trial_name,folder,n_trials)
     #objects.add_aruco_centroid_locations('../data/object_grasps/object_centroids.csv')
 
     repeat=1
