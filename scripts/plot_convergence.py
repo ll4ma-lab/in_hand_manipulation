@@ -101,7 +101,7 @@ def compute_reached_errors(obj):
             pos_err=np.linalg.norm(des_pose[0:3]-reached_pose[0:3],ord=2)
             err=[pos_err,R_err]        
             obj[i].err=err
-            if(pos_err>0.02):
+            if(R_err<0.2 and obj[i].name=="Banana"):
                 names.append(obj[i].f_name+'_'+obj[i].trial+'_'+str(pos_err))
             
         else:
@@ -237,7 +237,7 @@ def plot_convergence_method(obj,n,names_=['IK-rigid','PC','relaxed-position','re
     data['method']=method
 
     # Plot using seaborn:
-    plt.figure(figsize=(8,15))
+    plt.figure(figsize=(10,15))
        
     
     sns.set(font_scale=1.45)
@@ -365,26 +365,26 @@ def plot_method():
 
 def plot_reached():
     obj_1=TrialList('../data/trials/trinkle.csv','',5)
-    #obj_2=TrialList('../data/trials/relaxed-position.csv','',5)
+    obj_2=TrialList('../data/trials/relaxed-position.csv','',5)
 
-    #obj_3=TrialList('../data/trials/relaxed-full.csv','',5)
+    obj_3=TrialList('../data/trials/relaxed-full.csv','',5)
     obj_4=TrialList("../data/trials/relaxed-full-linear.csv",'',5)
 
 
     #obj_all=obj_1.arr+obj_2.arr+obj_3.arr#+obj_4.arr
     obj_1,n=compute_reached_errors(obj_1.arr)
-    #print n
+    print n
     #obj_1=compute_reached_errors_mean(obj_1)
-    #obj_2,_=compute_reached_errors(obj_2.arr)
+    obj_2,_=compute_reached_errors(obj_2.arr)
     #obj_2=compute_reached_errors_mean(obj_2)
-    #obj_3,n=compute_reached_errors(obj_3.arr)
+    obj_3,n=compute_reached_errors(obj_3.arr)
 
     #obj_3=compute_reached_errors_mean(obj_3)
     obj_4,n=compute_reached_errors(obj_4.arr)
     print n
-    obj=obj_1+obj_4#+obj_3+obj_4
+    obj=obj_1+obj_4#+obj_2+obj_3
     #plot_convergence_method(obj,[len(obj_1),len(obj_2),len(obj_3),len(obj_4)],names_=['trinkle','relaxed-position','relaxed-full','relaxed-full-linear'])
-    plot_convergence_method(obj,[len(obj_1),len(obj_4),len(obj_4),len(obj_4)],names_=['trinkle','relaxed-full-linear'])
+    plot_convergence_method(obj,[len(obj_1),len(obj_4),len(obj_2),len(obj_3)],names_=['Point Contact','Relaxed-Rigidity','relaxed-position','relaxed-full'])
 
 def plot_initial():
     
