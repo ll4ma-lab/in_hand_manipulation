@@ -10,12 +10,12 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
-
+#mpl.rcParams.update({'font.size': 42})
 
 import seaborn as sns
 #plt.style.use('seaborn-white')
-#safeui = ['#fef0d9','#fdcc8a','#fc8d59','#d7301f']
-safeuiall=['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00']
+safeuiall = ['#fef0d9','#fdcc8a','#fc8d59','#d7301f']
+#safeuiall=['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00']
 twoui=['#a6611a','#dfc27d','#f5f5f5','#80cdc1','#018571']
 safeui=['#fdcc8a','#377eb8']
 singleui=['#696969','#696969','#696969','#696969']
@@ -53,7 +53,7 @@ def compute_errors(obj):
     names=[]
     # Compute errors:
     for i in range(len(obj)):
-        if(obj[i].sol!=[]):
+        if(obj[i].sol!=[] and not('2f' in obj[i].name)):
             des_pose=obj[i].des
             reached_pose=obj[i].sol
         
@@ -75,7 +75,7 @@ def compute_errors(obj):
                 names.append(obj[i].f_name)
         else:
             obj[i].err=[0.0,0.0]
-    print names
+   # print names
         
     return obj,names
 
@@ -101,7 +101,7 @@ def compute_reached_errors(obj):
             pos_err=np.linalg.norm(des_pose[0:3]-reached_pose[0:3],ord=2)
             err=[pos_err,R_err]        
             obj[i].err=err
-            if(R_err<0.2 and obj[i].name=="Banana"):
+            if(pos_err>0.10 and obj[i].name=="Banana"):
                 names.append(obj[i].f_name+'_'+obj[i].trial+'_'+str(pos_err))
             
         else:
@@ -237,35 +237,35 @@ def plot_convergence_method(obj,n,names_=['IK-rigid','PC','relaxed-position','re
     data['method']=method
 
     # Plot using seaborn:
-    plt.figure(figsize=(10,15))
+    plt.figure(figsize=(4,8))
        
     
-    sns.set(font_scale=1.45)
+    sns.set(font_scale=1.)
     sns.set_style("whitegrid")
 
     ax=sns.boxplot(x="position",y="object",data=data,hue="method",orient="h",linewidth=1,palette=safeuiall,whis=100.0)
     #ax=sns.swarmplot(x='position',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
     handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles[0:4], labels[0:4],title='Method',loc='upper center', bbox_to_anchor=(0.5, 1.07),ncol=5, fancybox=False, shadow=False)
+    ax.legend(handles[0:4], labels[0:4],loc='upper center', bbox_to_anchor=(0.5, 1.07),ncol=2, fancybox=False, shadow=False)
     ax.set(xlabel='Position Error', ylabel='Objects')
         
-    #plt.savefig('convergence_exp_2_position_error.eps', bbox_inches='tight')
-    plt.show()
+    plt.savefig('position_error.eps', bbox_inches='tight')
+    #plt.show()
      # Plot using seaborn:
-    plt.figure(figsize=(8,15))
+    plt.figure(figsize=(4,8))
        
     
-    sns.set(font_scale=1.45)
+    sns.set(font_scale=1.)
     sns.set_style("whitegrid")
 
     ay=sns.boxplot(x="orientation",y="object",data=data,hue="method",orient="h",linewidth=1,palette=safeuiall,whis=100.0)
     #ay=sns.swarmplot(x='orientation',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
     handles, labels = ay.get_legend_handles_labels()
-    ay.legend(handles[0:4], labels[0:4],title='Method',loc='upper center', bbox_to_anchor=(0.5, 1.07),ncol=5, fancybox=False, shadow=False)
+    ay.legend(handles[0:4], labels[0:4],loc='upper center', bbox_to_anchor=(0.5, 1.07),ncol=2, fancybox=False, shadow=False)
     ax.set(xlabel='Orientation Error', ylabel='Objects')
         
-    #plt.savefig('convergence_exp_2_position_error.eps', bbox_inches='tight')
-    plt.show()
+    plt.savefig('orientation_error.eps', bbox_inches='tight')
+    #plt.show()
 
         
 
@@ -308,20 +308,34 @@ def plot_convergence_initial(obj,n=0):
     data['method']=method
 
     # Plot using seaborn:
-    plt.figure(figsize=(8,15))
+    plt.figure(figsize=(4,4))
        
     
-    sns.set(font_scale=1.45)
+    sns.set(font_scale=1.)
+    sns.set_style("whitegrid")
+
+    ax=sns.boxplot(x="position",y="object",data=data,hue="method",orient="h",linewidth=1,palette=safeuiall,whis=10.0)
+    #ax=sns.swarmplot(x='position',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles[0:4], labels[0:4],loc='upper center', bbox_to_anchor=(0.5, 1.1),ncol=5, fancybox=False, shadow=False)
+    ax.set(xlabel='Position Error', ylabel='Objects')
+        
+    plt.savefig('random_position_error.eps', bbox_inches='tight')
+    # Plot using seaborn:
+    plt.figure(figsize=(4,4))
+       
+    
+    sns.set(font_scale=1.)
     sns.set_style("whitegrid")
 
     ax=sns.boxplot(x="orientation",y="object",data=data,hue="method",orient="h",linewidth=1,palette=safeuiall,whis=10.0)
     #ax=sns.swarmplot(x='position',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
     handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles[0:4], labels[0:4],title='Method',loc='upper center', bbox_to_anchor=(0.5, 1.07),ncol=5, fancybox=False, shadow=False)
-    ax.set(xlabel='Position Error', ylabel='Objects')
+    ax.legend(handles[0:4], labels[0:4],loc='upper center', bbox_to_anchor=(0.5, 1.1),ncol=5, fancybox=False, shadow=False)
+    ax.set(xlabel='Orienation Error', ylabel='Objects')
         
-    #plt.savefig('convergence_exp_2_position_error.eps', bbox_inches='tight')
-    plt.show()
+    plt.savefig('random_orientation_error.eps', bbox_inches='tight')
+    #plt.show()
 
         
     
@@ -331,7 +345,6 @@ def plot_single():
     print len(obj_3.arr) 
     traj_n=125
     obj,n=compute_errors(obj_3.arr)
-    print n
     plot_convergence_method(obj,traj_n) 
    
     
@@ -349,19 +362,17 @@ def plot_random_method():
     plot_convergence_method(obj,traj_n)
 
 def plot_method():
-    obj_0=TrajList('../data/trajectories/gradient_relaxed-full_solution.csv','')
-    obj_2=TrajList('../data/trajectories/gradient_relaxed-full_solution.csv','')
+    obj_0=TrajList('../data/trajectories/exp_2_ik-rigid_solution.csv','')
     obj_1=TrajList('../data/trajectories/exp_2_relaxed-position_solution.csv','')
-    obj_3=TrajList("../data/trajectories/gradient_relaxed-full_solution.csv",folder='')
-    #obj_1=TrajList("../data/trajectories/exp_2_relaxed-full_solution.csv",folder='')
-    
-    #obj_4=TrajList("../data/trials/orient_cost.csv",'')
-    #print len(obj_0.arr)
-    traj_n=len(obj_3.arr)
+    obj_2=TrajList('../data/trajectories/exp_2_relaxed-full_final_solution.csv','')
+    obj_3=TrajList('../data/trajectories/exp_2_relaxed-full-linear_solution.csv','')
+
+    traj_n=len(obj_0.arr)
     obj_all=obj_0.arr+obj_1.arr+obj_2.arr+obj_3.arr
+
     obj,n=compute_errors(obj_all)
 
-    plot_convergence_method(obj,[len(obj_1.arr),len(obj_2.arr),len(obj_3.arr),len(obj_0.arr)],names_=['ik-rigid','relaxed-position','relaxed-full','relaxed-gradient'])
+    plot_convergence_method(obj,[len(obj_1.arr),len(obj_2.arr),len(obj_3.arr),len(obj_0.arr)],names_=['ik-rigid','relaxed-position','relaxed-full','Relaxed-Rigidity'])
 
 def plot_reached():
     obj_1=TrialList('../data/trials/trinkle.csv','',5)
@@ -382,15 +393,16 @@ def plot_reached():
     #obj_3=compute_reached_errors_mean(obj_3)
     obj_4,n=compute_reached_errors(obj_4.arr)
     print n
-    obj=obj_1+obj_4#+obj_2+obj_3
+    obj=obj_2+obj_3+obj_4+obj_1
     #plot_convergence_method(obj,[len(obj_1),len(obj_2),len(obj_3),len(obj_4)],names_=['trinkle','relaxed-position','relaxed-full','relaxed-full-linear'])
-    plot_convergence_method(obj,[len(obj_1),len(obj_4),len(obj_2),len(obj_3)],names_=['Point Contact','Relaxed-Rigidity','relaxed-position','relaxed-full'])
+    plot_convergence_method(obj,[len(obj_1),len(obj_4),len(obj_2),len(obj_3)],names_=['relaxed-position','relaxed-position-orientation','Relaxed-Rigidity','Point Contact'])
 
 def plot_initial():
     
-    obj_0=TrialList('../data/trials/random_5.csv','',5)
+    obj_0=TrialList('../data/trials/random_relaxed-full-linear.csv','',5)
     obj_all=obj_0.arr
     obj,n=compute_reached_errors(obj_all)
+    #print n
     obj,n=compute_initial_errors(obj_all)
 
     plot_convergence_initial(obj)
@@ -399,7 +411,7 @@ def plot_initial():
 if __name__=='__main__':
 
     #plot_single()
-    #plot_initial()
+    plot_initial()
     #plot_method()
     #plot_random_method()
-    plot_reached()
+    #plot_reached()

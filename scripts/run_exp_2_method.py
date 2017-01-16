@@ -98,19 +98,17 @@ if __name__=='__main__':
         if(ARUCO_):
             suc=raw_input('Press Enter - store final pose \n Press F to store as failure ')
 
-            '''
             if(suc==''):
                 # Get object pose from aruco marker
                 
                 # Get final joint angles
                 #joint_angles=allegroStates.joint_states.position
                 # Get final object pose
-                #reached_pose=allegroStates.tf_find_transform('obj')
-                #objects.arr[index].reached=reached_pose
+                reached_pose=allegroStates.tf_find_transform('obj')
+                objects.arr[index].reached=reached_pose
             else:
                 # Store failure
                 #objects.arr[index].reached='F'
-            '''
             if(RECORD_BAG_):
                 bag_process.send_signal(subprocess.signal.SIGINT)
                 time.sleep(0.5)
