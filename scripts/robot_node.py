@@ -11,7 +11,7 @@ import copy
 class robotStates:
     def __init__(self,node_name='allegro_node',publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right',rate=100.0,listen_aruco=False,clock_bag=False):
         rospy.init_node(node_name)
-        #self.rate=rospy.Rate(rate)
+        self.rate=rospy.Rate(rate)
         self.switch_cmd=rospy.Publisher(publish_prefix+'/control_type',Int8,queue_size=10)
 
         self.robot_joint_cmd_pub=rospy.Publisher(publish_prefix+'/joint_cmd',

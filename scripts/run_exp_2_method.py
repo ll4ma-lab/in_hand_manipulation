@@ -106,6 +106,7 @@ if __name__=='__main__':
                 # Get final object pose
                 reached_pose=allegroStates.tf_find_transform('obj')
                 objects.arr[index].reached=reached_pose
+                print reached_pose[0:3]
             else:
                 # Store failure
                 objects.arr[index].reached='F'

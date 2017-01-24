@@ -82,14 +82,14 @@ def transform_pose(t_pose,i_pose):
 
 def run_all():
     method='relaxed-full-linear'
-    trial_name=method+'_traj_length.csv'
+    trial_name=method+'_init.csv'
     folder='../data/trials/'
     bag_folder='/media/bala/Experiments_urlg/icra_2016_in_grasp/rss-experiments-bag/exp2/'+method+'/'
     objects=TrialList(trial_name,folder,5)
     bag_files=0
-    t_no=0
+    t_no=66
     allegroStates=robot.robotStates(listen_aruco=True,clock_bag=True)
-    while t_no<100:
+    while t_no<76:
         for trial_no in range(5):
             index=t_no*5+trial_no
             bag_name=bag_folder+objects.arr[index].name+'_'+str(t_no)+'_'+str(trial_no)+'.bag'
@@ -109,7 +109,7 @@ def run_all():
                #print list(objects.arr[index].length)
             else:
                 objects.arr[index].exp_pose='F'
-            objects.write_exp_pose(folder+method+'_init.csv')
+            objects.write_exp_pose(folder+method+'_init_1.csv')
             # kill node:
             #rospy.signal_shutdown('test') 
             print t_no
@@ -127,7 +127,7 @@ def bag_multi(data):
 
 if __name__=='__main__':
     method='relaxed-full-linear'
-    trial_name=method+'_traj_length.csv'
+    trial_name=method+'.csv'
     folder='../data/trials/'
     bag_folder='/home/bala/'+method+'/'
     objects=TrialList(trial_name,folder,5)
@@ -147,7 +147,6 @@ if __name__=='__main__':
         row=res
         q=row[-1]
         objects.arr[q].exp_pose=row[0]
-        #objects.write_exp_pose(folder+method+'_init.csv')    
         tr+=1
         print tr
 

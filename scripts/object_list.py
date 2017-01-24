@@ -115,7 +115,7 @@ class TrialList:
                     reached=map(float,line[24:24+6])
                 else:
                     reached=[]
-                if(line_length>30 and line[30]!=''):
+                if(line_length>30 and line[30]!='[]'):
                     length=float(line[30])
                 else:
                     length=[]

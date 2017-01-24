@@ -15,6 +15,7 @@ mpl.rcParams['ps.fonttype'] = 42
 import seaborn as sns
 #plt.style.use('seaborn-white')
 safeuiall = ['#ffffff','#fef0d9','#fdcc8a','#fc8d59','#d7301f']
+safeui_1 = ['#fef0d9','#fdcc8a','#fc8d59','#d7301f']
 #safeuiall=['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00']
 twoui=['#a6611a','#dfc27d','#f5f5f5','#80cdc1','#018571']
 safeui=['#fdcc8a','#377eb8']
@@ -58,7 +59,9 @@ def compute_errors(obj):
         if(obj[i].sol!=[] and not('2f' in obj[i].name)):
             des_pose=obj[i].des
             reached_pose=obj[i].sol
+            #initial_pose=obj[i].initial_pose
             initial_pose=obj[i].initial_pose
+            traj_length=np.linalg.norm(des_pose[0:3]-initial_pose[0:3])
             R_des=PyKDL.Rotation.RPY(des_pose[3],des_pose[4],des_pose[5])
             R_reach=PyKDL.Rotation.RPY(reached_pose[3],reached_pose[4],reached_pose[5])
 
@@ -70,7 +73,7 @@ def compute_errors(obj):
             
             R_err=100*np.min([q_sum,q_diff])/np.sqrt(2)
             #position error:
-            pos_err=100*np.linalg.norm(des_pose[0:3]-reached_pose[0:3],ord=2)#/np.linalg.norm(des_pose[0:3]-initial_pose[0:3],ord=2)
+            pos_err=100*np.linalg.norm(des_pose[0:3]-reached_pose[0:3],ord=2)#/traj_length
             err=[pos_err,R_err]        
             obj[i].err=err
             E_pos.append(pos_err)
@@ -103,7 +106,7 @@ def compute_reached_errors(obj):
             
             R_err=100*np.min([q_sum,q_diff])/np.sqrt(2)
             #position error:
-            pos_err=100*np.linalg.norm(des_pose[0:3]-reached_pose[0:3],ord=2)/obj[i].length
+            pos_err=100*np.linalg.norm(des_pose[0:3]-reached_pose[0:3],ord=2)#/obj[i].length
             if(pos_err<30.0):
                 names.append(obj[i].f_name+'_'+obj[i].trial)
             err=[pos_err,R_err]        
@@ -129,8 +132,9 @@ def compute_reached_errors_norm(obj):
         
             R_des=PyKDL.Rotation.RPY(des_pose[3],des_pose[4],des_pose[5])
             R_reach=PyKDL.Rotation.RPY(reached_pose[3],reached_pose[4],reached_pose[5])
-
             
+            initial_pose=obj[i].initial_pose
+            traj_length=np.linalg.norm(des_pose[0:3]-initial_pose[0:3])
             des=np.array(R_des.GetQuaternion())
             reach=np.array(R_reach.GetQuaternion())
             q_sum=np.linalg.norm(des+reach,ord=2)
@@ -138,9 +142,9 @@ def compute_reached_errors_norm(obj):
             
             R_err=100*np.min([q_sum,q_diff])/np.sqrt(2)
             #position error:
-            pos_err=100*np.linalg.norm(des_pose[0:3]-reached_pose[0:3],ord=2)/obj[i].length
-            if(pos_err<15.0):
-                names.append(obj[i].f_name+'_'+obj[i].trial)
+            pos_err=100*np.linalg.norm(des_pose[0:3]-reached_pose[0:3],ord=2)/traj_length
+            if(pos_err>80.0):
+                names.append(obj[i].f_name+'_'+obj[i].trial+'_'+str(des_pose[0:3]-reached_pose[0:3]))
             err=[pos_err,R_err]        
             obj[i].err=err            
             E_pos.append(pos_err)
@@ -161,7 +165,8 @@ def compute_reached_errors_var(obj):
         if(len(obj[i].reached)>2):
             des_pose=obj[i].des
             reached_pose=obj[i].reached
-        
+            
+            
             R_des=PyKDL.Rotation.RPY(des_pose[3],des_pose[4],des_pose[5])
             R_reach=PyKDL.Rotation.RPY(reached_pose[3],reached_pose[4],reached_pose[5])
 
@@ -322,34 +327,34 @@ def plot_convergence_method(obj,n,names_=['IK-rigid','PC','relaxed-position','re
     data['method']=method
 
     # Plot using seaborn:
-    plt.figure(figsize=(4,8))
+    plt.figure(figsize=(9,4))
     
     
     sns.set(font_scale=1)
     sns.set_style("whitegrid")
 
-    ax=sns.boxplot(x="position",y="object",data=data,hue="method",orient="h",linewidth=1,palette=safeuiall,whis=100.0)
+    ax=sns.boxplot(y="position",x="object",data=data,hue="method",orient="v",linewidth=1,palette=safeui_1,whis=100.0)
     #ax=sns.swarmplot(x='position',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles[0:4], labels[0:4],loc='upper center', bbox_to_anchor=(0.5, 1.1),ncol=5, fancybox=False, shadow=False)
-    ax.set(xlabel='Position Error(cm)', ylabel='Objects')
+    ax.set(ylabel='Position Error (cm)',xlabel='Objects')
     #plt.xlim(0,100)
         
     plt.savefig('position_error.eps', bbox_inches='tight')
     #plt.show()
      # Plot using seaborn:
-    plt.figure(figsize=(4,8))
+    plt.figure(figsize=(9,4))
        
     
     sns.set(font_scale=1.)
     sns.set_style("whitegrid")
 
-    ay=sns.boxplot(x="orientation",y="object",data=data,hue="method",orient="h",linewidth=1,palette=safeuiall,whis=100.0)
+    ay=sns.boxplot(y="orientation",x="object",data=data,hue="method",orient="v",linewidth=1,palette=safeuiall,whis=100.0)
     #ay=sns.swarmplot(x='orientation',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
     handles, labels = ay.get_legend_handles_labels()
-    ay.legend(handles[0:4], labels[0:4],loc='upper center', bbox_to_anchor=(0.5, 1.07),ncol=2, fancybox=False, shadow=False)
-    ay.set(xlabel='Orientation Error%', ylabel='Objects')
-    plt.xlim(0,100)
+    ay.legend(handles[0:4], labels[0:4],loc='upper center', bbox_to_anchor=(0.5, 1.1),ncol=5, fancybox=False, shadow=False)
+    ay.set(ylabel='Orientation Error %',xlabel='Objects')
+    #plt.ylim(0,100)
     plt.savefig('orientation_error.eps', bbox_inches='tight')
     #plt.show()
 
@@ -400,11 +405,10 @@ def plot_convergence_initial(obj,n=0):
     sns.set(font_scale=1.)
     sns.set_style("whitegrid")
 
-    ax=sns.boxplot(x="position",y="object",data=data,hue="method",orient="h",linewidth=1,palette=safeuiall,whis=10.0)
-    #ax=sns.swarmplot(x='position',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
+    ax=sns.boxplot(y="position",x="object",data=data,hue="method",orient="v",linewidth=1,palette=safeuiall,whis=10.0)
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles[0:4], labels[0:4],loc='upper center', bbox_to_anchor=(0.5, 1.1),ncol=5, fancybox=False, shadow=False)
-    ax.set(xlabel='Position Error (cm)', ylabel='Objects')
+    ax.set(ylabel='Position Error (cm)', xlabel='Objects')
         
     plt.savefig('random_position_error.eps', bbox_inches='tight')
     # Plot using seaborn:
@@ -414,11 +418,11 @@ def plot_convergence_initial(obj,n=0):
     sns.set(font_scale=1.)
     sns.set_style("whitegrid")
 
-    ax=sns.boxplot(x="orientation",y="object",data=data,hue="method",orient="h",linewidth=1,palette=safeuiall,whis=10.0)
+    ax=sns.boxplot(y="orientation",x="object",data=data,hue="method",orient="v",linewidth=1,palette=safeuiall,whis=10.0)
     #ax=sns.swarmplot(x='position',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles[0:4], labels[0:4],loc='upper center', bbox_to_anchor=(0.5, 1.1),ncol=5, fancybox=False, shadow=False)
-    ax.set(xlabel='Orientation Error%', ylabel='Objects')
+    ax.set(ylabel='Orientation Error %', xlabel='Objects')
     #plt.xlim(0,100)
         
     plt.savefig('random_orientation_error.eps', bbox_inches='tight')
@@ -450,9 +454,9 @@ def plot_random_method():
 
 def plot_method():
 
-    obj_0=TrialList('../data/trials/trinkle.csv','',5)
-    
-    obj_0=obj_0.get_traj_list(5)
+    #obj_0=TrialList('../data/trials/ik-rigid.csv','',5)
+    #obj_0=TrajList('../data/trajectories/exp_2_ik-rigid_solution.csv','').arr
+    #obj_0=obj_0.get_traj_list(5)
     obj_1=TrialList('../data/trials/relaxed-position.csv','',5)
     obj_1=obj_1.get_traj_list(5)
 
@@ -462,12 +466,12 @@ def plot_method():
     obj_3=TrialList("../data/trials/relaxed-full-linear.csv",'',5)
     obj_3=obj_3.get_traj_list(5)
 
-    traj_n=len(obj_0)
-    obj_all=obj_0+obj_1+obj_2+obj_3
+    traj_n=len(obj_1)
+    obj_all=obj_1+obj_2+obj_3
 
     obj,n=compute_errors(obj_all)
 
-    plot_convergence_method(obj,[len(obj_0),len(obj_1),len(obj_2),len(obj_3)],names_=['IK-rigid','relaxed-position','relaxed-position-orientation','Relaxed-Rigidity'])
+    plot_convergence_method(obj,[len(obj_1),len(obj_1),len(obj_2),len(obj_3)],names_=['relaxed-position','relaxed-position-orientation','Relaxed-Rigidity'])
 
 def plot_reached():
     obj_1=TrialList('../data/trials/trinkle.csv','',5)
@@ -500,7 +504,7 @@ def plot_reached_norm():
     obj_2=TrialList('../data/trials/relaxed-position_traj_length.csv','',5)
 
     obj_3=TrialList('../data/trials/relaxed-full_traj_length.csv','',5)
-    obj_4=TrialList("../data/trials/relaxed-full-linear_traj_length.csv",'',5)
+    obj_4=TrialList("../data/trials/relaxed-full-linear.csv",'',5)
 
     names_=['Point Contact','relaxed-position','relaxed-position-orientation','Relaxed-Rigidity']
     #obj_all=obj_1.arr+obj_2.arr+obj_3.arr#+obj_4.arr
@@ -527,7 +531,7 @@ def plot_reached_variance():
     obj_2=TrialList('../data/trials/relaxed-position_traj_length.csv','',5)
 
     obj_3=TrialList('../data/trials/relaxed-full_traj_length.csv','',5)
-    obj_4=TrialList("../data/trials/relaxed-full-linear_traj_length.csv",'',5)
+    obj_4=TrialList("../data/trials/relaxed-full-linear.csv",'',5)
 
     names_=['Point Contact','relaxed-position','relaxed-position-orientation','Relaxed-Rigidity']
     #obj_all=obj_1.arr+obj_2.arr+obj_3.arr#+obj_4.arr
@@ -558,12 +562,48 @@ def plot_initial():
 
     plot_convergence_initial(obj)
 
+def compute_robust_err(obj,n):
+    names=[]
+    for i in range(len(obj)):
+        if(i%n==0):
+            des_pose=np.array(obj[i].exp_pose)
+            #des_pose=np.array(obj[i].reached)
+            obj[i].err=[-1.0,-1.0]
+        else:
+            reached_pose=np.array(obj[i].exp_pose)
+            #reached_pose=np.array(obj[i].reached)
+            R_des=PyKDL.Rotation.RPY(des_pose[3],des_pose[4],des_pose[5])
+            R_reach=PyKDL.Rotation.RPY(reached_pose[3],reached_pose[4],reached_pose[5])
 
+            
+            des=np.array(R_des.GetQuaternion())
+            reach=np.array(R_reach.GetQuaternion())
+            q_sum=np.linalg.norm(des+reach,ord=2)
+            q_diff=np.linalg.norm(des-reach,ord=2)
+            
+            R_err=100*np.min([q_sum,q_diff])/np.sqrt(2)
+            #position error:
+            pos_err=100*np.linalg.norm(des_pose[0:3]-reached_pose[0:3],ord=2)
+            if(R_err>20.0):
+                names.append(obj[i].f_name+'_'+obj[i].trial)
+            obj[i].err=[pos_err,R_err]
+    return obj,names
+
+            
+
+
+def plot_robust():
+    obj_0=TrialList("../data/trials/relaxed-full-linear_init.csv",'',5).arr
+    n_trials=5
+    obj,n=compute_robust_err(obj_0,n_trials)
+    print n
+    plot_convergence_method(obj,[len(obj),len(obj),len(obj),len(obj)],['Relaxed-Rigidity'])
+    
 if __name__=='__main__':
 
     #plot_single()
     #plot_initial()
     #plot_method()
-    #plot_random_method()
-    plot_reached_norm()
+    #plot_reached_norm()
     #plot_reached_variance()
+    plot_robust()
