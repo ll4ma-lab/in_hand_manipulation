@@ -13,8 +13,8 @@ T=10
 def main():
     method='trinkle'
 
-    file="../data/goal_poses/exp_2_goal_poses.csv"
-    folder_to_write="../data/trajectories/new_goal/"+method+"/"
+    file="../data/goal_poses/new_goal_poses.csv"
+    folder_to_write="../data/trajectories/screw/"+method+"/"
     obj_list=ObjectList(file,folder_to_write)  
     obj_list.get_weights('../data/weights/exp_2_ik_trinkle.csv')
     print len(obj_list.arr)
@@ -29,7 +29,7 @@ def main():
     
     elap=time.time()-sta_t
     print "Time to compute(seconds): "+str(elap)
-    obj_list.write_sol_from_tjo("../data/trajectories/exp_2_new_"+method+"_solution.csv")
+    obj_list.write_sol_from_tjo("../data/trajectories/screw_"+method+"_solution.csv")
 
 def multi_obj(obj):
 

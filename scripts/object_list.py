@@ -74,7 +74,7 @@ class ObjectReachList:
 
 
 class ObjectModel:
-    def __init__(self,name,grasp,offset,x_des,fing,i,f_name,folder,initial_pose,solution=[],reached=[],weights=[],trial=0):
+    def __init__(self,name,grasp,offset,x_des,fing,i,f_name,folder,initial_pose,solution=[],reached=[],weights=[],trial=0,length=-1.0,exp_pose=[]):
         self.grasp=grasp
         self.offset=offset
         self.name=name
@@ -88,7 +88,8 @@ class ObjectModel:
         self.weights=weights
         self.trial=trial
         self.reached=reached
-
+        self.length=length
+        self.exp_pose=exp_pose
 class TrialList:
     '''Reading trial csv file'''
     def __init__(self,csv_file,folder,n_trials):
@@ -111,10 +112,20 @@ class TrialList:
                 fing=[]
                 line_length=len(line)
                 if(line_length>25 and line[25]!=''):
-                    reached=map(float,line[24:line_length])
+                    reached=map(float,line[24:24+6])
                 else:
                     reached=[]
-                self.arr.append(ObjectModel(name,grasp,offset,des,fing,csvreader.line_num,f_name,folder,initial_pose,solution,reached,weights,trial_no))
+                if(line_length>30 and line[30]!=''):
+                    length=float(line[30])
+                else:
+                    length=[]
+                if(line_length>32 and line[31]!=''):
+                    exp_pose=map(float,line[31:31+6])
+                else:
+                    exp_pose=[]
+                
+                
+                self.arr.append(ObjectModel(name,grasp,offset,des,fing,csvreader.line_num,f_name,folder,initial_pose,solution,reached,weights,trial_no,length,exp_pose))
 
     def add_aruco_centroid_locations(self,f_name):
         with open(f_name,'r') as csvfile:
@@ -134,6 +145,30 @@ class TrialList:
                 obj=self.arr[i]
                 row=[obj.name,obj.f_name,','.join(map(str,obj.grasp)),','.join(map(str,obj.offset)),','.join(map(str,obj.weights))]+list(obj.initial_pose)+list(obj.des)+list(obj.sol)+list(obj.trial)+list(obj.reached)
                 writer.writerow(row)
+
+    def write_traj_length(self,file_w):
+        with open(file_w,'w') as f:
+            writer= csv.writer(f)
+            for i in range(len(self.arr)):
+                obj=self.arr[i]
+                row=[obj.name,obj.f_name,','.join(map(str,obj.grasp)),','.join(map(str,obj.offset)),','.join(map(str,obj.weights))]+list(obj.initial_pose)+list(obj.des)+list(obj.sol)+list(obj.trial)+list(obj.reached)+list(obj.length)
+                writer.writerow(row)
+
+    def write_exp_pose(self,file_w):
+        with open(file_w,'w') as f:
+            writer= csv.writer(f)
+            for i in range(len(self.arr)):
+                obj=self.arr[i]
+                row=[obj.name,obj.f_name,','.join(map(str,obj.grasp)),','.join(map(str,obj.offset)),','.join(map(str,obj.weights))]+list(obj.initial_pose)+list(obj.des)+list(obj.sol)+list(obj.trial)+list(obj.reached)+[obj.length]+list(obj.exp_pose)
+                writer.writerow(row)
+    
+    def get_traj_list(self,n_trials):
+        obj=[]
+        # Get trajectories from trials without the reached pose
+        for i in range(len(self.arr)):
+            if i%n_trials==0:
+                obj.append(self.arr[i])
+        return obj
 
 class TrajList:
     ''' Reading  solution.csv file'''

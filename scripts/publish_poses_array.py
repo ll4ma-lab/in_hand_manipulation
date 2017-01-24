@@ -14,15 +14,18 @@ def file_import(f):
     rate=rospy.Rate(1.0)
     base_frame= "/palm_link"
     tf_pose=tf.TransformBroadcaster()
+    obj_0=TrialList('../data/trials/trinkle.csv','',5)
+    
+    obj_list=obj_0.get_traj_list(5)
 
     
-    obj_list=ObjectList(f,'')
-    traj_n=len(obj_list.arr)
+    #obj_list=ObjectList(f,'')
+    traj_n=len(obj_list)
     print traj_n
     while not rospy.is_shutdown():
     
-        for i in range(len(obj_list.arr)):
-            obj=obj_list.arr[i]
+        for i in range(len(obj_list)):
+            obj=obj_list[i]
             des_pose=obj.des
             init_pose=obj.initial_pose
             target_frame="des_"+str(i)

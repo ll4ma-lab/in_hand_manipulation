@@ -11,7 +11,7 @@ n_trials=5
 MAKE_TRIAL_LIST=False
 #MAKE_TRIAL_LIST=True
 ARUCO_=True
-RECORD_BAG_=False
+RECORD_BAG_=True
 
 #EXP_NAME='exp_1_waypoint'
 def read_objects(file,folder):
@@ -52,7 +52,7 @@ if __name__=='__main__':
                 t_no+=1
             # Get Object
             print 'Object: '+objects.arr[t_no*n_trials].name
-            Trial_no=-1
+            trial_no=-1
         trial_no_input=raw_input('Trial number('+str(trial_no+1)+'): ')
         if(trial_no_input!=''):
             trial_no=int(trial_no_input)
@@ -60,7 +60,7 @@ if __name__=='__main__':
             trial_no+=1
         index=t_no*n_trials+trial_no
 
-        # Publishing joint positions to robot
+         # Publishing joint positions to robot
         allegroStates.position_mode()
         allegroStates.publish_grasp(objects.arr[index].grasp)
     
@@ -108,16 +108,15 @@ if __name__=='__main__':
                 objects.arr[index].reached=reached_pose
             else:
                 # Store failure
-                #objects.arr[index].reached='F'
+                objects.arr[index].reached='F'
             if(RECORD_BAG_):
                 bag_process.send_signal(subprocess.signal.SIGINT)
                 time.sleep(0.5)
-            #objects.write_reached_pose(folder+trial_name)
+            objects.write_reached_pose(folder+trial_name)
 
             for i in P_:
                 i.send_signal(subprocess.signal.SIGINT)
-                #i.kill()
-
+            
         next_=raw_input('Press Enter- to run another trial \nPress 1-to run different trajectory.\nPress 2- to exit program\n ')
         if(next_==''):
             repeat=0

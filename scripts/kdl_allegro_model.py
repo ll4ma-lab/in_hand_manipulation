@@ -89,7 +89,7 @@ class allegroKinematics:
         t_T_O=np.eye(4)
         # Match initial rotation to palm fram
         R=PyKDL.Rotation()
-        R.RPY(t_X_O[3],t_X_O[4],t_X_O[5])
+        R=R.RPY(t_X_O[3],t_X_O[4],t_X_O[5])
         for k in range(3):
             for l in range(3):
                 t_T_O[k,l]=R[k,l]
@@ -268,7 +268,7 @@ class allegroKinematics:
         for i in range(len(finger_arr)):
             finger=finger_arr[i]
          
-            B[i*6:i*6+6,0]=self.obj_offset[finger].T+self.end_effector_pose_array(u[finger*4:finger*4+4],finger)
+            B[i*6:i*6+6,0]=self.end_effector_pose_array(u[finger*4:finger*4+4],finger)
             A[i*6:i*6+6,0:6]=np.eye(6)
 
         X=pinv(A)*np.matrix(B)

@@ -1,0 +1,111 @@
+import sys
+import rosbag
+import tf
+import subprocess
+import time
+import robot_node as robot
+from object_list import *
+import os  
+import PyKDL
+import rospy
+from rosgraph_msgs.msg import Clock
+class BagProcessing:
+    def __init__(self,file_name):
+        self.bag=rosbag.Bag(file_name)
+        self.contents = self.bag.read_messages()
+        
+        topics = []
+	for topic, msg, t in self.contents:
+		if topic not in topics:
+                    topics.append(topic)
+        self.topics=topics
+        print topics
+    def getTF(self):
+        for subtopic, msg, t in self.bag.read_messages('/tf'):
+            for i in range(len(msg.transforms)):
+                tf_data=msg.transforms[i]
+                if tf_data.child_frame_id=='/obj_ar':
+                    print msg
+
+
+
+def play_bag(file_name):
+    cmd=['/bin/bash','rosrun','rosbag','play','-u','2','--clock',file_name,]
+    proc=subprocess.Popen(cmd,stdout=subprocess.PIPE)
+    return proc
+
+
+def transform_pose(t_pose,i_pose):
+    # transforms i_pose to t_pose frame:
+    # generate T mat from t_pose
+    T=np.zeros((4,4))
+    T[0:3,3]=t_pose[0:3]
+    R=PyKDL.Rotation()
+    R.RPY(t_pose[3],t_pose[4],t_pose[5])
+    for k in range(3):
+        for l in range(3):
+            T[k,l]=R[k,l]
+    T_i=np.zeros((4,4))
+    T_i[0:3,3]=i_pose[0:3]
+    R=PyKDL.Rotation()
+    R.RPY(i_pose[3],i_pose[4],i_pose[5])
+    for k in range(3):
+        for l in range(3):
+            T_i[k,l]=R[k,l]
+
+    obj_T=T*T_i
+
+    R=PyKDL.Rotation(obj_T[0,0],obj_T[0,1],obj_T[0,2],obj_T[1,0],obj_T[1,1],obj_T[1,2],obj_T[2,0],obj_T[2,1],obj_T[2,2])
+
+    new_pose=np.zeros(6)
+    new_pose[0:3]=obj_T[0:3,3]
+    new_pose[3:6]=np.array(R.GetRPY())
+    return new_pose
+
+def run_all():
+    method='relaxed-full-linear'
+    trial_name=method+'_traj_length.csv'
+    folder='../data/trials/'
+    bag_folder='/media/bala/Experiments_urlg/icra_2016_in_grasp/rss-experiments-bag/exp2/'+method+'/'
+    objects=TrialList(trial_name,folder,5)
+    bag_files=0
+    t_no=0
+    allegroStates=robot.robotStates(listen_aruco=True,clock_bag=True)
+    while t_no<100:
+        for trial_no in range(5):
+            index=t_no*5+trial_no
+            bag_name=bag_folder+objects.arr[index].name+'_'+str(t_no)+'_'+str(trial_no)+'.bag'
+            #print bag_name
+            if os.path.isfile(bag_name):
+               allegroStates.reinitialize_tf()
+               bag_files+=1
+               p=play_bag(bag_name)
+               #a=rospy.Subscriber('/clock',Clock,allegroStates.clock_callback)
+               stdoutdata, stderrdata = p.communicate()
+
+            
+               init_pose_transform=allegroStates.tf_find_transform('obj_ar','obj')
+               # Transform 
+               initial_pose=transform_pose(init_pose_transform,objects.arr[index].initial_pose)
+               objects.arr[index].exp_pose=initial_pose
+               #print list(objects.arr[index].length)
+            else:
+                objects.arr[index].exp_pose='F'
+            objects.write_exp_pose(folder+method+'_init.csv')
+            # kill node:
+            #rospy.signal_shutdown('test') 
+            print t_no
+        t_no+=1
+
+def get_file_name(index):
+    
+if __name__=='__main__':
+    run_single()
+    get_file_name(sys.argv[1])
+    '''
+    allegroStates=robot.robotStates(listen_aruco=True)
+    p=play_bag(bag_name)
+    stdoutdata, stderrdata = p.communicate()
+    reached_pose=allegroStates.tf_find_transform('obj')
+    objects.arr[index].reached=reached_pose
+    '''
