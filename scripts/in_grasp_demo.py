@@ -9,8 +9,8 @@ import time
 import sys
 n_trials=5
 MAKE_TRIAL_LIST=False
-ARUCO_=True
-RECORD_VIDEO_=True
+ARUCO_=False
+RECORD_VIDEO_=False
 
 #EXP_NAME='exp_1_waypoint'
 def read_objects(file,folder):
@@ -80,8 +80,8 @@ if __name__=='__main__':
         joint_traj=np.loadtxt(open(traj_folder+objects.arr[index].f_name,'r'))
         
 
-        allegroStates.publish_joint_trajectory(joint_traj)
-        time.sleep(2.0)
+        #allegroStates.publish_joint_trajectory(joint_traj)
+        #time.sleep(2.0)
         if(RECORD_VIDEO_):
             vid_process.send_signal(subprocess.signal.SIGINT)
             time.sleep(0.1)
