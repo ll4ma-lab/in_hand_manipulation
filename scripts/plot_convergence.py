@@ -22,7 +22,7 @@ safeui=['#fdcc8a','#377eb8']
 singleui=['#696969','#696969','#696969','#696969']
 #sns.color_palette(safeui)
 #sns.palplot(sns.color_palette(safeui))
-
+twoui=['#f1a340','#998ec3']
 ten_colors=['#a50026','#d73027','#f46d43','#fdae61','#fee090','#e0f3f8','#abd9e9','#74add1','#4575b4','#313695']
 
 def compute_initial_errors(obj):
@@ -614,20 +614,25 @@ def plot_pair():
     method=[]
     traj=[]
     #plt.figure(figsize=(4,4))
-    sns.set(font_scale=1,rc={"lines.linewidth": 0.75})
+    sns.set(font_scale=1,rc={"lines.linewidth": 1.0})
     sns.set_style("whitegrid")
     for i in range(500):
 
         if(obj_reached[i].err[0]!=-1.0):
             p_err.append(obj_init[i].err[0])
             r_err.append(obj_init[i].err[1])
-            traj.append('traj-'+str(i/5%10))       
+            if(i/5%10<5):
+                traj.append('Grasp-1')       
+                traj.append('Grasp-1')       
+            else:
+                traj.append('Grasp-2')       
+                traj.append('Grasp-2')       
             names.append(obj_init[i].name)
             method.append('Initial')
             p_err.append(obj_reached[i].err[0])
             r_err.append(obj_reached[i].err[1])
             names.append(obj_reached[i].name)
-            traj.append('traj-'+str(i/5%10))          
+
             method.append('Reached')
 
         
@@ -636,18 +641,18 @@ def plot_pair():
     data = pd.DataFrame()
     data['position']=p_err
     data['orientation']=r_err
-    data['object']=names
+    data['Object']=names
     data['Pose']=method
     data['traj']=traj
     #ax=sns.PairGrid(data=data,y_vars="position",x_vars=['method'],hue='traj')
     #ax.map(sns.pointplot,dodge=True)
     #ax=sns.PairGrid(data=data)
-    ax = sns.factorplot(data=data,y='position', x='Pose',hue='traj',dodge=True, sharey=True,ylim=(0,10),col='object',size=3,aspect=0.6,col_wrap=5,legend=False,palette=ten_colors)
+    ax = sns.factorplot(data=data,y='position', x='Pose',hue='traj',dodge=True, sharey=True,col='Object',size=3,aspect=0.6,col_wrap=5,legend=False,palette=twoui,ci=95)
     ax.set_axis_labels("Pose", "Position error (cm)")
     handles = ax._legend_data.values()
     labels = ax._legend_data.keys()
     #ax.add_legend(ncol=5)
-    ax.fig.legend(handles, labels,loc='upper center', bbox_to_anchor=(0.5, 1.07),ncol=5, fancybox=False, shadow=False)
+    ax.fig.legend(handles, labels,loc='upper center', bbox_to_anchor=(0.5, 1.02),ncol=5, fancybox=False, shadow=False)
     #handles, labels = ax.get_legend_handles_labels()
     #ax.set_xticklabels(["Men", "Women", "Children"])
     #ax.set_titles("{col_name} {col_var}")
