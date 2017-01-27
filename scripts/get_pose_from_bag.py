@@ -24,7 +24,7 @@ class BagProcessing:
                     topics.append(topic)
             self.topics=topics
         else:
-            exit()    
+            exit()
             
     def getTF(self):
         for subtopic, msg, t in self.bag.read_messages('/tf'):
@@ -119,18 +119,22 @@ def bag_multi(data):
     bag_name=data[0]
     initial=data[1]
     index=data[2]
-    bag_=BagProcessing(bag_name)
-    init_pose_transform=bag_.getTF()
-    initial_pose=transform_pose(init_pose_transform,initial)
+    if os.path.isfile(bag_name):
+        bag_=BagProcessing(bag_name)
+        init_pose_transform=bag_.getTF()
+        initial_pose=transform_pose(init_pose_transform,initial)
+    else:
+        initial_pose='F'
     exp_pose=initial_pose
     return [exp_pose,index]
 
 if __name__=='__main__':
-    method='relaxed-full-linear'
+    method='trinkle'
     trial_name=method+'.csv'
     folder='../data/trials/'
     bag_folder='/home/bala/'+method+'/'
     objects=TrialList(trial_name,folder,5)
+
     bag_files=0
     t_no=0
     data_arr=[]
@@ -152,11 +156,3 @@ if __name__=='__main__':
 
         
     objects.write_exp_pose(folder+method+'_init.csv')    
-    
-    '''
-    #allegroStates=robot.robotStates(listen_aruco=True)
-    p=play_bag(bag_name)
-    stdoutdata, stderrdata = p.communicate()
-    reached_pose=allegroStates.tf_find_transform('obj')
-    objects.arr[index].reached=reached_pose
-    '''

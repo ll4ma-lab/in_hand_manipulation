@@ -23,6 +23,8 @@ singleui=['#696969','#696969','#696969','#696969']
 #sns.color_palette(safeui)
 #sns.palplot(sns.color_palette(safeui))
 twoui=['#f1a340','#998ec3']
+E#fourui=['#fee6ce','#fdae6b','#5e3c99','#b2abd2']
+fourui=['#e66101','#fdb863','#5e3c99','#b2abd2']
 ten_colors=['#a50026','#d73027','#f46d43','#fdae61','#fee090','#e0f3f8','#abd9e9','#74add1','#4575b4','#313695']
 
 def compute_initial_errors(obj):
@@ -108,7 +110,7 @@ def compute_reached_errors(obj):
             #position error:
             pos_err=100*np.linalg.norm(des_pose[0:3]-reached_pose[0:3],ord=2)#/obj[i].length
             if(pos_err<30.0):
-                names.append(obj[i].f_name+'_'+obj[i].trial)
+                names.append(obj[i].f_name+'_'+str(obj[i].trial))
             err=[pos_err,R_err]        
             obj[i].err=err            
             E_pos.append(pos_err)
@@ -143,7 +145,7 @@ def compute_reached_errors_norm(obj):
             R_err=100*np.min([q_sum,q_diff])/np.sqrt(2)
             #position error:
             pos_err=100*np.linalg.norm(des_pose[0:3]-reached_pose[0:3],ord=2)/traj_length
-            if(pos_err>80.0):
+            if(pos_err>150.0):
                 names.append(obj[i].f_name+'_'+obj[i].trial+'_'+str(des_pose[0:3]-reached_pose[0:3]))
             err=[pos_err,R_err]        
             obj[i].err=err            
@@ -334,12 +336,17 @@ def plot_convergence_method(obj,n,names_=['IK-rigid','PC','relaxed-position','re
     sns.set_style("whitegrid")
 
     ax=sns.boxplot(y="position",x="object",data=data,hue="method",orient="v",linewidth=1,palette=safeuiall,whis=100.0)
+    limits=np.arange(0, 6, 0.5)
+    #limits=np.arange(0, 160, 15)
+    plt.yticks(limits)
     #ax=sns.swarmplot(x='position',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles[0:4], labels[0:4],loc='upper center', bbox_to_anchor=(0.5, 1.1),ncol=5, fancybox=False, shadow=False)
     ax.set(ylabel='Position Error (cm)',xlabel='Objects')
-    #plt.xlim(0,100)
-        
+    plt.ylim(0,5.5)
+    #plt.ylim(0,210)
+    #ax.get_yaxis().set_minor_locator(mpl.ticker.AutoMinorLocator(n=2))
+    #ax.grid(b=True, which='minor', color='0.85', linewidth=0.5)
     plt.savefig('position_error.eps', bbox_inches='tight')
     #plt.show()
      # Plot using seaborn:
@@ -354,6 +361,7 @@ def plot_convergence_method(obj,n,names_=['IK-rigid','PC','relaxed-position','re
     handles, labels = ay.get_legend_handles_labels()
     ay.legend(handles[0:4], labels[0:4],loc='upper center', bbox_to_anchor=(0.5, 1.1),ncol=5, fancybox=False, shadow=False)
     ay.set(ylabel='Orientation Error %',xlabel='Objects')
+    plt.yticks(range(0,70,5))
     #plt.ylim(0,100)
     plt.savefig('orientation_error.eps', bbox_inches='tight')
     #plt.show()
@@ -455,7 +463,7 @@ def plot_random_method():
 def plot_method():
 
     #obj_0=TrialList('../data/trials/ik-rigid.csv','',5)
-    #obj_0=TrajList('../data/trajectories/exp_2_ik-rigid_solution.csv','').arr
+    obj_0=TrajList('../data/trajectories/exp_2_ik-rigid_solution.csv','').arr
     #obj_0=obj_0.get_traj_list(5)
     obj_1=TrialList('../data/trials/relaxed-position.csv','',5)
     obj_1=obj_1.get_traj_list(5)
@@ -467,11 +475,11 @@ def plot_method():
     obj_3=obj_3.get_traj_list(5)
 
     traj_n=len(obj_1)
-    obj_all=obj_1+obj_2+obj_3
+    obj_all=obj_0+obj_1+obj_2+obj_3
 
     obj,n=compute_errors(obj_all)
 
-    plot_convergence_method(obj,[len(obj_1),len(obj_1),len(obj_2),len(obj_3)],names_=['relaxed-position','relaxed-position-orientation','Relaxed-Rigidity'])
+    plot_convergence_method(obj,[len(obj_0),len(obj_1),len(obj_2),len(obj_3)],names_=['IK-rigid','relaxed-position','relaxed-position-orientation','Relaxed-Rigidity'])
 
 def plot_reached():
     obj_1=TrialList('../data/trials/trinkle.csv','',5)
@@ -503,7 +511,7 @@ def plot_reached_norm():
     obj_1=TrialList('../data/trials/trinkle_traj_length.csv','',5)
     obj_2=TrialList('../data/trials/relaxed-position_traj_length.csv','',5)
 
-    obj_3=TrialList('../data/trials/relaxed-full_traj_length.csv','',5)
+    obj_3=TrialList('../data/trials/relaxed-full.csv','',5)
     obj_4=TrialList("../data/trials/relaxed-full-linear.csv",'',5)
 
     names_=['Point Contact','relaxed-position','relaxed-position-orientation','Relaxed-Rigidity']
@@ -517,11 +525,11 @@ def plot_reached_norm():
     #obj_2=compute_reached_errors_mean(obj_2)
     obj_3,n=compute_reached_errors_norm(obj_3.arr)
     print names_[2]+': '+str(100-100*len(n)/500.0)
-
+    print n
     #obj_3=compute_reached_errors_mean(obj_3)
     obj_4,n=compute_reached_errors_norm(obj_4.arr)
     print names_[3]+': '+str(100-100*len(n)/500.0)
-    print n
+
     obj=obj_1+obj_2+obj_3+obj_4
     #plot_convergence_method(obj,[len(obj_1),len(obj_2),len(obj_3),len(obj_4)],names_=['trinkle','relaxed-position','relaxed-full','relaxed-full-linear'])
     plot_convergence_method(obj,[len(obj_1),len(obj_2),len(obj_3),len(obj_4)],names_)
@@ -565,7 +573,7 @@ def plot_initial():
 def compute_robust_err(obj,n,initial_=False):
     names=[]
     for i in range(len(obj)):
-        if(i%n==0):
+        if(int(obj[i].trial)==0):
             des_pose=np.array(obj[i].reached)
             if(initial_):
                 des_pose=np.array(obj[i].exp_pose)
@@ -587,6 +595,8 @@ def compute_robust_err(obj,n,initial_=False):
             R_err=100*np.min([q_sum,q_diff])/np.sqrt(2)
             #position error:
             pos_err=100*np.linalg.norm(des_pose[0:3]-reached_pose[0:3],ord=2)
+            if(initial_==True and pos_err>1.1):
+                names.append(obj[i].f_name+'_'+str(obj[i].trial))#+str(pos_err))
             obj[i].err=[pos_err,R_err]
     return obj,names
 
@@ -603,11 +613,14 @@ def plot_robust():
     
 
 def plot_pair():
-    obj_0=TrialList("../data/trials/relaxed-full-linear_init.csv",'',5).arr
-    obj_1=TrialList("../data/trials/relaxed-full-linear_init.csv",'',5).arr
+    #obj_0=TrialList("../data/trials/relaxed-full-linear_init.csv",'',5).arr
+    #obj_1=TrialList("../data/trials/relaxed-full-linear_init.csv",'',5).arr
+    obj_0=TrialList("../data/trials/trinkle_init.csv",'',5).arr
+    obj_1=TrialList("../data/trials/trinkle_init.csv",'',5).arr
     n_trials=5
     obj_reached,n=compute_robust_err(obj_0,n_trials)
     obj_init,n=compute_robust_err(obj_1,n_trials,initial_=True)
+    print n
     p_err=[]
     r_err=[]
     names=[]
@@ -616,17 +629,41 @@ def plot_pair():
     #plt.figure(figsize=(4,4))
     sns.set(font_scale=1,rc={"lines.linewidth": 1.0})
     sns.set_style("whitegrid")
-    for i in range(500):
+    for i in range(len(obj_0)):
 
         if(obj_reached[i].err[0]!=-1.0):
             p_err.append(obj_init[i].err[0])
             r_err.append(obj_init[i].err[1])
             if(i/5%10<5):
-                traj.append('Grasp-1')       
-                traj.append('Grasp-1')       
+                traj.append('PC:Grasp-1')       
+                traj.append('PC:Grasp-1')       
             else:
-                traj.append('Grasp-2')       
-                traj.append('Grasp-2')       
+                traj.append('PC:Grasp-2')       
+                traj.append('PC:Grasp-2')       
+            names.append(obj_init[i].name)
+            method.append('Initial')
+            p_err.append(obj_reached[i].err[0])
+            r_err.append(obj_reached[i].err[1])
+            names.append(obj_reached[i].name)
+
+            method.append('Reached')
+
+    obj_0=TrialList("../data/trials/relaxed-full-linear_init.csv",'',5).arr
+    obj_1=TrialList("../data/trials/relaxed-full-linear_init.csv",'',5).arr
+    n_trials=5
+    obj_reached,n=compute_robust_err(obj_0,n_trials)
+    obj_init,n=compute_robust_err(obj_1,n_trials,initial_=True)
+
+    for i in range(len(obj_0)):
+        if(obj_reached[i].err[0]!=-1.0):
+            p_err.append(obj_init[i].err[0])
+            r_err.append(obj_init[i].err[1])
+            if(i/5%10<5):
+                traj.append('Relaxed-Rigidity:Grasp-1')       
+                traj.append('Relaxed-Rigidity:Grasp-1')       
+            else:
+                traj.append('Relaxed-Rigidity:Grasp-2')       
+                traj.append('Relaxed-Rigidity:Grasp-2')       
             names.append(obj_init[i].name)
             method.append('Initial')
             p_err.append(obj_reached[i].err[0])
@@ -647,8 +684,8 @@ def plot_pair():
     #ax=sns.PairGrid(data=data,y_vars="position",x_vars=['method'],hue='traj')
     #ax.map(sns.pointplot,dodge=True)
     #ax=sns.PairGrid(data=data)
-    ax = sns.factorplot(data=data,y='position', x='Pose',hue='traj',dodge=True, sharey=True,col='Object',size=3,aspect=0.6,col_wrap=5,legend=False,palette=twoui,ci=95)
-    ax.set_axis_labels("Pose", "Position error (cm)")
+    ax = sns.factorplot(data=data,y='position', x='Pose',hue='traj',dodge=True, sharey=True,col='Object',size=3,aspect=0.6,col_wrap=5,legend=False,palette=fourui,ci=100)
+    ax.set_axis_labels("Pose", "Position (cm)")
     handles = ax._legend_data.values()
     labels = ax._legend_data.keys()
     #ax.add_legend(ncol=5)
@@ -703,7 +740,7 @@ if __name__=='__main__':
     #plot_single()
     #plot_initial()
     #plot_method()
-    #plot_reached_norm()
+    #plot_reached()#_norm()
     #plot_reached_variance()
     #plot_robust()
     #plot_regression()
