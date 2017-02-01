@@ -12,9 +12,9 @@ T=10
 
 def main():
     #no=sys.argv[1]
-    method='relaxed-full-linea'
-    file="../data/goal_poses/exp_2_goal_poses.csv"
-    folder_to_write="../data/trajectories/screw/"+method+"/"
+    method='relaxed-full-linear'
+    file="../data/goal_poses/general_goal_poses.csv"
+    folder_to_write="../data/trajectories/general/"+method+"/"
     obj_list=ObjectList(file,folder_to_write)  
     obj_list.get_weights('../data/weights/exp_2_relaxed_full.csv')
     print len(obj_list.arr)
@@ -30,7 +30,7 @@ def main():
     
     elap=time.time()-sta_t
     print "Time to compute(seconds): "+str(elap)
-    obj_list.write_sol_from_tjo("../data/trajectories/screw_"+method+"_solution.csv")
+    obj_list.write_sol_from_tjo("../data/trajectories/general_"+method+"_solution.csv")
 
 def multi_obj(obj):
 

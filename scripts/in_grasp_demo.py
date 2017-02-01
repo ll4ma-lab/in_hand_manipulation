@@ -8,9 +8,9 @@ import signal
 import time
 import sys
 n_trials=5
-MAKE_TRIAL_LIST=False
-ARUCO_=False
-RECORD_VIDEO_=False
+MAKE_TRIAL_LIST=True
+ARUCO_=True
+RECORD_VIDEO_=True
 
 #EXP_NAME='exp_1_waypoint'
 def read_objects(file,folder):
@@ -21,15 +21,15 @@ def read_objects(file,folder):
 if __name__=='__main__':
     method=sys.argv[1]
     f_name='../data/trajectories/exp_2_'+method+'_solution.csv'
-    trial_name=method+'.csv'
+    trial_name=method+'_general.csv'
     folder='../data/trials/'
-    traj_folder='../data/trajectories/new_goal/'+method+'/'
+    traj_folder='../data/trajectories/general/'+method+'/'
     
    
     allegroStates=robot.robotStates(listen_aruco=ARUCO_)   
     # Read trial list
     objects=TrialList(trial_name,folder,n_trials)
-    objects.add_aruco_centroid_locations('../data/object_grasps/object_centroids_two_grasps.csv')
+    objects.add_aruco_centroid_locations('../data/object_grasps/object_centroids_4f.csv')
 
     repeat=1
     t_no=-1
@@ -80,8 +80,8 @@ if __name__=='__main__':
         joint_traj=np.loadtxt(open(traj_folder+objects.arr[index].f_name,'r'))
         
 
-        #allegroStates.publish_joint_trajectory(joint_traj)
-        #time.sleep(2.0)
+        allegroStates.publish_joint_trajectory(joint_traj)
+        time.sleep(1.0)
         if(RECORD_VIDEO_):
             vid_process.send_signal(subprocess.signal.SIGINT)
             time.sleep(0.1)

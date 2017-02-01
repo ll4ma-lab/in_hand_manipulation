@@ -8,8 +8,8 @@ import signal
 import time
 import sys
 n_trials=5
-MAKE_TRIAL_LIST=False
-#MAKE_TRIAL_LIST=True
+#MAKE_TRIAL_LIST=False
+MAKE_TRIAL_LIST=True
 ARUCO_=True
 RECORD_BAG_=True
 
@@ -21,12 +21,12 @@ def read_objects(file,folder):
 
 if __name__=='__main__':
     method=sys.argv[1]
-    f_name='../data/trajectories/exp_2_'+method+'_solution.csv'
-    trial_name=method+'.csv'
+    f_name='../data/trajectories/general_'+method+'_solution.csv'
+    trial_name=method+'_general.csv'
     folder='../data/trials/'
-    traj_folder='../data/trajectories/new_goal/'+method+'/'
+    traj_folder='../data/trajectories/general/'+method+'/'
     
-    bag_folder='/media/bala/Experiments_urlg/icra_2016_in_grasp/rss-experiments-bag/exp2/'+method+'/'
+    bag_folder='/media/bala/Experiments_urlg/icra_2016_in_grasp/rss-experiments-bag/general/'+method+'/'
     if(MAKE_TRIAL_LIST):
         ''' RUN only once'''
         # read file and store as object list
@@ -38,7 +38,7 @@ if __name__=='__main__':
     allegroStates=robot.robotStates(listen_aruco=ARUCO_)   
     # Read trial list
     objects=TrialList(trial_name,folder,n_trials)
-    objects.add_aruco_centroid_locations('../data/object_grasps/object_centroids_two_grasps.csv')
+    objects.add_aruco_centroid_locations('../data/object_grasps/object_centroids_4f.csv')
 
     repeat=1
     t_no=-1

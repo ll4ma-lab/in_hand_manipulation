@@ -23,7 +23,7 @@ singleui=['#696969','#696969','#696969','#696969']
 #sns.color_palette(safeui)
 #sns.palplot(sns.color_palette(safeui))
 twoui=['#f1a340','#998ec3']
-E#fourui=['#fee6ce','#fdae6b','#5e3c99','#b2abd2']
+#fourui=['#fee6ce','#fdae6b','#5e3c99','#b2abd2']
 fourui=['#e66101','#fdb863','#5e3c99','#b2abd2']
 ten_colors=['#a50026','#d73027','#f46d43','#fdae61','#fee090','#e0f3f8','#abd9e9','#74add1','#4575b4','#313695']
 
@@ -572,6 +572,7 @@ def plot_initial():
 
 def compute_robust_err(obj,n,initial_=False):
     names=[]
+    P_err=[]
     for i in range(len(obj)):
         if(int(obj[i].trial)==0):
             des_pose=np.array(obj[i].reached)
@@ -598,6 +599,9 @@ def compute_robust_err(obj,n,initial_=False):
             if(initial_==True and pos_err>1.1):
                 names.append(obj[i].f_name+'_'+str(obj[i].trial))#+str(pos_err))
             obj[i].err=[pos_err,R_err]
+            P_err.append(pos_err)
+    print np.mean(P_err)
+    print np.var(P_err)
     return obj,names
 
             
@@ -618,8 +622,9 @@ def plot_pair():
     obj_0=TrialList("../data/trials/trinkle_init.csv",'',5).arr
     obj_1=TrialList("../data/trials/trinkle_init.csv",'',5).arr
     n_trials=5
-    obj_reached,n=compute_robust_err(obj_0,n_trials)
+    #obj_reached,n=compute_robust_err(obj_0,n_trials)
     obj_init,n=compute_robust_err(obj_1,n_trials,initial_=True)
+    '''
     print n
     p_err=[]
     r_err=[]
@@ -672,7 +677,7 @@ def plot_pair():
 
             method.append('Reached')
 
-        
+
     #plt.savefig('robust_position_error_apple.eps', bbox_inches='tight')
 
     data = pd.DataFrame()
@@ -684,8 +689,9 @@ def plot_pair():
     #ax=sns.PairGrid(data=data,y_vars="position",x_vars=['method'],hue='traj')
     #ax.map(sns.pointplot,dodge=True)
     #ax=sns.PairGrid(data=data)
-    ax = sns.factorplot(data=data,y='position', x='Pose',hue='traj',dodge=True, sharey=True,col='Object',size=3,aspect=0.6,col_wrap=5,legend=False,palette=fourui,ci=100)
+    ax = sns.factorplot(data=data,y='position', x='Pose',hue='traj',dodge=True, sharey=False,col='Object',size=3,aspect=0.6,col_wrap=5,legend=False,palette=fourui,ci=100)
     ax.set_axis_labels("Pose", "Position (cm)")
+    ax.set_titles("{col_name}")
     handles = ax._legend_data.values()
     labels = ax._legend_data.keys()
     #ax.add_legend(ncol=5)
@@ -702,10 +708,10 @@ def plot_pair():
     
     #ax=sns.PairGrid(data=data,y_vars="position",x_vars=["Object","method"],hue="object",size=5, aspect=.5)
     #ax = sns.pointplot(y="position", x="method", data=data,ci=None)
-    plt.savefig('robust_error.eps', bbox_inches='tight')
+    #plt.savefig('robust_error.eps', bbox_inches='tight')
    
-    plt.show()
-
+    #plt.show()
+    '''
 def plot_regression():
     obj_0=TrialList("../data/trials/relaxed-full-linear_init.csv",'',5).arr
     obj_1=TrialList("../data/trials/relaxed-full-linear_init.csv",'',5).arr
@@ -745,3 +751,4 @@ if __name__=='__main__':
     #plot_robust()
     #plot_regression()
     plot_pair()
+    #plot_4f()
