@@ -743,6 +743,14 @@ def plot_regression():
     '''
 if __name__=='__main__':
 
+    #method_arr=["relaxed-rigidity","trinkle",'relaxed-position','relaxed-position-orientation']
+    method_arr=["2f_4f_relaxed-rigidity","random_relaxed-rigidity"]
+    for method in method_arr:
+
+        obj_0=TrialList("../data/trials/"+method+".csv",'',5)
+        obj_1=obj_0.get_traj_list(5)
+        obj_0.write_traj_list("../data/trajectories/"+method+".csv",obj_1)
+
     #plot_single()
     #plot_initial()
     #plot_method()
@@ -750,5 +758,5 @@ if __name__=='__main__':
     #plot_reached_variance()
     #plot_robust()
     #plot_regression()
-    plot_pair()
+    #plot_pair()
     #plot_4f()

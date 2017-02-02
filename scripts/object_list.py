@@ -170,6 +170,18 @@ class TrialList:
                 obj.append(self.arr[i])
         return obj
 
+    def write_traj_list(self,f_name,traj_list):
+        ''' create csv file with name f_name and n_trials per trajectory'''
+       
+        file_w=f_name
+        with open(file_w,'w') as f:
+            writer= csv.writer(f)
+            for i in range(len(traj_list)):
+                obj=traj_list[i]
+                row=[obj.name,obj.f_name,','.join(map(str,obj.grasp)),','.join(map(str,obj.offset)),','.join(map(str,obj.weights))]+list(obj.initial_pose)+list(obj.des)+list(obj.sol)
+                data=row
+                writer.writerow(data)
+
 class TrajList:
     ''' Reading  solution.csv file'''
     def __init__(self,csv_file,folder,tr_start=0):
@@ -206,6 +218,7 @@ class TrajList:
                     data=row+[k]
                     #write to csv file
                     writer.writerow(data)
+
 
 class ObjectList:
     def __init__(self,csv_file,folder,tr_start=0):
