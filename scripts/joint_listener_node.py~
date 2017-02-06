@@ -1,5 +1,0 @@
-# Listens to allegro joint states
-import rospy
-from sensor_msgs.msg import JointState
-
-class jointListener:
