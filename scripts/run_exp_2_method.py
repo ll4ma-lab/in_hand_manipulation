@@ -8,8 +8,8 @@ import signal
 import time
 import sys
 n_trials=5
-MAKE_TRIAL_LIST=False
-#MAKE_TRIAL_LIST=True
+#MAKE_TRIAL_LIST=False
+MAKE_TRIAL_LIST=True
 ARUCO_=True
 RECORD_BAG_=True
 
@@ -21,12 +21,12 @@ def read_objects(file,folder):
 
 if __name__=='__main__':
     method=sys.argv[1]
-    f_name='../data/trajectories/exp_2_'+method+'_solution.csv'
-    trial_name=method+'.csv'
+    f_name='../data/trajectories/general_'+method+'_solution.csv'
+    trial_name=method+'_general.csv'
     folder='../data/trials/'
-    traj_folder='../data/trajectories/new_goal/'+method+'/'
+    traj_folder='../data/trajectories/general/'+method+'/'
     
-    bag_folder='/media/bala/Experiments_urlg/icra_2016_in_grasp/rss-experiments-bag/exp2/'+method+'/'
+    bag_folder='/media/bala/Experiments_urlg/icra_2016_in_grasp/rss-experiments-bag/general/'+method+'/'
     if(MAKE_TRIAL_LIST):
         ''' RUN only once'''
         # read file and store as object list
@@ -38,7 +38,7 @@ if __name__=='__main__':
     allegroStates=robot.robotStates(listen_aruco=ARUCO_)   
     # Read trial list
     objects=TrialList(trial_name,folder,n_trials)
-    objects.add_aruco_centroid_locations('../data/object_grasps/object_centroids_two_grasps.csv')
+    objects.add_aruco_centroid_locations('../data/object_grasps/object_centroids_4f.csv')
 
     repeat=1
     t_no=-1
@@ -60,7 +60,7 @@ if __name__=='__main__':
             trial_no+=1
         index=t_no*n_trials+trial_no
 
-        # Publishing joint positions to robot
+         # Publishing joint positions to robot
         allegroStates.position_mode()
         allegroStates.publish_grasp(objects.arr[index].grasp)
     
@@ -98,7 +98,6 @@ if __name__=='__main__':
         if(ARUCO_):
             suc=raw_input('Press Enter - store final pose \n Press F to store as failure ')
 
-
             if(suc==''):
                 # Get object pose from aruco marker
                 
@@ -107,10 +106,10 @@ if __name__=='__main__':
                 # Get final object pose
                 reached_pose=allegroStates.tf_find_transform('obj')
                 objects.arr[index].reached=reached_pose
+                print reached_pose[0:3]
             else:
                 # Store failure
                 objects.arr[index].reached='F'
-
             if(RECORD_BAG_):
                 bag_process.send_signal(subprocess.signal.SIGINT)
                 time.sleep(0.5)
@@ -118,8 +117,7 @@ if __name__=='__main__':
 
             for i in P_:
                 i.send_signal(subprocess.signal.SIGINT)
-                #i.kill()
-
+            
         next_=raw_input('Press Enter- to run another trial \nPress 1-to run different trajectory.\nPress 2- to exit program\n ')
         if(next_==''):
             repeat=0

@@ -43,3 +43,6 @@
 
 # rosbag files
 *.bag
+
+# CMA data files
+*.dat

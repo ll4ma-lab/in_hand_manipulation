@@ -1,13 +1,15 @@
 # Listens to allegro joint states
 import rospy
+from rosgraph_msgs.msg import Clock
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Int8
 import tf
 from subprocess import Popen
 import subprocess
 import numpy as np
+import copy
 class robotStates:
-    def __init__(self,node_name='allegro_node',publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right',rate=100.0,listen_aruco=False):
+    def __init__(self,node_name='allegro_node',publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right',rate=100.0,listen_aruco=False,clock_bag=False):
         rospy.init_node(node_name)
         self.rate=rospy.Rate(rate)
         self.switch_cmd=rospy.Publisher(publish_prefix+'/control_type',Int8,queue_size=10)
@@ -16,9 +18,12 @@ class robotStates:
                                                      JointState, queue_size=100)
 
         rospy.Subscriber(listen_prefix+'/joint_states',JointState,self.joint_state_cb)
+        self.clock=0
         if(listen_aruco):
             self.listener = tf.TransformListener()
-            
+        if(clock_bag):
+            rospy.Subscriber('/clock',Clock,self.clock_callback)
+            print 'Subscribing to clock'
         print 'Initialized robot node'
         self.loop_rate=rospy.Rate(rate)
         jc=JointState()
@@ -32,6 +37,16 @@ class robotStates:
                       0.0, 0.0, 0.0, 0.0,
                       0.0, 0.0, 0.0, 0.0]
         self.jc=jc
+        self.clock_bag=clock_bag
+
+  
+    def reinitialize_tf(self):
+        self.listener = tf.TransformListener()
+      
+    def clock_callback(self,msg):
+        self.clock=msg.clock#copy.deepcopy(msg.clock)
+
+        #print msg
 
     def tf_pose_pub(self,pose,target_frame,base_frame='palm_link'):
         tf_pose=tf.TransformBroadcaster()
@@ -61,11 +76,18 @@ class robotStates:
         proc=Popen(cmd,stdout=subprocess.PIPE)
         return proc
 
-
+    def run_process(self,cmd_args):
+        cmd=cmd_args
+        proc=Popen(cmd,stdout=subprocess.PIPE)
+        return proc
     def tf_find_transform(self,target_frame,base_frame='palm_link'):
         got_tf=False
+        if (self.clock_bag):
+            time=copy.deepcopy(self.clock)
+        else:
+            time=copy.deepcopy(rospy.Time(0))
 
-
+        time=copy.deepcopy(rospy.Time(0))
         (trans_2,rot_2)= self.listener.lookupTransform(base_frame, target_frame, rospy.Time(0))
         final_pose=np.zeros(6)
         final_pose[0:3]=trans_2
