@@ -743,8 +743,8 @@ def plot_regression():
     '''
 if __name__=='__main__':
 
-    #method_arr=["relaxed-rigidity","trinkle",'relaxed-position','relaxed-position-orientation']
-    method_arr=["2f_4f_relaxed-rigidity","random_relaxed-rigidity"]
+    method_arr=["relaxed-rigidity","trinkle",'relaxed-position','relaxed-position-orientation']
+    #method_arr=["2f_4f_relaxed-rigidity","random_relaxed-rigidity"]
     for method in method_arr:
 
         obj_0=TrialList("../data/trials/"+method+".csv",'',5)

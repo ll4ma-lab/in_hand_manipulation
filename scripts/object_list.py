@@ -25,7 +25,7 @@ class ObjectReachList:
                 offset=np.array(line[1].split(','))
                 name=line[0]
                 grasp=np.array(map(float, line[2].split(',')))
-                fing=np.array(map(int, line[3].split(',')))
+                fing=[0,1,3]#np.array(map(int, line[3].split(',')))
                 if(len(line)>11):
                     des=np.array(map(float, line[10:]))
                 else:
@@ -109,7 +109,7 @@ class TrialList:
                 solution=np.array(map(float, line[17:17+6]))
                 trial_no=line[23]
                 folder=folder
-                fing=[]
+                fing=[0,1,3]
                 line_length=len(line)
                 if(line_length>25 and line[25]!=''):
                     reached=map(float,line[24:24+6])
@@ -178,7 +178,7 @@ class TrialList:
             writer= csv.writer(f)
             for i in range(len(traj_list)):
                 obj=traj_list[i]
-                row=[obj.name,obj.f_name,','.join(map(str,obj.grasp)),','.join(map(str,obj.offset)),','.join(map(str,obj.weights))]+list(obj.initial_pose)+list(obj.des)+list(obj.sol)
+                row=[obj.name,','.join(map(str,obj.offset)),','.join(map(str,obj.grasp)),','.join(map(str,obj.fing))]+list(obj.initial_pose)+list(obj.des)+list(obj.sol)
                 data=row
                 writer.writerow(data)
 
