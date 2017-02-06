@@ -14,7 +14,7 @@ def main():
     file="../data/goal_poses/random_goal_poses.csv"
     folder_to_write="../data/trajectories/random_full/"
     obj_list=ObjectList(file,folder_to_write)  
-    obj_list.get_weights('../data/weights/random_poses.csv')
+    obj_list.get_weights('../data/weights/exp_2_relaxed_full.csv')
     print len(obj_list.arr)
     sc_pool=Pool()
     sta_t = time.time()
@@ -27,7 +27,7 @@ def main():
     
     elap=time.time()-sta_t
     print "Time to compute(seconds): "+str(elap)
-    obj_list.write_sol_from_tjo("../data/trajectories/random_full_solution.csv")
+    obj_list.write_sol_from_tjo("../data/trajectories/random_full_linear_solution.csv")
 
 def multi_obj(obj):
 
@@ -44,7 +44,7 @@ def multi_obj(obj):
         robot_model.object_frames=robot_model.add_object_frame(D,joints,finger=3)    
 
         robot_model.obj_dim_weights=np.array([100.0,100.0,100.0,-1.0,-1.0,1.0])
-        robot_model.final_obj_dim_weights=np.array([100.0,100.0,100.0,-1.0,-1.0,1.0])
+        robot_model.final_obj_dim_weights=np.array([100.0,100.0,100.0,1.0,1.0,-1.0])
         robot_model.psi=[0.0,1.0,0.0]
         #print obj.weights
         robot_model.wp=obj.weights[0]
