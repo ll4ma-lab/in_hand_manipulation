@@ -13,6 +13,7 @@ class allegroKinematics:
             T= total time steps
             fingers=[0-4],0=index,1=middle,2=ring,3=thumb        
         '''
+        self.n=6
         self.m=4*4
         self.T=T
         self.delta_t=delta_t
@@ -20,7 +21,8 @@ class allegroKinematics:
         rp = RosPack()
         packages = rp.list()
         path = rp.get_path('urlg_robots_description')
-        path= path + '/urdf/allegro_right/allegro_hand_description_right.urdf'
+        path='../urdf/allegro.urdf'
+        #path= path + '/urdf/allegro_right/allegro_hand_description_right.urdf'
         self.kdlModel=handModel.HandSimpleModel(path)
         low_bounds=[]
         up_bounds=[]
@@ -42,7 +44,44 @@ class allegroKinematics:
         f_T_o[0:3,0:3]=f_R_t
         f_T_o[0:3,3]=D
         return np.matrix(f_T_o)
-    
+        
+    def update_object_frame(self,f_T_o,joints,finger=3):
+        t_T_f=self.end_effector_pose(joints[finger*4:finger*4+4],finger)
+        object_frames=[[np.eye(4)]for i in range(4)]
+        inv_object_frames=[[np.eye(4)]for i in range(4)]
+        object_frames[finger]=f_T_o
+        inv_object_frames[finger]=inv(f_T_o)
+        fingers=self.fingers[self.fingers!=finger]
+        for i in fingers:            
+            # Creating frames for other fingers:
+            i_T_o=inv(np.matrix(self.end_effector_pose(joints[i*4:i*4+4],i)))*np.matrix(t_T_f)*np.matrix(f_T_o)
+            object_frames[i]=np.matrix(i_T_o)
+            inv_object_frames[i]=inv(np.matrix(i_T_o))
+
+        finger_dist=[[0.0,0.0,0.0] for i in range(self.FINGERS)]
+        
+        # Yaw angle constant:
+        yaw_rig=np.zeros((self.FINGERS,self.FINGERS))
+        orient_rig=[np.zeros(3) for i in range(self.FINGERS)]
+
+        u=joints
+        i=finger
+        for k in self.fingers:
+            T_mat=inv(self.end_effector_pose(u[i*self.DOF:i*self.DOF+self.DOF],i))*self.end_effector_pose(u[k*self.DOF:k*self.DOF+self.DOF],k)    
+            diff=np.ravel(T_mat[0:3,3])
+            finger_dist[k]=diff
+            a=self.end_effector_pose_array(u[i*self.DOF:i*self.DOF+self.DOF],i)[3:6]
+            b=self.end_effector_pose_array(u[k*self.DOF:k*self.DOF+self.DOF],k)[3:6]
+            diff_yaw=a-b
+            diff_orient=a-b
+            yaw_rig[i,k]=diff_yaw[1]
+            orient_rig[k]=diff_orient
+        self.finger_dist=finger_dist
+        self.inv_object_frames=inv_object_frames
+        self.yaw_rig=yaw_rig
+        self.orient_rig=orient_rig
+        return object_frames
+
     def add_object_frame(self,D,joints,finger=3):
         # Adds object frame at a distance D from finger 0 and creates frame transformations to this frame from other fingertips
         f_T_o=self.object_frame_init(D,joints,finger) 
@@ -241,11 +280,11 @@ class allegroKinematics:
         return J
 
     def predict_xdot(self,x,u):
-        noise=0.0#np.random.standard_normal(size=u.shape)*0.00001
-        
-        #print noise
-        x_new=(u)+noise
-        
+        # given the current object pose and the new input, find the velcity
+        #des_finger_pose=np.ravel(self.linear_finger_poses[t_step])
+        x_pose=self.end_effector_pose_array(u[3*4:3*4+4],3)
+        x_dot=(x-x_pose)/self.delta_t
+        x_new=x_dot
         return x_new
 
     # Adding functions to compute object_pose_cost

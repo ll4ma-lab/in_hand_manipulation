@@ -4,7 +4,6 @@ from numpy.linalg import inv
 import PyKDL
 
 def cost(x_des,u,dyn_model,t_step=-1): 
-    print dyn_model
     wr=dyn_model.wr
     wo=dyn_model.wo
     wl=dyn_model.wl

@@ -25,6 +25,25 @@ def interpolate():
     
     f.close()
 
+def write_pre_plan(pos_array,f_name):
+    #t=len(pos_array)-1
+    #T=10
+    #dt=T/t
+    #new_traj=np.zeros((T,16))
+    '''
+    for i in range(len(pos_array)-1):
+        for k in range(len(pos_array[i])):
+            new_traj[i*dt:i*dt+dt,k]=np.linspace(pos_array[i,k],pos_array[i+1,k],dt)
+    '''
+    f=open(f_name,"w")
+    for i in range(0,len(pos_array)):
+        for k in range(16):
+            f.write(str(pos_array[i,k]))
+            f.write(' ')
+        f.write('\n')
+    
+    f.close()
+    
 def interpolate_joints(pos_array,f_name):
     t=len(pos_array)-1
     T=100

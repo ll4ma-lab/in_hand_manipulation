@@ -3,7 +3,7 @@ import numpy as np
 #import pathos
 #from pathos.pools import ThreadPool as TPool
 #import psutil
-
+#from multiprocessing import Pool
 class OptFns:
     def __init__(self,immediate_cost,final_cost,grad,grad_final,robot_model,x_d,x0):
         self.eps=1e-15
@@ -31,9 +31,9 @@ class OptFns:
         x_d - desired trajectory
         dyn_model - model simulating system dynamics of the form x[k+1] = dyn_model.predict(x[k], u[k])
         '''
-    
+
         x,u=self.get_x_u_from_q(q)
-        #m=self.robot.m
+
         cost=0.0
         x_d=self.x_d
         u_arr=u[1:-1]
@@ -47,7 +47,7 @@ class OptFns:
         #cost_arr=map(self.multi_cost,data_arr)
         cost_arr=[self.multi_cost(k) for k in data_arr]
         cost=sum(cost_arr)
-
+        #print cost
         cost+=self.final_cost(x_d[-1],u[-1],self.robot)
 
         #print cost
@@ -76,9 +76,10 @@ class OptFns:
 
         data_arr=np.concatenate((x_d_arr,u_arr),axis=1)
         data_arr=list(np.concatenate((data_arr,t),axis=1))
+        #sc_pool=TPool()
 
-        #gradient_arr=map(self.multi_gradient,data_arr)
-        gradient_arr=[self.multi_gradient(k) for k in data_arr]
+        gradient_arr=[self.multi_gradient(data) for data in data_arr]
+        #gradient_ar=rp[self.multi_gradient(k) for k in data_arr]
         gradient=np.ravel(gradient_arr)
 
         gradient=np.append(gradient,self.gradient_final(x_d[-1],u[-1],self.robot))

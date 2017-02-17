@@ -8,6 +8,7 @@ from subprocess import Popen
 import subprocess
 import numpy as np
 import copy
+import PyKDL
 class robotStates:
     def __init__(self,node_name='allegro_node',publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right',rate=100.0,listen_aruco=False,clock_bag=False):
         rospy.init_node(node_name)
@@ -80,6 +81,32 @@ class robotStates:
         cmd=cmd_args
         proc=Popen(cmd,stdout=subprocess.PIPE)
         return proc
+    def tf_find_T_mat(self,target_frame,base_frame):
+        got_tf=False
+        if (self.clock_bag):
+            time=copy.deepcopy(self.clock)
+        else:
+            time=copy.deepcopy(rospy.Time(0))
+
+        time=copy.deepcopy(rospy.Time(0))
+        (trans_2,rot_2)= self.listener.lookupTransform(base_frame, target_frame, rospy.Time(0))
+        final_pose=np.zeros(6)
+        final_pose[0:3]=trans_2
+        final_pose[3:6]=tf.transformations.euler_from_quaternion(rot_2)
+        f_T_o=np.eye(4)
+        # Match initial rotation to palm fram
+        R=PyKDL.Rotation()
+        R=R.RPY(final_pose[3],final_pose[4],final_pose[5])
+        for k in range(3):
+            for l in range(3):
+                f_T_o[k,l]=R[k,l]
+        f_T_o[0:3,3]=final_pose[0:3]
+
+        got_tf=True
+        #print 'tf'
+    
+        return f_T_o
+
     def tf_find_transform(self,target_frame,base_frame='palm_link'):
         got_tf=False
         if (self.clock_bag):

@@ -8,9 +8,9 @@ import signal
 import time
 import sys
 n_trials=5
-MAKE_TRIAL_LIST=True
-ARUCO_=True
-RECORD_VIDEO_=True
+MAKE_TRIAL_LIST=False
+ARUCO_=False
+RECORD_VIDEO_=False
 
 #EXP_NAME='exp_1_waypoint'
 def read_objects(file,folder):
@@ -20,16 +20,23 @@ def read_objects(file,folder):
 
 if __name__=='__main__':
     method=sys.argv[1]
-    f_name='../data/trajectories/exp_2_'+method+'_solution.csv'
-    trial_name=method+'_general.csv'
+    f_name='../data/trajectories/debug_'+method+'_solution.csv'
+    trial_name=method+'_deb.csv'
     folder='../data/trials/'
-    traj_folder='../data/trajectories/general/'+method+'/'
-    
-   
+    #traj_folder='../data/trajectories/reachable_poses/'+method+'/'
+    traj_folder='../data/trajectories/debug/'
+    if(MAKE_TRIAL_LIST):
+        ''' RUN only once'''
+        # read file and store as object list
+        obj_=TrajList(f_name,folder)
+        # Make trial list from object list
+        obj_.write_trial_list(n_trials,trial_name)
+        exit()
+
     allegroStates=robot.robotStates(listen_aruco=ARUCO_)   
     # Read trial list
     objects=TrialList(trial_name,folder,n_trials)
-    objects.add_aruco_centroid_locations('../data/object_grasps/object_centroids_4f.csv')
+    #objects.add_aruco_centroid_locations('../data/object_grasps/object_centroids_4f.csv')
 
     repeat=1
     t_no=-1

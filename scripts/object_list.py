@@ -256,6 +256,18 @@ class ObjectList:
                 self.arr.append(ObjectModel(name,grasp,offset,des,fing,i,f_name,folder,initial_pose))
                 i+=1
         print "Read "+str(i)+" objects"
+
+    def add_aruco_centroid_locations(self,f_name):
+        with open(f_name,'r') as csvfile:
+            csvreader=csv.reader(csvfile,delimiter=',',quotechar='"')
+            for row in csvreader:
+                obj_name=row[0]
+                obj_tf=np.array(map(float, row[1].split(',')))
+                for i in range(len(self.arr)):
+                    if(self.arr[i].name==obj_name):
+                        self.arr[i].aruco=obj_tf
+
+    #def add_
     def get_weights(self,file_name):
         with open(file_name,'r') as csvfile:
             row_count = sum(1 for row in csvfile)  

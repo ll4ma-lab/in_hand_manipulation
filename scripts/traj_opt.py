@@ -1,6 +1,6 @@
 #import numpy as np
 import pyOpt_wrapper_manipulator as pyOpt_wrapper
-#import ilqr as ilqr
+#import ilqr_with_x as ilqr
 #import  manipulator_opt_functions as opt_fn
 import  manipulator_opt_functions_time_parsing as opt_fn
 class TrajOpt:
@@ -30,7 +30,7 @@ class TrajOpt:
             controller=ilqr.ILQR(self.robot,self.im_cost,self.fin_cost)
             u_opt,x_opt=controller.controller(self.x0,self.x_des,self.u)
             return u_opt,x_opt
-        ''' 
+        '''
         if(self.control=='SLSQP'):
             controller=pyOpt_wrapper.OptimalController(self.robot,self.opt_fns,self.control,self.opt_options)
             u_opt,x_opt=controller.learn_controller(self.x0,self.x_des,self.u)

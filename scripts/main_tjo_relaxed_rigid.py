@@ -12,9 +12,9 @@ T=10
 
 def main():
     #no=sys.argv[1]
-    method='relaxed-full-linear'
-    file="../data/goal_poses/general_goal_poses.csv"
-    folder_to_write="../data/trajectories/general/"+method+"/"
+    method='relaxed-rigidity'
+    file="../data/trajectories/exp_2_goal_poses.csv"
+    folder_to_write="../data/trajectories/debug/"
     obj_list=ObjectList(file,folder_to_write)  
     obj_list.get_weights('../data/weights/exp_2_relaxed_full.csv')
     print len(obj_list.arr)
@@ -22,15 +22,17 @@ def main():
     sc_pool=Pool()
     sta_t = time.time()
     tr=0
+    obj_list.arr[0].sol=multi_obj(obj_list.arr[0])[0]
+    '''
     for res in sc_pool.imap_unordered(multi_obj,obj_list.arr,chunksize=1):
         row=res
         q=row[-1]
         obj_list.arr[q].sol=row[0]
         tr+=1
-    
+    '''
     elap=time.time()-sta_t
     print "Time to compute(seconds): "+str(elap)
-    obj_list.write_sol_from_tjo("../data/trajectories/general_"+method+"_solution.csv")
+    obj_list.write_sol_from_tjo("../data/trajectories/debug_"+method+"_solution.csv")
 
 def multi_obj(obj):
 
@@ -105,7 +107,7 @@ def multi_obj(obj):
     
 
 
-        interpolate_joints(u_new,obj.folder+obj.f_name)
+        write_pre_plan(u_new,obj.folder+obj.f_name)
         list_arr=[x_final,i_number]
 
         print 'Desired '+str(i_number)
