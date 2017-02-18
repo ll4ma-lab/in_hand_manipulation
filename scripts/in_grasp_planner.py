@@ -12,7 +12,7 @@ import sys
 import numpy as np
 from object_list import *
 delta_t=1.0/60.0
-T=5
+T=10
 import robot_node as robot
 
 class Grasp:
@@ -60,15 +60,15 @@ class inGraspPlanner:
         self.max_iter=obj.weights[4]
         #print obj.weights
     
-    def interpolate_joints(self,pos_array):
+    def interpolate_joints(self,pos_array,H):
         t=len(pos_array)-1
-        T_=100
+        T_=H*10
         dt=T_/t
         new_traj=np.zeros((T_,16))
-
         for i in range(len(pos_array)-1):
             for k in range(len(pos_array[i])):
                 new_traj[i*dt:i*dt+dt,k]=np.linspace(pos_array[i,k],pos_array[i+1,k],dt)
+        
         return new_traj
 
     def update_pre_plan(self,interpolated_plan):
@@ -78,8 +78,8 @@ class inGraspPlanner:
                 pre_plan[i/10]=interpolated_plan[i]
                 self.pre_plan=pre_plan[0:T]
     
-    def plan(self,obj_des):
-        #self.robot_model.T=T
+    def plan(self,obj_des,H=10):
+        self.robot_model.T=H
         # Setup SNOPT:
         # Input to the optimization by the user
         u0=self.robot_model.joints.copy()
@@ -104,7 +104,7 @@ class inGraspPlanner:
         # sampling object pose:
         linear_poses=[]
         for i in range(T):
-            sample_pose=x0+(x_des-x0)*float(i)/T
+            sample_pose=x0+(x_des-x0)*float(i)/H
             # Building transformation matrix:
             x_des_mat=np.eye(4)
             x_des_mat[0:3,3]=sample_pose[0:3]
@@ -117,10 +117,15 @@ class inGraspPlanner:
         
 
         self.robot_model.linear_finger_poses=linear_poses
-        u_input=np.array([joints.copy() for k in range(T+1)]) 
-        u_input[1:]=self.pre_plan
+        
+        u_input=np.array([joints.copy() for k in range(H+1)])
+        
+        u_input[1:]=self.pre_plan[-H:]
+        if(H<=4):
+            u_input=np.array([joints.copy() for k in range(H+1)])
+
         #u_input[0]=joints.copy()
-        x_d=np.array(list(np.array([x_des for k in range(T)])))
+        x_d=np.array(list(np.array([x_des for k in range(H)])))
 
         robot_model=self.robot_model
         opt_options={'Iterations limit':max_iter,'Solution':'No','iPrint':0,'iSumm':0}
@@ -132,9 +137,8 @@ class inGraspPlanner:
         x_final=opta.robot.object_pose(u_new[-1])
         self.pre_plan=u_new[1:]
 
+        joint_traj=self.interpolate_joints(u_new,H)
         
-        joint_traj=self.interpolate_joints(u_new)
-
         print x_des
         print x_final
         
@@ -150,17 +154,22 @@ def main():
     objects.add_aruco_centroid_locations('../data/initial_data/object_grasps/object_centroids.csv')
 
     # Initializing trajectory with previous run:
-    traj_name='../data/trajectories/debug/Lego_0_30'
+    #traj_name='../data/trajectories/debug/Lego_0_30'
+    traj_name='../data/trajectories/debug/Apple_0_0'
     pre_plan=np.loadtxt(open(traj_name,'r'))
     
-    t_no=30#int(raw_input("Enter trajectory number: "))
+    t_no=0#int(raw_input("Enter trajectory number: "))
     obj=objects.arr[t_no]
     print obj.name
-    print obj.aruco
+
 
     # Move robot to initial grasp pose:
     allegroStates.position_mode()
     allegroStates.publish_grasp(obj.grasp)
+    robot_model=allegroKinematics(delta_t,T,fingers=obj.fing)
+    print obj.grasp
+
+
 
     planner=inGraspPlanner()
     planner.update_pre_plan(pre_plan)
@@ -170,23 +179,50 @@ def main():
     P_.append(allegroStates.tf_pose_pub_process(obj.aruco,'obj_ar','ar') )
     P_.append(allegroStates.tf_pose_pub_process(obj.des,'G'))
     P_.append(allegroStates.tf_pose_pub_process(obj.initial_pose,'i') )
+    initial_frame=allegroStates.tf_find_transform('/i','/obj_ar')
+    #palm_rotation=allegroStates.tf_find_transform('/palm_link','/obj_ar')
+    #raw_input('remove initial error')
+    #P_.append(allegroStates.tf_pose_pub_process(initial_frame,'/obj','/obj_ar'))
                 
     raw_input("Confirm object tracking")
     replan=1
+    H=10
+    k=0
     while(replan==1):
         # Update initial grasp
         # Get new robot state:
-        initial_robot_joints=allegroStates.joint_states.position
+        initial_robot_joints=np.array(allegroStates.joint_states.position)
+        vel_offset=np.ones((4,4))
+        tips=['index_tip','middle_tip','ring_tip','thumb_tip']
+        for i in obj.fing:
+            vel_offset[i,0:3]=[2.0,0.0,2.0]*allegroStates.tf_find_transform(tips[i],'/obj_ar')[0:3]
+        p_T_o=allegroStates.tf_find_T_mat('obj_ar','palm_link')
+        #print p_T_o
+        new_grasp=allegroStates.tighten_grasp(initial_robot_joints.copy(),robot_model,p_T_o,vel_offset)
+
         # Get finger object frame:
-        obj_grasp=Grasp(np.array(initial_robot_joints),obj.offset,obj.fing)
+        obj_grasp=Grasp(np.array(new_grasp),obj.offset,obj.fing)
         f_T_o=allegroStates.tf_find_T_mat('obj_ar','thumb_tip')
         planner.update_grasp(obj_grasp,f_T_o)
         planner.update_weights(obj)
-        traj=planner.plan(obj.des)
-        raw_input("Enter to run traj:")
+        sta_t = time.time()
+        
+        traj=planner.plan(obj.des,H)
+        print np.matrix(traj).shape
+        elap=time.time()-sta_t
+        print "Time to compute(seconds): "+str(elap)
+        print "Time horizon: "+str(H)
+        #raw_input("Enter to run traj:")
         # Run traj:
         allegroStates.publish_joint_trajectory(traj[0:10])
-        replan=int(raw_input("Replan with new pose: "))
+        H=H-1
+        if(H<=4):
+            allegroStates.publish_joint_trajectory(traj[10:])
+            H=4
+            k+=1
+        if(k>50):
+            replan=2
+        #replan=int(raw_input("Replan with new pose: "))
 
     for i in P_:
         i.send_signal(subprocess.signal.SIGINT)

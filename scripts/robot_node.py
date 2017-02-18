@@ -48,7 +48,15 @@ class robotStates:
         self.clock=msg.clock#copy.deepcopy(msg.clock)
 
         #print msg
-
+    def tighten_grasp(self,joints,robot_model,p_T_o,vel_offset):
+        u=joints
+        #Moves the fingertips closer to the object centroid using the Jacobian:
+        for i in robot_model.fingers:
+            #print (np.matrix(vel_offset[i]).T).shape
+            J=robot_model.jacobian(joints[i*4:i*4+4],i)
+            vel_vect=-(p_T_o*(np.matrix(vel_offset[i]).T))[0:3]#*vel_offset[i].T*robot_model.delta_t).T #velocity direction
+            u[i*4:i*4+4]=u[i*4:i*4+4]+(J.T*vel_vect*10.0).T #velocity direction
+        return u
     def tf_pose_pub(self,pose,target_frame,base_frame='palm_link'):
         tf_pose=tf.TransformBroadcaster()
         pose=pose.tolist()
