@@ -8,16 +8,18 @@ from numpy.linalg import inv
 from numpy.linalg import pinv
 import PyKDL
 class allegroKinematics:
-    def __init__(self,delta_t,T,fingers=[0,3]):
+    def __init__(self,delta_t,T,fingers=[0,3],fing=3):
         ''' delta_t= timestep
             T= total time steps
             fingers=[0-4],0=index,1=middle,2=ring,3=thumb        
+            The model assumes all fingers have same number of joints.
         '''
         self.n=6
         self.m=4*4
         self.T=T
         self.delta_t=delta_t
         self.fingers=np.array(fingers)
+        self.fing=3
         rp = RosPack()
         packages = rp.list()
         path = rp.get_path('urlg_robots_description')

@@ -35,17 +35,15 @@ class inGraspPlanner:
         joints=grasp.joint_angles
         #obj_name=obj.name
 
-        robot_model=allegroKinematics(delta_t,T,fingers=grasp.contact_fingers)
-        robot_model.joints=joints
+        self.robot_model=allegroKinematics(delta_t,T,fingers=grasp.contact_fingers)
+        self.robot_model.joints=joints.copy()
         #robot_model.object_frames=robot_model.add_object_frame(D,joints,finger=3)
         
-        robot_model.object_frames=robot_model.update_object_frame(finger_object_frame,joints,finger=3)    
-        robot_model.final_obj_dim_weights=np.array([100.0,100.0,100.0,-1.0,-1.0,1.0])
+        self.robot_model.object_frames=self.robot_model.update_object_frame(finger_object_frame,joints,finger=3)    
+        self.robot_model.final_obj_dim_weights=np.array([100.0,100.0,100.0,-1.0,-1.0,1.0])
 
-        robot_model.obj_dim_weights=np.array([100.0,100.0,100.0,1.0,1.0,-1.0])
+        self.robot_model.obj_dim_weights=np.array([100.0,100.0,100.0,1.0,1.0,-1.0])
 
-
-        self.robot_model=robot_model
     def update_weights(self,obj):
         self.robot_model.psi=[0.0,1.0,0.0]
 
@@ -78,7 +76,7 @@ class inGraspPlanner:
                 pre_plan[i/10]=interpolated_plan[i]
                 self.pre_plan=pre_plan[0:T]
     
-    def plan(self,obj_des,H=10):
+    def plan(self,obj_des,H=10,psi=1):
         self.robot_model.T=H
         # Setup SNOPT:
         # Input to the optimization by the user
@@ -88,7 +86,8 @@ class inGraspPlanner:
         # Initial pose of the object:
         x0=self.robot_model.object_pose(joints,3)
         #print x0
-        
+        print x0
+
         
         x_des=obj_des
             
@@ -103,7 +102,7 @@ class inGraspPlanner:
 
         # sampling object pose:
         linear_poses=[]
-        for i in range(T):
+        for i in range(H):
             sample_pose=x0+(x_des-x0)*float(i)/H
             # Building transformation matrix:
             x_des_mat=np.eye(4)
@@ -135,12 +134,12 @@ class inGraspPlanner:
         u_new,_=opta.optimize()  
     
         x_final=opta.robot.object_pose(u_new[-1])
-        self.pre_plan=u_new[1:]
+        self.pre_plan=u_new[psi:]
 
         joint_traj=self.interpolate_joints(u_new,H)
         
-        print x_des
-        print x_final
+        #print x_des
+        #print x_final
         
         return joint_traj
         
@@ -154,11 +153,11 @@ def main():
     objects.add_aruco_centroid_locations('../data/initial_data/object_grasps/object_centroids.csv')
 
     # Initializing trajectory with previous run:
-    #traj_name='../data/trajectories/debug/Lego_0_30'
-    traj_name='../data/trajectories/debug/Apple_0_0'
-    pre_plan=np.loadtxt(open(traj_name,'r'))
+    traj_name='../data/trajectories/debug/Lego_0_30'
+    #traj_name='../data/trajectories/debug/Apple_0_0'
+    pre_plan=np.load('new_plan.npy')#np.loadtxt(open(traj_name,'r'))
     
-    t_no=0#int(raw_input("Enter trajectory number: "))
+    t_no=30#int(raw_input("Enter trajectory number: "))
     obj=objects.arr[t_no]
     print obj.name
 
@@ -179,7 +178,8 @@ def main():
     P_.append(allegroStates.tf_pose_pub_process(obj.aruco,'obj_ar','ar') )
     P_.append(allegroStates.tf_pose_pub_process(obj.des,'G'))
     P_.append(allegroStates.tf_pose_pub_process(obj.initial_pose,'i') )
-    initial_frame=allegroStates.tf_find_transform('/i','/obj_ar')
+    allegroStates.loop_rate.sleep()
+    #initial_frame=allegroStates.tf_find_transform('/i','/obj_ar')
     #palm_rotation=allegroStates.tf_find_transform('/palm_link','/obj_ar')
     #raw_input('remove initial error')
     #P_.append(allegroStates.tf_pose_pub_process(initial_frame,'/obj','/obj_ar'))
@@ -188,42 +188,62 @@ def main():
     replan=1
     H=10
     k=0
+    psi=10
+    vel_gains=[6.0,0.0,6.0]
     while(replan==1):
         # Update initial grasp
         # Get new robot state:
         initial_robot_joints=np.array(allegroStates.joint_states.position)
-        vel_offset=np.ones((4,4))
+        vel_offset=np.zeros((4,4))
         tips=['index_tip','middle_tip','ring_tip','thumb_tip']
+        fing_T_O=np.zeros((4,3))
         for i in obj.fing:
-            vel_offset[i,0:3]=[2.0,0.0,2.0]*allegroStates.tf_find_transform(tips[i],'/obj_ar')[0:3]
+            vel_offset[i,0:3]=vel_gains*allegroStates.tf_find_transform(tips[i],'/obj_ar')[0:3]
+            fing_T_O[i]=allegroStates.tf_find_transform(tips[i],'/obj_ar')[0:3]
         p_T_o=allegroStates.tf_find_T_mat('obj_ar','palm_link')
-        #print p_T_o
+    
         new_grasp=allegroStates.tighten_grasp(initial_robot_joints.copy(),robot_model,p_T_o,vel_offset)
 
         # Get finger object frame:
-        obj_grasp=Grasp(np.array(new_grasp),obj.offset,obj.fing)
+        obj_grasp=Grasp(initial_robot_joints.copy(),obj.offset,obj.fing)
         f_T_o=allegroStates.tf_find_T_mat('obj_ar','thumb_tip')
         planner.update_grasp(obj_grasp,f_T_o)
         planner.update_weights(obj)
         sta_t = time.time()
         
-        traj=planner.plan(obj.des,H)
-        print np.matrix(traj).shape
+        #traj=planner.plan(obj.des,H,psi)
+        #np.save("open_loop_plan",traj)
+        traj=np.load("open_loop_plan.npy")
         elap=time.time()-sta_t
         print "Time to compute(seconds): "+str(elap)
         print "Time horizon: "+str(H)
-        #raw_input("Enter to run traj:")
-        # Run traj:
-        allegroStates.publish_joint_trajectory(traj[0:10])
-        H=H-1
-        if(H<=4):
-            allegroStates.publish_joint_trajectory(traj[10:])
-            H=4
-            k+=1
-        if(k>50):
-            replan=2
-        #replan=int(raw_input("Replan with new pose: "))
+        #if(k==0):
+        new_grasp=allegroStates.tighten_grasp(traj[0],robot_model,p_T_o,vel_offset)
+        allegroStates.publish_grasp(new_grasp)
 
+        tight_traj=allegroStates.tighten_traj(np.array(traj[0:10*psi]).copy(),robot_model,vel_gains,f_T_o,fing_T_O,vel_offset,p_T_o)
+
+        raw_input("run traj")
+        #allegroStates.publish_grasp(tight_traj[0])
+        allegroStates.publish_joint_trajectory(tight_traj)
+
+
+        # check error
+        curr_obj_pose=allegroStates.tf_find_transform('obj_ar')
+        err=np.linalg.norm(curr_obj_pose[0:3]-obj.des[0:3])
+        print err
+        break
+        k+=1
+        
+        if(H<=6):
+            # Tighten the grasp before sending the trajectory
+            k+=1
+            H=7
+            if(err<0.005):
+                replan=2
+        H=H-psi
+        if(k>100):
+            replan=2
     for i in P_:
         i.send_signal(subprocess.signal.SIGINT)
 

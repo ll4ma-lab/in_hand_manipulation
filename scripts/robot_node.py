@@ -47,16 +47,15 @@ class robotStates:
     def clock_callback(self,msg):
         self.clock=msg.clock#copy.deepcopy(msg.clock)
 
-        #print msg
     def tighten_grasp(self,joints,robot_model,p_T_o,vel_offset):
-        u=joints
+        u=np.array(joints).copy()
         #Moves the fingertips closer to the object centroid using the Jacobian:
         for i in robot_model.fingers:
-            #print (np.matrix(vel_offset[i]).T).shape
             J=robot_model.jacobian(joints[i*4:i*4+4],i)
-            vel_vect=-(p_T_o*(np.matrix(vel_offset[i]).T))[0:3]#*vel_offset[i].T*robot_model.delta_t).T #velocity direction
-            u[i*4:i*4+4]=u[i*4:i*4+4]+(J.T*vel_vect*10.0).T #velocity direction
+            vel_vect=-(p_T_o*(np.matrix(vel_offset[i]).T))[0:3] #velocity direction
+            u[i*4:i*4+4]=u[i*4:i*4+4]+(J.T*vel_vect*10.0).T 
         return u
+    
     def tf_pose_pub(self,pose,target_frame,base_frame='palm_link'):
         tf_pose=tf.TransformBroadcaster()
         pose=pose.tolist()
@@ -67,6 +66,20 @@ class robotStates:
                 tf_pose.sendTransform((pose[0],pose[1],pose[2]),tf.transformations.quaternion_from_euler(pose[3],pose[4],pose[5]),rospy.Time.now(),target_frame,base_frame)
                 self.loop_rate.sleep()
             break
+    
+    def tighten_traj(self,joint_traj,robot_model,vel_gains,f_T_O,fing_T_O):
+        new_traj=np.zeros((len(joint_traj),len(joint_traj[0])))
+        for i in range(len(joint_traj)):
+            # Find feed-forward object pose:
+            p_T_thumb=robot_model.end_effector_pose(joint_traj[i][12:16],3)
+            p_T_O=np.matrix(p_T_thumb)*np.matrix(f_T_O) # Palm- thumb tf * thumb- object tf
+            # Compute velocity offset
+            vel_offset=np.zeros((4,4))
+            for j in range(len(fing_T_O)):
+                vel_offset[j,0:3]=vel_gains*fing_T_O[j]
+            new_joints=self.tighten_grasp(joint_traj[i],robot_model,p_T_O,vel_offset)
+            new_traj[i]=new_joints.copy()
+        return new_traj
     
     def tf_pose_pub_process(self,pose,target_frame,base_frame='palm_link',rate=500):
         tf_pose=tf.TransformBroadcaster()
@@ -135,8 +148,6 @@ class robotStates:
     def joint_state_cb(self,joint_state):
         self.joint_states=joint_state
         
-
-
     def publish_grasp(self,joint_pos_arr):
         self.jc.position=joint_pos_arr
         while not rospy.is_shutdown():
@@ -144,6 +155,15 @@ class robotStates:
                 self.robot_joint_cmd_pub.publish(self.jc)
                 self.loop_rate.sleep()
             break
+
+
+    def publish_joint(self,joint_pos_arr):
+        self.jc.position=joint_pos_arr
+        #while not rospy.is_shutdown():
+        for i in range(1):
+            self.robot_joint_cmd_pub.publish(self.jc)
+            self.loop_rate.sleep()
+            #break
     def publish_joint_trajectory(self,joint_pos_traj):
         while not rospy.is_shutdown():
             for i in range(len(joint_pos_traj)):
@@ -151,7 +171,7 @@ class robotStates:
                 self.robot_joint_cmd_pub.publish(self.jc)
                 self.loop_rate.sleep()
             break
-        print 'Finished running trajectory'
+        #print 'Finished running trajectory'
 
     def grav_comp_mode(self):
         sw_value=Int8()
