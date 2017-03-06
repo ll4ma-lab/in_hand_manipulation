@@ -6,4 +6,4 @@ This package performs trajectory optimization to obtain joint space trajectories
 ##### Dataset:
 Currently porting to h5py.
 The dataset would be in the below structure:
-![Alt text](http://www.bitbucket.org)
+![Alt text](/docs/in_grasp_dataset.png)
