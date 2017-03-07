@@ -1,6 +1,6 @@
 # Runs the trajectory on the robot with feedback using ILQR gains.
 import numpy as np
-from robot_node import *
+#from robot_node import *
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 mpl.rcParams['pdf.fonttype'] = 42
@@ -16,7 +16,8 @@ def update_input(curr_state,u,x,k_ff,K):
     u_dot=u-k_ff-np.dot(K,curr_state-x)
     return u_dot
 def main():
-    allegro=robotStates(listen_aruco=False)
+    #allegro=robotStates(listen_aruco=False)
+    allegro=robotSim()
     # Load ilqr gains:
     x=np.load("x.npy")
     u=np.load("u.npy")
@@ -69,7 +70,7 @@ def main():
 
     # Plot error:
     #x_err=abs(des_x-curr_x)
-    np.save('raw.npy',curr_x)
+    np.save('r aw.npy',curr_x)
     curr_x=np.matrix(curr_x)
     plt.plot(range(len(curr_x)), curr_x)
     #plt.plot(time_, curr_x)
