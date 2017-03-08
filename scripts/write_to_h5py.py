@@ -23,10 +23,11 @@ each dataset is a grasp
 
 
 def read_objects():
-    method=sys.argv[1]
-    f_name='../data/trajectories/general_'+method+'_solution.csv'
-    trial_name=method+'_general.csv'
+    method='relaxed-rigidity'
+    f_name='../data/trajectories/reachable_poses/'+method+'.csv'
+    trial_name=method+'.csv'
     folder='../data/trials/'
+    n_trials=5
         
     objects=TrialList(trial_name,folder,n_trials)
     return objects
@@ -35,30 +36,57 @@ objects=read_objects()
 
 
 
-f=h5py.File("rss_data.hdf5","w")
+f=h5py.File("../data/rss_data.hdf5","w")
+method='relaxed-rigidity'
+traj_folder='../data/trajectories/reachable_poses/'+method+'/'
+n_methods=len(method)
 #odset=f.create_dataset("in_grasp_dataset",(),dtype='i')
+n_traj=50 # number of trajectories per object
 n_trials=5
-n_traj=5
-for i in range(len(objects.arr)):
-    obj=object.arr[i]
+prev_name='temp'
+i=0
+rig_fing=np.ravel([3,-1,-1,-1])
+while i<len(objects.arr):
+    obj=objects.arr[i]
     obj_name=obj.name
+    if(prev_name!=obj_name):
+        print obj_name
+        print i
+        prev_name=obj_name
+        # create a new group
+        new_object=f.create_group(obj_name)
+        # create dataset for the new object 
+        # Each dataset entry stores a desired pose and its trajectory.
+        data=new_object.create_dataset("data",(n_traj,),grasp_type)
+
+    # Read from traj file:
+    traj=np.loadtxt(open(traj_folder+obj.f_name,'r'))
+    
+    # TODO: use kdl to get obj traj
+    obj_traj=np.zeros((100,6))
+
+    # This data needs to be stored per method of trajectory generation, currently it only stores one method.
+    # TODO: add all other cost formulations to this dataset
+    K=np.zeros((100,16,16))
+    k_ff=np.zeros((100,6))
+    x=np.zeros((100,16))
+    u=np.zeros((100,16))
+    
+    ilqr_data=np.array([K,k_ff,x,u],dtype=ilqr_type)    
     j=0
-    for j in range(n_traj):
-        data=np.array([
-        j+=1
+    trials=[]
+    for j in range(n_trials):
+        # Add dataset data:
+        trial_data=np.array([(np.ravel(objects.arr[i].reached))],dtype=trial_type)
+        trials.append(trial_data)
         i+=1
-# Create a group for each object:
-apple=f.create_group("apple")
-# Create a dataset for each grasp:
+    trials=np.array(trials,dtype=trial_type)    
+    trajectory_data=np.array([method,obj.sol,traj,obj_traj,trials,ilqr_data],dtype=trajectory_type)
+   
+    contact_fingers=np.ravel(obj.fing+[-1]*(4-len(obj.fing)))
+    rigid_offset=np.ravel(list(obj.offset)+list([0.0,0.0,0.0]))
+    grasp_data=np.array([np.ravel(obj.grasp),contact_fingers,rig_fing,rigid_offset,obj.initial_pose,obj.des,trajectory_data],dtype=grasp_type)
 
-grasp=f.create_dataset("grasp",(2,),grasp_type)
+#Close h5py file
+f.close()
 
-grasp["rigid_transform"]=np.zeros(6)
-#grasp.create_group("desired_poses")
-
-# Define data for single object:
-
-
-#print f.name
-
-#objects.create_dataset("
