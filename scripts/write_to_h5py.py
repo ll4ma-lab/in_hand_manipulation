@@ -72,7 +72,7 @@ while i<len(objects.arr):
     x=np.zeros((100,16))
     u=np.zeros((100,16))
     
-    ilqr_data=np.array([K,k_ff,x,u],dtype=ilqr_type)    
+    ilqr_data=np.array([K ,k_ff , x ,u],dtype=ilqr_type)    
     j=0
     trials=[]
     for j in range(n_trials):
@@ -86,7 +86,7 @@ while i<len(objects.arr):
     contact_fingers=np.ravel(obj.fing+[-1]*(4-len(obj.fing)))
     rigid_offset=np.ravel(list(obj.offset)+list([0.0,0.0,0.0]))
     grasp_data=np.array([np.ravel(obj.grasp),contact_fingers,rig_fing,rigid_offset,obj.initial_pose,obj.des,trajectory_data],dtype=grasp_type)
-
+    #data[i%5]=grasp_data
 #Close h5py file
 f.close()
 

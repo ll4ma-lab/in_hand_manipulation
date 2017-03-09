@@ -4,6 +4,12 @@ import csv
 import copy
 #import PyKDL
 
+'''
+class Dataset:
+    def __init__(self):
+    def 
+'''
+
 class ObjectReachList:
     '''
     Initialized with initial grasp and offset and desired thumb pose to get goal pose of object
@@ -165,9 +171,13 @@ class TrialList:
     def get_traj_list(self,n_trials):
         obj=[]
         # Get trajectories from trials without the reached pose
+        j=0
         for i in range(len(self.arr)):
             if i%n_trials==0:
+                
+                self.arr[i].row=j
                 obj.append(self.arr[i])
+                j+=1
         return obj
 
     def write_traj_list(self,f_name,traj_list):

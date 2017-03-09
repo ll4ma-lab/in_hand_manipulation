@@ -12,10 +12,11 @@ class SimAllegroJoint:
     def get_x_dot(self,x,u):
         x_dot=u
         return x_dot
-
+'''
 class robotSim:
     def __init__(self,dt):
 
     def publish_grasp(self,u):
         # Initial grasp
         
+'''

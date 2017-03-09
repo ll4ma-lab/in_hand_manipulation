@@ -162,7 +162,7 @@ class ILQR:
 
                 # Calculate parameters:
                 # Parallelizing:
-                sc_pool=TPool(2)
+                sc_pool=TPool(1)
                 data_arr=[]
                 for k in range(self.T):
                     data_arr.append([x_des[k],x[k],u[k],k])
@@ -231,7 +231,7 @@ class ILQR:
                 x_new_arr[t+1]=x_new_arr[t]+self.robot.sim.get_x_dot(x_new_arr[t],u_new[t])*self.delta_t
             cost_new+=self.l_final(x_des[-1],x_new_arr[-1],u[-1],self.robot)
 
-            print "new_cost "+str(cost_new)
+            #print "new_cost "+str(cost_new)
             if(cost_new<cost):
                 lamb/=self.lamb_factor
                 x=x_new_arr
@@ -240,7 +240,7 @@ class ILQR:
                 cost=cost_new
                 sim_new_trajectory=True
                 if(ii>0 and (abs(cost-old_cost)/cost<self.eps_converge)):
-                    print 'Converged'
+                    #print 'Converged'
                     break
             else:
                 lamb*=self.lamb_factor
