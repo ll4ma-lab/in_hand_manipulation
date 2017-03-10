@@ -8,21 +8,20 @@ import pathos
 from pathos.pools import ThreadPool as TPool
 
 class ILQR:
-    def __init__(self,robot_model,cost,cost_gradient,final_cost,final_cost_gradient):
+    def __init__(self,robot_model,cost,final_cost):
         self.robot=robot_model
         self.n=robot_model.n
         self.m=robot_model.m
         self.T=robot_model.T
         self.delta_t=robot_model.delta_t
         self.lamb_factor=np.sqrt(10.0)
-        self.lamb_max=1e10
-        self.max_iter=1000
-        self.eps_converge=1e-5
+        self.lamb_max=1e5
+        self.max_iter=50
+        self.eps_converge=1e-3
         self.eps=1e-3
         self.cost=cost
         self.l_final=final_cost
-        
-        
+
     
     def final_cost_fd(self,x_des,x,u):
         # This final cost method uses finite differences to generate derivatives
@@ -128,7 +127,7 @@ class ILQR:
         x=data[1]
         u=data[2]
         l,l_x,l_xx,l_u,l_uu,l_ux=self.cost_fd(x_des,x,u)
-        
+        # TODO: Add actual dynamics:
         A,B=self.finite_differences(np.ravel(x.T),np.ravel(u))
         #A,B=self.robot.linearized_AB(np.ravel(x[self.robot.T-k-1,:]),np.ravel(u[self.robot.T-k-1]))
         f_x=np.eye(self.n,self.n)+A*self.delta_t
@@ -162,12 +161,12 @@ class ILQR:
 
                 # Calculate parameters:
                 # Parallelizing:
-                sc_pool=TPool(1)
+                #sc_pool=TPool(1)
                 data_arr=[]
                 for k in range(self.T):
                     data_arr.append([x_des[k],x[k],u[k],k])
                 
-                for res in sc_pool.map(self.forward_simulation,data_arr,chunksize=1):
+                for res in map(self.forward_simulation,data_arr):
                     k=res[-1]
                     l[k]=res[0]
                     l_x[k]=res[1]
@@ -240,12 +239,12 @@ class ILQR:
                 cost=cost_new
                 sim_new_trajectory=True
                 if(ii>0 and (abs(cost-old_cost)/cost<self.eps_converge)):
-                    #print 'Converged'
+                    print 'Converged'
                     break
             else:
                 lamb*=self.lamb_factor
                 if(lamb>self.lamb_max):
-                    print " No convergence "+str(np.log(lamb))+" iter: "+str(ii)
+                    print " No convergence "+str(cost_new)+" iter: "+str(ii)
                     break
         # Writing torques to file:
         '''

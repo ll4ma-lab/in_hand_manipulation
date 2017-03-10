@@ -169,7 +169,7 @@ def main():
         x_des_mat[0:3,3]=sample_pose[0:3]
         linear_poses.append(sample_pose)
 
-    # update goal pose:
+    # Update goal pose:
 
     # Move robot to initial grasp pose:
     allegroStates.position_mode()
