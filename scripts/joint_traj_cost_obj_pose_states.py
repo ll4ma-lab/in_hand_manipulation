@@ -4,6 +4,7 @@ ILQR is formulated in the velocity domain. i.e. The input to the robot is a join
 Author: bala@cs.utah.edu
 '''
 #TODO: Formulate first and second order analytic gradients and compare computation efficiency
+
 import numpy as np
 from numpy.linalg import inv
 import PyKDL

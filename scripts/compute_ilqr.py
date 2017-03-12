@@ -67,7 +67,7 @@ def compute_gains_in_grasp(obj):
     #Weights:
     robot_model.w_x=2.0
     robot_model.w_u=0.0001
-    robot_model.w_theta=0.5
+    robot_model.w_theta=1.0
     robot_model.n=robot_model.m+6
     ilqr=ILQR(robot_model,cost,final_cost)
     method='relaxed-rigidity'

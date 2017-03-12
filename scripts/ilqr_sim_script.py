@@ -74,40 +74,44 @@ def sim_robot(obj):
     x_des=des_traj#obj.open_loop_joint_traj
     #x_des=des_traj[:][17]
     obj_des=[]
-    index=1
+    index=19
     for i in range(1,99):
         t=i
+        # Get updated input  from ilqr controller:
         u_dot=update_input(x_new,u[t],x[t],k_ff[t],K[t])
-        # Compute new position based on velocity and loop rate
-        #print u_dot
-        u_new=u_dot*dt#x_new[0:16]+u_dot*dt
-        #print x_des[t][:16]
-        #print x_new
-        #raw_input()
 
-        #curr_x.append(np.linalg.norm(x[t][:16]-x_new[:16]))
+        # For debugging robot simulator, uncomment below line:
+        #u_dot=(x_des[t][:16]-x_new[:16])/dt
+
+        #ILQR outputs a joint velocity with delta_t from robot model used in computing ILQR
+        u_new=u_dot
+
+        # Storing current state and desired state for plotting:
+        # TODO: store in pickle database
         curr_x.append(x_new[index])
         obj_des.append(x_des[t][index])
+
+        # Storing norm error for debugging:
+        #curr_x.append(np.linalg.norm(x[t][:16]-x_new[:16]))
+
+        # Sending new joint command to simulation:
+        # Can be replaced with actual robot, with robot in joint velocity mode:
         x_new=in_grasp_sim.get_next_state(x_new,u_new)
+        
 
-    #print max(curr_x)
-
+    # To correct for final state error, we use the ilqr gains at final state in a feedback controller for 100 timesteps, think of it as an integral controller to reduce steady state error
+    
     for i in range(100):
         prev_x=x_new
         t=-1
         u_dot=update_input(x_new,u[t],x[t],k_ff[t],K[t])
-        # Compute new position based on velocity and loop rate
-        
-        #u_new=x[t]#+u_dot*dt
-        u_new=u_dot*dt#x_new[0:16]+u_dot*dt
-                
+        u_new=u_dot
         curr_x.append(x_new[index])
         obj_des.append(x_des[t][index])
         x_new=in_grasp_sim.get_next_state(x_new,u_new)
 
-        #print u_new
-        #allegro.publish_joint(u_new)
 
+    # TODO: Find a good way to plot multidimensional tracking.
     # Plot error:
     #x_err=abs(des_x-curr_x)
     #curr_x=np.ravel(curr_x)
