@@ -38,7 +38,7 @@ def sim_robot(obj):
     
     robot_model.joints=obj.grasp
     robot_model.object_frames=robot_model.update_object_frame(obj_frame,robot_model.joints,finger=3)
-    in_grasp_sim=inGraspSimVel(robot_model,100.0)
+    in_grasp_sim=inGraspSimVel(robot_model,0.6,obj_noise=True,joint_noise=True)
 
     
     # Load ilqr gains:
@@ -72,9 +72,13 @@ def sim_robot(obj):
         des_traj[i][robot_model.m:]=robot_model.object_pose(pre_plan[i])
 
     x_des=des_traj#obj.open_loop_joint_traj
+
     #x_des=des_traj[:][17]
     obj_des=[]
-    index=19
+    index=range(12,22,1)
+    curr_x.append(x_new[index])
+    obj_des.append(x_des[0][index])
+
     for i in range(1,99):
         t=i
         # Get updated input  from ilqr controller:
@@ -96,13 +100,14 @@ def sim_robot(obj):
 
         # Sending new joint command to simulation:
         # Can be replaced with actual robot, with robot in joint velocity mode:
-        x_new=in_grasp_sim.get_next_state(x_new,u_new)
+        
+        x_new=in_grasp_sim.get_next_state(x_new,u_new,err=True)
         
 
     # To correct for final state error, we use the ilqr gains at final state in a feedback controller for 100 timesteps, think of it as an integral controller to reduce steady state error
     
-    for i in range(100):
-        prev_x=x_new
+    for i in range(1000):
+        #prev_x=x_new
         t=-1
         u_dot=update_input(x_new,u[t],x[t],k_ff[t],K[t])
         u_new=u_dot
@@ -113,57 +118,72 @@ def sim_robot(obj):
 
     # TODO: Find a good way to plot multidimensional tracking.
     # Plot error:
-    #x_err=abs(des_x-curr_x)
-    #curr_x=np.ravel(curr_x)
-    #print curr_x[0]
-    plt.plot(range(len(obj_des)),obj_des,label='desired value')
-    plt.plot(range(len(curr_x)),curr_x,label='value from simulation')
-    plt.legend()
+    curr_x=np.matrix(curr_x)
+    obj_des=np.matrix(obj_des)
+    print curr_x.shape
+    plot_pos=[1,2,3,4,5,6,7,9,10,11]
+    row_pos=[0,0,0,0,1,1,1,2,2,2]
+    col_pos=[0,1,2,3,0,1,2,0,1,2]
+    plot_label=['joint-0','joint-1','joint-2','joint-3',
+                'obj-x','obj-y','obj-z','obj-theta_x','obj-theta_y','obj-theta_z']
+    j=0
+    fig, axes = plt.subplots(3, 4,sharex=True,figsize=(20,10))
+    for i in index:
+        ax=axes[row_pos[j]][col_pos[j]]
+        #ax=plt.subplot(3,4,plot_pos[j])
+        ax.plot(range(len(obj_des)),obj_des[:,i-12],label='desired value')
+        ax.plot(range(len(curr_x)),curr_x[:,i-12],label='value from simulation')
+        ax.set_xlabel('timestep')
+        ax.set_ylabel(plot_label[j])
+        j+=1
+    handles, labels = ax.get_legend_handles_labels()
+    fig.legend(handles,labels,loc='upper center', bbox_to_anchor=(0.5, 1.0),ncol=2, fancybox=False, shadow=False)
     
-    #plt.plot(time_, curr_x)
-    plt.show()
+    pad=5
+    rows = ['Thumb \nJoints','Object \n Position','Object\nOrientation']
+    for ax, row in zip(axes[:,0], rows):
+        ax.annotate(row, xy=(0, 0.5), xytext=(-ax.yaxis.labelpad - pad, 0),
+                    xycoords=ax.yaxis.label, textcoords='offset points',
+                    size='large', ha='right', va='center')
 
+    
+    plt.tight_layout()
+    fig.subplots_adjust(left=0.1, top=0.95)
+    plt.show()
+    ind=1
+    fin_idx=len(K)-1
+    vmin=np.min([np.min(K[ind]),np.min(K[fin_idx])])
+    vmax=np.max([np.max(K[ind]),np.max(K[fin_idx])])
+    #fig=plt.figure()
+    fig,ax=plt.subplots(2)#add_subplot(111)
+    cax=ax[0].imshow(K[ind],cmap='plasma',origin='lower',vmin=vmin, vmax=vmax)
+    ax[0].set_xlabel('States')
+    ax[0].set_ylabel('Joint input')
+    ax[0].xaxis.set_ticks(np.arange(0,22, 2.0))
+    ax[0].set_title('K matrix at time= '+str(ind))
+            
+    cax_1=ax[1].imshow(K[fin_idx],cmap='plasma',origin='lower',vmin=vmin, vmax=vmax)
+    ax[1].set_xlabel('States')
+    ax[1].set_ylabel('Joint input')
+    ax[1].xaxis.set_ticks(np.arange(0,22, 2.0))
+    ax[1].set_title('K matrix at time= '+str(fin_idx))
+
+    '''
+    cax=ax[2].imshow(k_ff.T,cmap='plasma',origin='lower')
+    ax[2].set_xlabel('States')
+    ax[2].set_ylabel('Joint input')
+    #ax[2].xaxis.set_ticks(np.arange(0,22, 2.0))
+    '''
+    fig.subplots_adjust(right=0.7)
+    cbar_ax=fig.add_axes([0.85, 0.15, 0.05, 0.7])
+    fig.colorbar(cax, cax=cbar_ax)
+    #fig.tight_layout()
+    plt.show()
+    
 def main():
     # read data from pickle file:
     objects=pickle.load(open("../data/relaxed_rigidity_ilqr_joint.p",'rb'))
     # simulate robot and plot error:
-    sim_robot(objects[0])
-
-def compare_error():
-    raw=np.load('raw.npy')
-    ilqr_err=np.load('ilqr.npy')
-    time_=range(100)
-    # sum errors in all joints:
-    sum_err=np.linalg.norm(raw,axis=1)
-    sum_ilqr_err=np.linalg.norm(ilqr_err,axis=1)
-    ax=plt.plot(range(len(sum_ilqr_err)),sum_err,label='Raw Control')
-    ay=plt.plot(range(len(sum_ilqr_err)),sum_ilqr_err,label='ILQR feedback')
-    plt.title('Trajectory tracking')
-    plt.xlabel('timestep')
-    plt.ylabel('Error norm across all joints')
-    plt.legend()
-    plt.show()
-
-def plot_error():
-    
-    ilqr_err=np.load('ilqr.npy')
-    #time_=range(100)
-    # sum errors in all joints:
-    j=0
-    for i in range(len(ilqr_err[0,:])):
-        if(ilqr_err[-2,i])>0.01:
-            j=i
-            print j
-    
-        
-    ay=plt.plot(range(len(ilqr_err)),ilqr_err[:,j],label='ILQR feedback')
-    plt.title('Trajectory tracking')
-    plt.xlabel('timestep')
-    plt.ylabel('Joint error(rad)')
-    #plt.legend()
-    plt.show()
-
-#compare_error()
-#plot_error()
+    sim_robot(objects[1])
 
 main()

@@ -55,13 +55,14 @@ class inGraspSimVel:
     # states x=[joint_position, object_position]
     # input u=[joint_position_cmd]
     # TODO: Loop rate
-    def __init__(self,robot_model,max_joint_vel,DEBUG=True):
+    def __init__(self,robot_model,max_joint_vel,joint_noise=False,obj_noise=False,DEBUG=False):
         self.robot_model=robot_model
         self.debug=DEBUG
         self.max_joint_vel=max_joint_vel
         self.jointSim=robotSimVel(max_joint_vel,robot_model.delta_t)
         self.x=np.zeros(22)
-
+        self.joint_noise=joint_noise
+        self.obj_noise=obj_noise
     def publish_grasp(self,u):
         # Get new joint positions
         x_theta=u# + error? TODO:make this a velocity?
@@ -70,24 +71,34 @@ class inGraspSimVel:
         x=np.append(x_theta,x_obj)
         return x        
         
-    def get_next_state(self,x,u):                
+    def get_next_state(self,x,u,err=False):                
         # Get new joint positions
         #print u
-        x_theta=self.jointSim.update_state(x[0:16],u)# + error? TODO:make this a velocity?
+        x_theta=self.jointSim.update_state(x[0:16],u)
+        if (self.joint_noise==True and err==True):
+            # Adding Gaussian noise:
+            # normal(mean,std. deviation, array size)
+            x_theta+=np.random.normal(0,1.0,len(x_theta))*0.005
         # Use joint positions to get object pose
-        x_obj=self.robot_model.object_pose(x_theta) # + noise
+        x_obj=x[16:]+(self.robot_model.object_pose(x_theta)-x[16:])*self.robot_model.delta_t
+        if(self.obj_noise==True and err==True):
+            # Adding Gaussian noise:
+            # normal(mean,std. deviation, array size)
+            x_obj+=np.random.normal(0,1.0,len(x_obj))*0.001
         x=np.append(x_theta,x_obj)
         return x
 
     def get_x_dot(self,x,u):
         x_dot=np.zeros(22)
         # theta
-        x_dot[0:16]=u#np.copysign(np.minimum(abs(u),self.max_joint_vel),u)#*self.dt #+ some error model?
+        x_dot[0:16]=u
+        # Since the 
+        #x_dot[12:16]+=
 
         # object
         x_theta_plus_1=self.jointSim.update_state(x[0:16],u)# + error? TODO:make this a velocity?
         
-        x_dot[16:]=self.robot_model.object_pose(x_theta_plus_1)-self.robot_model.object_pose(x[:16])
+        x_dot[16:]=self.robot_model.object_pose(x_theta_plus_1)-x[16:]
         return x_dot
 
         

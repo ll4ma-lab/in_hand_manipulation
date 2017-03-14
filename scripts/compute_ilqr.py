@@ -63,9 +63,9 @@ def compute_gains_in_grasp(obj):
     robot_model.joints=obj.grasp
     robot_model.object_frames=robot_model.update_object_frame(obj_frame,robot_model.joints,finger=3)
 
-    robot_model.sim=inGraspSimVel(robot_model,0.1)
+    robot_model.sim=inGraspSimVel(robot_model,0.6)
     #Weights:
-    robot_model.w_x=2.0
+    robot_model.w_x=20.0
     robot_model.w_u=0.0001
     robot_model.w_theta=1.0
     robot_model.n=robot_model.m+6
@@ -81,6 +81,7 @@ def compute_gains_in_grasp(obj):
         des_traj[i][0:robot_model.m]=np.ravel(pre_plan[i])
         # getting object pose:
         des_traj[i][robot_model.m:]=robot_model.object_pose(pre_plan[i])
+    #des_traj.append(des_traj[-1])
     x0=des_traj[0]
 
     x_des=des_traj

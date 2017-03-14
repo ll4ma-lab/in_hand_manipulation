@@ -15,9 +15,10 @@ def cost(x_des,x,u,dyn_model,t_step=-1):
     w_x=dyn_model.w_x
     w_u=dyn_model.w_u
     w_theta=dyn_model.w_theta
-    obj_cost=w_x*np.square(np.linalg.norm(x_des[dyn_model.m:]-x[dyn_model.m:]))
-    joint_cost=w_theta*np.square(np.linalg.norm(x_des[:dyn_model.m]-x[:dyn_model.m]))
-    input_cost=w_u*np.square(np.linalg.norm(u))
+    #obj_cost=w_x*np.square(np.linalg.norm(np.unwrap(x_des[dyn_model.m:]-x[dyn_model.m:])*np.array([100.0,100.0,100.0,1.0,1.0,1.0])))
+    obj_cost=w_x*np.sum((x_des[dyn_model.m:]-x[dyn_model.m:])**2)
+    joint_cost=w_theta*np.sum((x_des[:dyn_model.m]-x[:dyn_model.m])**2)
+    input_cost=w_u*np.sum(u**2)
     l=obj_cost+joint_cost+input_cost
     return l
 
@@ -46,9 +47,11 @@ def final_cost(x_des,x,u,dyn_model,t_step=-1):
     w_x=dyn_model.w_x
     w_u=dyn_model.w_u
     w_theta=dyn_model.w_theta
-    obj_cost=w_x*np.square(np.linalg.norm(x_des[dyn_model.m:]-x[dyn_model.m:]))
-    joint_cost=w_theta*np.square(np.linalg.norm(x_des[:dyn_model.m]-x[:dyn_model.m]))
-    input_cost=w_u*np.square(np.linalg.norm(u))
+    #obj_cost=w_x*np.square(np.linalg.norm(np.unwrap(x_des[dyn_model.m:]-x[dyn_model.m:])*np.array([100.0,100.0,100.0,1.0,1.0,1.0])))
+    obj_cost=w_x*np.sum((x_des[dyn_model.m:]-x[dyn_model.m:])**2)
+    joint_cost=w_theta*np.sum((x_des[:dyn_model.m]-x[:dyn_model.m])**2)
+    input_cost=w_u*np.sum(u**2)
+
     l=obj_cost+joint_cost+input_cost
     
     return l

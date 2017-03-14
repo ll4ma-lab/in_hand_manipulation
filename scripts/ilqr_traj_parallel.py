@@ -16,7 +16,7 @@ class ILQR:
         self.delta_t=robot_model.delta_t
         self.lamb_factor=np.sqrt(10.0)
         self.lamb_max=1e5
-        self.max_iter=50
+        self.max_iter=1000
         self.eps_converge=1e-3
         self.eps=1e-3
         self.cost=cost
@@ -165,7 +165,7 @@ class ILQR:
                 data_arr=[]
                 for k in range(self.T):
                     data_arr.append([x_des[k],x[k],u[k],k])
-                
+                # Obtain cost, cost derivatives and robot dynamics
                 for res in map(self.forward_simulation,data_arr):
                     k=res[-1]
                     l[k]=res[0]
@@ -194,7 +194,7 @@ class ILQR:
             K=np.zeros((N,self.m,self.n))
 
             # Backward pass:
-            for t in range(N-2,-1,-1):
+            for t in range(N-1,-1,-1):
 
                 Q_uu=l_uu[t]+f_u[t].T*V_xx*f_u[t]
                 
@@ -239,7 +239,7 @@ class ILQR:
                 cost=cost_new
                 sim_new_trajectory=True
                 if(ii>0 and (abs(cost-old_cost)/cost<self.eps_converge)):
-                    print 'Converged'
+                    print 'Converged: '+str(cost_new)
                     break
             else:
                 lamb*=self.lamb_factor
