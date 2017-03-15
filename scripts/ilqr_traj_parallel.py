@@ -161,7 +161,7 @@ class ILQR:
 
                 # Calculate parameters:
                 # Parallelizing:
-                #sc_pool=TPool(1)
+                #sc_pool=TPool()
                 data_arr=[]
                 for k in range(self.T):
                     data_arr.append([x_des[k],x[k],u[k],k])

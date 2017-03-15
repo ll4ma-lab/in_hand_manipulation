@@ -40,11 +40,12 @@ class allegroKinematics:
     def object_frame_init(self,D,joints,finger=3):
         t_T_f=self.end_effector_pose(joints[finger*4:finger*4+4],finger)
         t_R_f=t_T_f[0:3,0:3]
-        f_R_t=t_R_f.T
+        f_R_t=inv(t_R_f)
        
         f_T_o=np.eye(4)
         f_T_o[0:3,0:3]=f_R_t
         f_T_o[0:3,3]=D
+
         return np.matrix(f_T_o)
         
     def update_object_frame(self,f_T_o,joints,finger=3):
@@ -69,7 +70,7 @@ class allegroKinematics:
         u=joints
         i=finger
         for k in self.fingers:
-            T_mat=inv(self.end_effector_pose(u[i*self.DOF:i*self.DOF+self.DOF],i))*self.end_effector_pose(u[k*self.DOF:k*self.DOF+self.DOF],k)    
+            T_mat=(self.end_effector_pose(u[i*self.DOF:i*self.DOF+self.DOF],i))*self.end_effector_pose(u[k*self.DOF:k*self.DOF+self.DOF],k)    
             diff=np.ravel(T_mat[0:3,3])
             finger_dist[k]=diff
             a=self.end_effector_pose_array(u[i*self.DOF:i*self.DOF+self.DOF],i)[3:6]
@@ -104,11 +105,10 @@ class allegroKinematics:
         # Yaw angle constant:
         yaw_rig=np.zeros((self.FINGERS,self.FINGERS))
         orient_rig=[np.zeros(3) for i in range(self.FINGERS)]
-
         u=joints
         i=finger
         for k in self.fingers:
-            T_mat=inv(self.end_effector_pose(u[i*self.DOF:i*self.DOF+self.DOF],i))*self.end_effector_pose(u[k*self.DOF:k*self.DOF+self.DOF],k)    
+            T_mat=(self.end_effector_pose(u[i*self.DOF:i*self.DOF+self.DOF],i))*self.end_effector_pose(u[k*self.DOF:k*self.DOF+self.DOF],k)    
             diff=np.ravel(T_mat[0:3,3])
             finger_dist[k]=diff
             a=self.end_effector_pose_array(u[i*self.DOF:i*self.DOF+self.DOF],i)[3:6]

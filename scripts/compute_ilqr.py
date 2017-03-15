@@ -2,12 +2,14 @@
 Builds the ILQR gain matrices
 '''
 from joint_traj_cost_obj_pose_states import *
+#from cost_relaxed_rigid_obj_sampled_ilqr import *
 from ilqr_traj_parallel import *
 from kdl_allegro_model import *
 from dynamics_sim import *
 import pickle
 from multiprocessing import Pool
 import time
+
 def deinterpolate_pre_plan(interpolated_plan,T):
     pre_plan=np.zeros((10,16))
     for i in range(len(interpolated_plan)):
@@ -62,12 +64,23 @@ def compute_gains_in_grasp(obj):
     obj_frame[0:3,3]=np.ravel(D)
     robot_model.joints=obj.grasp
     robot_model.object_frames=robot_model.update_object_frame(obj_frame,robot_model.joints,finger=3)
+    # Add robot_model values for relaxed rigidity:
+    #robot_model.final_obj_dim_weights=np.array([1.0,1.0,1.0,1.0,1.0,1.0])
+    #robot_model.obj_dim_weights=np.array([1.0,1.0,1.0,1.0,1.0,1.0])
+    #robot_model.psi=[0.0,1.0,0.0]
+    robot_model.wp=0.0#obj.weights[0]
+    robot_model.wr=0.0#obj.weights[1]/float(T)
+    robot_model.wo=0.0#obj.weights[2]/float(T)
+    robot_model.wl=0.0#obj.weights[3]/float(T)
 
-    robot_model.sim=inGraspSimVel(robot_model,0.6)
-    #Weights:
     robot_model.w_x=20.0
     robot_model.w_u=0.0001
     robot_model.w_theta=1.0
+
+
+    
+    robot_model.sim=inGraspSimVel(robot_model,0.6)
+    #Weights:
     robot_model.n=robot_model.m+6
     ilqr=ILQR(robot_model,cost,final_cost)
     method='relaxed-rigidity'
@@ -83,9 +96,22 @@ def compute_gains_in_grasp(obj):
         des_traj[i][robot_model.m:]=robot_model.object_pose(pre_plan[i])
     #des_traj.append(des_traj[-1])
     x0=des_traj[0]
-
-    x_des=des_traj
     
+    x_des=des_traj
+
+
+    x_des_=des_traj[-1][16:]
+    # Storing desired object pose for faster solution:
+    obj_mat=np.eye(4)
+    R=PyKDL.Rotation.RPY(x_des_[3],x_des_[4],x_des_[5])
+    for k in range(3):
+        for i in range(3):
+            obj_mat[k,i]=R[k,i]
+    obj_mat[0:3,3]=x_des_[0:3]
+    robot_model.des_finger_pose=robot_model.object_finger_diff(obj_mat,3)   
+
+    #print x_des_
+    #print x_des[-1][16:]
     u=np.zeros((T,robot_model.m))
     k_ff,K,x_new_arr,u_new=ilqr.controller(x0,x_des,u)
     obj.ilqr_joint_cost_K=K
@@ -93,7 +119,7 @@ def compute_gains_in_grasp(obj):
     obj.ilqr_joint_cost_x=x_new_arr
     obj.ilqr_joint_cost_u=u_new
     #obj.open_loop_joint_traj=pre_plan
-    print obj.row
+    #print obj.row
     return obj
         
 
@@ -103,14 +129,13 @@ def main():
     sta_t = time.time()
     tr=0
     #compute_gains_in_grasp(objects[0])
+
     objects=objects[0:2]
     for res in sc_pool.imap_unordered(compute_gains_in_grasp,objects,chunksize=1):
         objects[res.row]=res
     elap=time.time()-sta_t
     print elap
     pickle.dump(objects,open('../data/relaxed_rigidity_ilqr_joint.p',"wb"))
-   
-
     
 def debug():
     delta_t=1.0/60.0

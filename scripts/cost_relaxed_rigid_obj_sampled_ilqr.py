@@ -7,38 +7,29 @@ def cost(x_des,x,u,dyn_model,t_step=-1):
     wr=dyn_model.wr
     wo=dyn_model.wo
     wl=dyn_model.wl
-    w_u=dyn_model.w_u
-    f0=3
-    l_linear=0.0
-    t_step=int(t_step)
-    joints=x[0:16]
-    if t_step>0:
-        # Adding a cost for linear interpolation of object pose:
-        des_finger_pose=np.ravel(dyn_model.linear_finger_poses[t_step])
-        diff_pose=des_finger_pose-dyn_model.end_effector_pose_array(joints[f0*4:f0*4+4],f0)
-        diff_pose_d=np.unwrap(diff_pose)*dyn_model.obj_dim_weights
-        l_linear=wl*np.dot(diff_pose_d,diff_pose_d) 
 
+    w_x=dyn_model.w_x
+    w_u=dyn_model.w_u
+    w_theta=dyn_model.w_theta
+    joints=x[:16]
+    f0=3
     # distance cost:
     l_f=0.0
     l_orient=0.0
     finger_arr=dyn_model.fingers[dyn_model.fingers!=f0]
     for i in finger_arr:
-        T_mat=inv(dyn_model.end_effector_pose(joints[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0))*dyn_model.end_effector_pose(joints[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)
-        dist=np.ravel(T_mat[0:3,3])-dyn_model.finger_dist[i]
-        l_f+=wr*(np.dot(dist,dist))
-        # orientation cost
-        a=dyn_model.end_effector_pose_array(joints[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0)[3:6]
-        b=dyn_model.end_effector_pose_array(joints[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)[3:6]
-        diff=a-b
-        diff[2]=0.0
-        diff[0]=0.0
-        diff[1]=diff[1]-dyn_model.yaw_rig[f0,i]
-        l_orient+=wo*(np.dot(diff,diff))
+        T_mat=(dyn_model.end_effector_pose(joints[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0))*dyn_model.end_effector_pose(joints[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)
+        dist=(np.ravel(T_mat[0:3,3])-dyn_model.finger_dist[i])**2
+        l_f+=wr*(np.sum(dist))
     input_cost=w_u*np.sum(u**2)
-    l=l_f+l_orient+l_linear+input_cost
-    
+    obj_cost=w_x*np.sum((x_des[dyn_model.m:]-x[dyn_model.m:])**2)
+    joint_cost=w_theta*np.sum((x_des[:dyn_model.m]-x[:dyn_model.m])**2)
+
+    #print input_cost
+    #l=l_f+l_orient+l_linear+input_cost+obj_cost+joint_cost
+    l=input_cost+obj_cost+joint_cost
     return l
+
 '''
 def cost_gradient(x_des,u,dyn_model,t_step=-1):
     wp=dyn_model.wp
@@ -90,42 +81,36 @@ def cost_gradient(x_des,u,dyn_model,t_step=-1):
     return gradient
 '''
 
-def final_cost(x_des,u,dyn_model): 
+def final_cost(x_des,x,u,dyn_model): 
     wp=dyn_model.wp
     wr=dyn_model.wr
     wo=dyn_model.wo
+    w_x=dyn_model.w_x
     w_u=dyn_model.w_u
+    w_theta=dyn_model.w_theta
     l_obj=0.0
     # cost for object pose:
     i=3
-    des_finger_pose=dyn_model.des_finger_pose
-    diff_pose=des_finger_pose-dyn_model.end_effector_pose_array(u[i*4:i*4+4],i)
-    diff_pose_d=np.unwrap(diff_pose)*dyn_model.final_obj_dim_weights
-    l_obj=wp*np.dot(diff_pose_d,diff_pose_d) 
     #print des_finger_pose
     f0=i
+    
     joints=x[0:16]
     # distance cost:
     l_f=0.0
     l_orient=0.0
     finger_arr=dyn_model.fingers[dyn_model.fingers!=f0]#np.delete(dyn_model.fingers,3)
     for i in finger_arr:
-        T_mat=inv(dyn_model.end_effector_pose(joints[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0))*dyn_model.end_effector_pose(joints[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)
-        dist=np.ravel(T_mat[0:3,3])-dyn_model.finger_dist[i]
-        l_f+=wr*(np.dot(dist,dist))
-
-        # orientation cost
-
-
-        a=dyn_model.end_effector_pose_array(joints[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0)[3:6]
-        b=dyn_model.end_effector_pose_array(joints[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)[3:6]
-        diff=a-b
-        diff=np.multiply(diff-dyn_model.orient_rig[i],dyn_model.psi)
-      
-        l_orient+=wo*(np.dot(diff,diff))
+        T_mat=(dyn_model.end_effector_pose(joints[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0))*dyn_model.end_effector_pose(joints[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)
+        dist=(np.ravel(T_mat[0:3,3])-dyn_model.finger_dist[i])**2
+        l_f+=wr*(np.sum(dist))
+        #dist=np.ravel(T_mat[0:3,3])-dyn_model.finger_dist[i]
+        #l_f+=wr*(np.dot(dist,dist))
     input_cost=w_u*np.sum(u**2)
-    l=l_obj+l_f+l_orient+input_cost
+    obj_cost=w_x*np.sum((x_des[dyn_model.m:]-x[dyn_model.m:])**2)
+    joint_cost=w_theta*np.sum((x_des[:dyn_model.m]-x[:dyn_model.m])**2)
     
+    #l=l_obj+l_f+l_orient+input_cost+obj_cost+joint_cost
+    l=input_cost+obj_cost+joint_cost
     return l
 
 '''

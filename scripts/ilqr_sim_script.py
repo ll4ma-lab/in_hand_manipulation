@@ -38,7 +38,7 @@ def sim_robot(obj):
     
     robot_model.joints=obj.grasp
     robot_model.object_frames=robot_model.update_object_frame(obj_frame,robot_model.joints,finger=3)
-    in_grasp_sim=inGraspSimVel(robot_model,0.6,obj_noise=True,joint_noise=True)
+    in_grasp_sim=inGraspSimVel(robot_model,0.6,obj_noise=False,joint_noise=False)
 
     
     # Load ilqr gains:
@@ -106,7 +106,7 @@ def sim_robot(obj):
 
     # To correct for final state error, we use the ilqr gains at final state in a feedback controller for 100 timesteps, think of it as an integral controller to reduce steady state error
     
-    for i in range(1000):
+    for i in range(200):
         #prev_x=x_new
         t=-1
         u_dot=update_input(x_new,u[t],x[t],k_ff[t],K[t])
@@ -151,7 +151,7 @@ def sim_robot(obj):
     fig.subplots_adjust(left=0.1, top=0.95)
     plt.show()
     ind=1
-    fin_idx=len(K)-1
+    fin_idx=99
     vmin=np.min([np.min(K[ind]),np.min(K[fin_idx])])
     vmax=np.max([np.max(K[ind]),np.max(K[fin_idx])])
     #fig=plt.figure()
@@ -166,7 +166,7 @@ def sim_robot(obj):
     ax[1].set_xlabel('States')
     ax[1].set_ylabel('Joint input')
     ax[1].xaxis.set_ticks(np.arange(0,22, 2.0))
-    ax[1].set_title('K matrix at time= '+str(fin_idx))
+    ax[1].set_title('K matrix at time= '+str(fin_idx+1))
 
     '''
     cax=ax[2].imshow(k_ff.T,cmap='plasma',origin='lower')
