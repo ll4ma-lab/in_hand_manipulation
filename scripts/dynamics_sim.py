@@ -84,7 +84,7 @@ class inGraspSimVel:
         if(self.obj_noise==True and err==True):
             # Adding Gaussian noise:
             # normal(mean,std. deviation, array size)
-            x_obj+=np.random.normal(0,1.0,len(x_obj))*0.001
+            x_obj+=np.random.normal(0,1.0,len(x_obj))*0.0005
         x=np.append(x_theta,x_obj)
         return x
 

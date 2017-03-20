@@ -38,7 +38,7 @@ def sim_robot(obj):
     
     robot_model.joints=obj.grasp
     robot_model.object_frames=robot_model.update_object_frame(obj_frame,robot_model.joints,finger=3)
-    in_grasp_sim=inGraspSimVel(robot_model,0.6,obj_noise=False,joint_noise=False)
+    in_grasp_sim=inGraspSimVel(robot_model,0.6,obj_noise=True,joint_noise=False)
 
     
     # Load ilqr gains:
@@ -155,19 +155,19 @@ def sim_robot(obj):
     vmin=np.min([np.min(K[ind]),np.min(K[fin_idx])])
     vmax=np.max([np.max(K[ind]),np.max(K[fin_idx])])
     #fig=plt.figure()
-    fig,ax=plt.subplots(2)#add_subplot(111)
-    cax=ax[0].imshow(K[ind],cmap='plasma',origin='lower',vmin=vmin, vmax=vmax)
-    ax[0].set_xlabel('States')
-    ax[0].set_ylabel('Joint input')
-    ax[0].xaxis.set_ticks(np.arange(0,22, 2.0))
-    ax[0].set_title('K matrix at time= '+str(ind))
-            
+    fig,ax=plt.subplots(1)#add_subplot(111)
+    cax=ax.imshow(K[ind],cmap='plasma',origin='lower',vmin=vmin, vmax=vmax)
+    ax.set_xlabel('States')
+    ax.set_ylabel('Joint input')
+    ax.xaxis.set_ticks(np.arange(0,22, 2.0))
+    ax.set_title('K matrix at time= '+str(ind))
+    '''
     cax_1=ax[1].imshow(K[fin_idx],cmap='plasma',origin='lower',vmin=vmin, vmax=vmax)
     ax[1].set_xlabel('States')
     ax[1].set_ylabel('Joint input')
     ax[1].xaxis.set_ticks(np.arange(0,22, 2.0))
     ax[1].set_title('K matrix at time= '+str(fin_idx+1))
-
+    '''
     '''
     cax=ax[2].imshow(k_ff.T,cmap='plasma',origin='lower')
     ax[2].set_xlabel('States')
@@ -181,6 +181,8 @@ def sim_robot(obj):
     plt.show()
     
 def main():
+    plt.style.use('seaborn-poster')
+
     # read data from pickle file:
     objects=pickle.load(open("../data/relaxed_rigidity_ilqr_joint.p",'rb'))
     # simulate robot and plot error:
