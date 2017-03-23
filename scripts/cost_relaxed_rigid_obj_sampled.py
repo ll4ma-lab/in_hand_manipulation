@@ -22,7 +22,7 @@ def cost(x_des,u,dyn_model,t_step=-1):
     l_orient=0.0
     finger_arr=dyn_model.fingers[dyn_model.fingers!=f0]
     for i in finger_arr:
-        T_mat=inv(dyn_model.end_effector_pose(u[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0))*dyn_model.end_effector_pose(u[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)
+        T_mat=(dyn_model.end_effector_pose(u[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0))*dyn_model.end_effector_pose(u[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)
         dist=np.ravel(T_mat[0:3,3])-dyn_model.finger_dist[i]
         l_f+=wr*(np.dot(dist,dist))
         # orientation cost
@@ -60,9 +60,9 @@ def cost_gradient(x_des,u,dyn_model,t_step=-1):
     for i in finger_arr:
 
         f0_mat=dyn_model.end_effector_pose(u[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0)
-        inv_f0=inv(f0_mat)
+        inv_f0=(f0_mat)
         f1_mat=dyn_model.end_effector_pose(u[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)
-        inv_f1=inv(f1_mat)
+        inv_f1=(f1_mat)
         T_mat=inv_f0*f1_mat
         dist=np.ravel(T_mat[0:3,3])-dyn_model.finger_dist[i]
         const_vec=wr*2.0*dist*dyn_model.obj_dim_weights[0:3]
@@ -105,7 +105,7 @@ def final_cost(x_des,u,dyn_model):
     l_orient=0.0
     finger_arr=dyn_model.fingers[dyn_model.fingers!=f0]#np.delete(dyn_model.fingers,3)
     for i in finger_arr:
-        T_mat=inv(dyn_model.end_effector_pose(u[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0))*dyn_model.end_effector_pose(u[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)
+        T_mat=(dyn_model.end_effector_pose(u[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0))*dyn_model.end_effector_pose(u[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)
         dist=np.ravel(T_mat[0:3,3])-dyn_model.finger_dist[i]
         l_f+=wr*(np.dot(dist,dist))
 
@@ -151,9 +151,9 @@ def final_cost_gradient(x_des,u,dyn_model):
     finger_arr=dyn_model.fingers[dyn_model.fingers!=f0]#np.delete(dyn_model.fingers,3)
     for i in finger_arr:
         f0_mat=dyn_model.end_effector_pose(u[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0)
-        inv_f0=inv(f0_mat)
+        inv_f0=(f0_mat)
         f1_mat=dyn_model.end_effector_pose(u[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)
-        inv_f1=inv(f1_mat)
+        inv_f1=(f1_mat)
         T_mat=inv_f0*f1_mat
         dist=np.ravel(T_mat[0:3,3])-dyn_model.finger_dist[i]
         const_vec=wr*2.0*dist*dyn_model.obj_dim_weights[0:3]
@@ -178,7 +178,7 @@ def final_cost_gradient(x_des,u,dyn_model):
         
     gradient=gradient_fk
     return gradient
-
+'''
 def cost_terms(u_joints,dyn_model): 
     f0=3
     l_linear=0.0
@@ -239,3 +239,4 @@ def cost_terms(u_joints,dyn_model):
 
     return l_f,l_orient,l_linear,l_obj
 
+'''

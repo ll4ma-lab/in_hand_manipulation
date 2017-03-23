@@ -44,24 +44,30 @@ def write_pre_plan(pos_array,f_name):
     
     f.close()
     
-def interpolate_joints(pos_array,f_name):
+def interpolate_joints(pos_array,f_name,write_to_file=True):
     t=len(pos_array)-1
     T=100
     dt=T/t
     new_traj=np.zeros((T,16))
+    for k in range(len(pos_array[0])):
+        new_traj[0:dt,k]=np.linspace(pos_array[0,k],pos_array[1,k],dt)
 
-    for i in range(len(pos_array)-1):
+    for i in range(1,len(pos_array)-1):
+        print str(i)+' '+str(i+1)
         for k in range(len(pos_array[i])):
-            new_traj[i*dt:i*dt+dt,k]=np.linspace(pos_array[i,k],pos_array[i+1,k],dt)
+            new_traj[i*dt-1:i*dt+dt,k]=np.linspace(pos_array[i,k],pos_array[i+1,k],dt+1)
 
-    f=open(f_name,"w")
-    for i in range(0,T):
-        for k in range(16):
-            f.write(str(new_traj[i,k]))
-            f.write(' ')
-        f.write('\n')
+    if(write_to_file):
+        f=open(f_name,"w")
+        for i in range(0,T):
+            for k in range(16):
+                f.write(str(new_traj[i,k]))
+                f.write(' ')
+            f.write('\n')
     
-    f.close()
+        f.close()
+    else:
+        return new_traj
 
 def interpolate_traj(pos_array,T):
     t=len(pos_array)-1
@@ -73,3 +79,13 @@ def interpolate_traj(pos_array,T):
             new_traj[i*dt:i*dt+dt,k]=np.linspace(pos_array[i,k],pos_array[i+1,k],dt)
     return new_traj
 
+def deinterpolate_pre_plan(interpolated_plan,T,init_joints):
+    pre_plan=np.zeros((11,16))
+    #pre_plan[0]=init_joints
+    for i in range(len(interpolated_plan)):
+        if(i%10==0):
+            #print i
+            pre_plan[(i/10)]=interpolated_plan[i]
+            #pre_plan=pre_plan[0:T]
+    pre_plan[-1]=interpolated_plan[-1]
+    return pre_plan
