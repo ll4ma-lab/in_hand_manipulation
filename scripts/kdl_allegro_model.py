@@ -8,7 +8,7 @@ from numpy.linalg import inv
 from numpy.linalg import pinv
 import PyKDL
 class allegroKinematics:
-    def __init__(self,delta_t,T,fingers=[0,3],fing=3):
+    def __init__(self,delta_t=1.0/60.0,T=10,fingers=[0,3],fing=3):
         ''' delta_t= timestep
             T= total time steps
             fingers=[0-4],0=index,1=middle,2=ring,3=thumb        

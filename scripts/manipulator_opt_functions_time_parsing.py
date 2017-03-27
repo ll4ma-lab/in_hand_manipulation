@@ -39,17 +39,19 @@ class OptFns:
         u_arr=u[1:-1]
         x_d_arr=x_d[:-1]
         t=np.array([range(self.robot.T-1)]).T
-
+        if(self.robot.T>1):
         #print u_arr[0]
-        data_arr=np.concatenate((x_d_arr,u_arr),axis=1)
-        data_arr=list(np.concatenate((data_arr,t),axis=1))
+            data_arr=np.concatenate((x_d_arr,u_arr),axis=1)
+            data_arr=list(np.concatenate((data_arr,t),axis=1))
 
-        #cost_arr=map(self.multi_cost,data_arr)
-        cost_arr=[self.multi_cost(k) for k in data_arr]
-        cost=sum(cost_arr)
-        #print cost
-        cost+=self.final_cost(x_d[-1],u[-1],self.robot)
-
+            #cost_arr=map(self.multi_cost,data_arr)
+            cost_arr=[self.multi_cost(k) for k in data_arr]
+            cost=sum(cost_arr)
+            #print cost
+            cost+=self.final_cost(x_d[-1],u[-1],self.robot)
+        else:
+            # This case works when you want to optimize for only one time-step
+            cost+=self.final_cost(x_d,u,self.robot)
         #print cost
         
         return cost

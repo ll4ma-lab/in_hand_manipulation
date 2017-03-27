@@ -5,11 +5,12 @@ import numpy as np
 import pyOpt
 
 class OptimalController:
-    def __init__(self,robot,robot_fns,method,opt_options={}):
+    def __init__(self,robot,robot_fns,method,opt_options={},DYN_constraint=True):
         self.robot=robot    
         self.robot_fns=robot_fns
         self.method=method
         self.opt_options=opt_options
+        self.DYN_constraint=DYN_constraint # This is flag toggles the joint velocity constraint
     def regenerate_control(self,x_n,x0,x_d,u):
         self.x0=x0
         self.x_d=x_d
@@ -36,12 +37,14 @@ class OptimalController:
         opt_prob=pyOpt.Optimization('TP37 Constrained Problem',self.objfunc)
         opt_prob.addObj('f')
 
-        # Add inequality constraint limits
-        lower_limit_velocity=np.ones(T*self.robot.m)*(-0.1)
-        upper_limit_velocity=np.ones(T*self.robot.m)*(0.1)
+        if(self.DYN_constraint):
+            # Add inequality constraint limits
+            lower_limit_velocity=np.ones(T*self.robot.m)*(-0.1)
+            upper_limit_velocity=np.ones(T*self.robot.m)*(0.1)
 
         # Add variables
         opt_prob.addVarGroup('q',len(q0),type='c',value=q0,upper=opt_up_bounds,lower=opt_low_bounds)
+
         opt_prob.addConGroup('g',self.robot.m*T,type='i',lower=lower_limit_velocity,upper=upper_limit_velocity)
         #opt_prob.addConGroup('g',(T)*self.robot.m+T,type='i',lower=lower_limits,upper=upper_limits)
         method=getattr(pyOpt,self.method)
