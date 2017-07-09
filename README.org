@@ -1,0 +1,15 @@
+#+Title: In-hand manipulation
+This package contains research code to perform in-hand manipulation. Most of the work is based on optimization.
+* System req:
+- Ubuntu 16.04 ( CMAKE 3.2, BOOST 1.61)
+* Pkg Depends:
+- optimization_pkg
+
+
+* TODO:
+** TODO In-grasp manipulation:
+Port from python.
+** TODO Replanning in-grasp framework
+** TODO ILQR code
+** TODO Service call to link with in_hand_manipulation_pipeline
+

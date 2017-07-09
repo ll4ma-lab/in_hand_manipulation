@@ -26,7 +26,11 @@
 #*underDevelopment/
 #*old/
 *closed-source/
+\#*\#
 
+*~
+[#]*[#]
+.\#*
 
 # documentation (maybe uncomment this later)
 *html/
@@ -37,3 +41,8 @@
 # SVN
 *.svn/
 
+# rosbag files
+*.bag
+
+# CMA data files- Uncomment if required
+#*.dat
