@@ -1,0 +1,5 @@
+
+int64[] fingers
+float64 gain
+---
+bool enabled

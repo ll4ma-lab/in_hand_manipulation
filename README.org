@@ -1,12 +1,22 @@
 #+Title: In-hand manipulation
+#+OPTIONS: toc:1 
 This package contains research code to perform in-hand manipulation. Most of the work is based on optimization.
-* System req:
+* Req:
+** System req
 - Ubuntu 16.04 ( CMAKE 3.2, BOOST 1.61)
-* Pkg Depends:
+** Pkg Depends
 - optimization_pkg
 
+* Functions
+** Grasp stability
+This function uses tactile feedback to stabilize an object. Methods implemented:
+1. Impedance controller
+** Finger contact breaking/making
+** In-grasp manipulation
+** Finger sliding
+** Finger gaiting
 
-* TODO:
+* TODO
 ** TODO In-grasp manipulation:
 Port from python.
 ** TODO Replanning in-grasp framework

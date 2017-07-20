@@ -19,8 +19,13 @@
     <build_depend>sensor_msgs</build_depend>
     <build_depend>orocos_kdl</build_depend>
     <build_depend>kdl_parser</build_depend>
+    <build_depend>biotac_sensors</build_depend>
+    <build_depend>optimization_pkg</build_depend>
+    <build_depend>allegro_driver</build_depend>
 
-    <run_depend>libpcan</run_depend>
+    <run_depend>allegro_driver</run_depend>
+    <run_depend>optimization_pkg</run_depend>
+    <run_depend>biotac_sensors</run_depend>
     <run_depend>roscpp</run_depend>
     <run_depend>roslib</run_depend>
     <run_depend>sensor_msgs</run_depend>
