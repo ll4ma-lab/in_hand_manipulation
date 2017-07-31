@@ -48,6 +48,13 @@
   <build_depend>sensor_msgs</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>visualization_msgs</build_depend>
+  <build_depend> optimization_pkg</build_depend>
+  <build_depend> ll4ma_kdl</build_depend>
+  <build_depend> trajectory_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
+  <build_depend> pcl_mesh_tools</build_depend>
+  <build_depend>tf</build_depend>
+  
   <run_depend>kdl_parser</run_depend>
   <run_depend>pykdl_utils</run_depend>
   <run_depend>roscpp</run_depend>
@@ -56,8 +63,12 @@
   <run_depend>sensor_msgs</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>visualization_msgs</run_depend>
-
-
+  <run_depend> message_runtime</run_depend>
+  <run_depend> ll4ma_kdl</run_depend>
+  <run_depend> optimization_pkg</run_depend>
+  <run_depend> trajectory_msgs</run_depend>
+  <run_depend> pcl_mesh_tools</run_depend>
+  <run_depend> tf </run_depend>
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->

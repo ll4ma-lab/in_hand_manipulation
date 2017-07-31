@@ -1,0 +1,6 @@
+sensor_msgs/JointState init_joints
+geometry_msgs/Pose object_pose
+geometry_msgs/Pose desired_object_pose
+float64[] weights
+---
+trajectory_msgs/JointTrajectory joint_traj
