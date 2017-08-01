@@ -1,4 +1,4 @@
-3# The cost functions are combined into a single function to allow for faster computation
+# The cost functions are combined into a single function to allow for faster computation
 import numpy as np
 from numpy.linalg import inv
 import PyKDL

@@ -27,7 +27,7 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   vector<double> g_vec={0.0,0.0,0.0};// Gravity needed for dynamics
 
   manipulator_kdl::robotKDL allegro_kdl(urdf_file,base_names,ee_names,g_vec);
-
+  allegro_kdl.urdfParser();
   // Getting parameters from service request:
 
   vector<double> joints_0;
@@ -90,7 +90,8 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
 
   // Get des pose from mat:
   vector<double> j_des;
-  j_des.resize(4,0.2);
+  j_des.resize(4,0.6);
+  j_des[0]=1.3;
   //vector<double> des_pose=allegro_kdl.frame_to_pose_(des_thumb_mat,true);
   vector<double> des_pose=allegro_kdl.getFK(3,j_des,true);
   
@@ -106,7 +107,7 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   data_arr[1]=obj_frame;
 
   vector<double> vel_limits;
-  vel_limits.resize(16,0.5);
+  vel_limits.resize(16,0.2);
   // Creating opt problem instance:
   opt_problems::optProblem opt_problem(10,allegro_kdl,data_arr,vel_limits,joints_0);
 
@@ -118,11 +119,12 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   algorithm algo{snopt7(false,"/usr/local/lib/")};
   //algorithm algo{cmaes(500)};
   population pop{prob,10u};
-
-  vector<double> x_in(160,0.1);
+  /*
+  vector<double> x_in(160,0.0);
 
   vector<double> f_in=prob.fitness(x_in);
   pop.set_xf(0,x_in,f_in); 
+  */
   cerr<<"Solving"<<endl;  
   population pop_res = algo.evolve(pop);
   cerr<<"optimization completed!  Final cost: "<<pop_res.champion_f()[0]<<endl;

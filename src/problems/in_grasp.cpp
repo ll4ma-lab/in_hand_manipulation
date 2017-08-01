@@ -18,6 +18,9 @@ optProblem::optProblem(int time_steps,manipulator_kdl::robotKDL robot_kdl,vector
   des_poses.resize(2);
   joints_0=init_joint_angles;
   vel_lim=vel_limits[0];
+
+  //des_poses_ contains parameters for in_grasp manipulation
+  // 
   for(int i=0;i<2;++i)
   {    
     Map<Eigen::VectorXd> des_pose(&des_poses_[0][0],des_poses_[0].size());// only position
@@ -31,29 +34,41 @@ double optProblem::objFunction(const vector<double> x) const
   double cost_val=0.0;
   vector<double> q;
   vector<double> ee_pose_arr;
+  Eigen::VectorXd obj_pos_err;
   Eigen::VectorXd pos_err;
-
-
+  int rigid_f=3;// rigid_finger
+  double wo,wr,wl;
+  wo=1.0;
+  wr=1.0;
   q.resize(robot_kdl_.dof,0.0);
   for(int i=1; i<timesteps_;++i)
   {
+    // Getting joint angles for current timestep:
     for(int j=0; j<robot_kdl_.dof;++j)
     {
       q[j]=x[(i)*robot_kdl_.dof+j];
     }
-    vector<double> f_q(&q[3*4],&q[3*4+4]);
 
-    ee_pose_arr=robot_kdl_.getFK(3,f_q,true);
-    Map<Eigen::VectorXd> ee_pose(&ee_pose_arr[0],6);// only position
     
-    pos_err=des_poses[0]-ee_pose;
-    pos_err[3]=0.0;
-    pos_err[4]=0.0;
-    pos_err[5]=0.0;
+    vector<double> f_q(&q[rigid_f*4],&q[rigid_f*4+4]);
 
-    //if(i==timesteps_-1)
+    ee_pose_arr=robot_kdl_.getFK(rigid_f,f_q,true);
+    Map<Eigen::VectorXd> ee_pose(&ee_pose_arr[0],6);// only position
+    // object pose error:
+    obj_pos_err=des_poses[0]-ee_pose;
+
+    // Relaxed-Rigidity costs:
+    // Position:
+    for(int k=0;k<
+
+
+    
+
+
+    
+    if(i==timesteps_-1)
     {  
-      cost_val+=pos_err.lpNorm<1>();
+      cost_val+=obj_pos_err.lpNorm<1>();
     }
   }
   //cerr<<cost_val<<endl;
@@ -78,7 +93,7 @@ vector<double> optProblem::EqConstraints(vector<double> x) const
   // no constraint
   vector<double> ret(m_nec,0.0);
   // Equality constraint to ensure initial joint angles
-  for (int i=0;i<16;++i)
+  for (int i=0;i<robot_kdl_.dof;++i)
   {
     ret[i]=joints_0[i]-x[i];
     //cerr<<ret[i]<<endl;
@@ -100,8 +115,8 @@ vector<double> optProblem::objGradient(vector<double> x) const
   pose_err.resize(6);
   q.resize(robot_kdl_.dof,0.0);
 
-  //int i=timesteps_-1;
-  for(int i=0;i<timesteps_;++i)
+  int i=timesteps_-1;
+  //for(int i=0;i<timesteps_;++i)
   {
     for(int j=0; j<robot_kdl_.dof;++j)
     {
@@ -116,11 +131,9 @@ vector<double> optProblem::objGradient(vector<double> x) const
     pos_err=des_poses[0]-ee_pose;
 
     pose_err=pos_err;
-    pose_err[3]=0.0;
-    pose_err[4]=0.0;
-    pose_err[5]=0.0;
-    //pose_err[3]=pose_err[3]*-1.0;
-    //pose_err[4]=pose_err[4]*-1.0;
+    
+    pose_err[3]=pose_err[3]*-1.0;
+    pose_err[4]=pose_err[4]*-1.0;
 
     finger_gradient=-1.0*pose_err.transpose()*robot_kdl_.getJacobian(3,f_q);
     for (int k=0;k<4;++k)
@@ -265,10 +278,13 @@ vector<vector<double>> optProblem::bounds() const
   vector<vector<double>> bound;
   vector<double> up_bounds;
   vector<double> low_bounds;
-  low_bounds.resize(robot_kdl_.dof*timesteps_,-0.5);
-
-  up_bounds.resize(robot_kdl_.dof*timesteps_,0.5);
-
+  for(int i=0;i<timesteps_;++i)
+  {
+    up_bounds.insert(up_bounds.end(), robot_kdl_.up_bounds.begin(), robot_kdl_.up_bounds.end());
+    low_bounds.insert(low_bounds.end(), robot_kdl_.low_bounds.begin(), robot_kdl_.low_bounds.end());
+  }
+  
+  
   bound.resize(2);
   bound[0]=low_bounds;
   bound[1]=up_bounds;

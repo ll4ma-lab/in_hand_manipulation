@@ -18,7 +18,7 @@ class inGraspClient:
 if __name__=='__main__':
     # in grasp data:
     j0=JointState()
-    j0.position=np.zeros(16)
+    j0.position=np.ones(16)*0.5
     obj_pose=Pose()
     obj_pose.position.x=0.0
     obj_pose.position.y=0.0
