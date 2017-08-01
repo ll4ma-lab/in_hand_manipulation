@@ -15,10 +15,10 @@ optProblem::optProblem(int time_steps,manipulator_kdl::robotKDL robot_kdl,vector
   m_nic=robot_kdl.dof*(time_steps-1);// velocity constraints
   timesteps_=time_steps;
   robot_kdl_=robot_kdl;
-  des_poses.resize(time_steps);
+  des_poses.resize(2);
   joints_0=init_joint_angles;
   vel_lim=vel_limits[0];
-  for(int i=0;i<time_steps;++i)
+  for(int i=0;i<2;++i)
   {    
     Map<Eigen::VectorXd> des_pose(&des_poses_[0][0],des_poses_[0].size());// only position
     des_poses[i]=des_pose;
@@ -41,16 +41,22 @@ double optProblem::objFunction(const vector<double> x) const
     {
       q[j]=x[(i)*robot_kdl_.dof+j];
     }
-    
-    ee_pose_arr=robot_kdl_.getFK(0,q,true);
+    vector<double> f_q(&q[3*4],&q[3*4+4]);
+
+    ee_pose_arr=robot_kdl_.getFK(3,f_q,true);
     Map<Eigen::VectorXd> ee_pose(&ee_pose_arr[0],6);// only position
     
-    pos_err=des_poses[i]-ee_pose;
-    if(i==timesteps_-1)
+    pos_err=des_poses[0]-ee_pose;
+    pos_err[3]=0.0;
+    pos_err[4]=0.0;
+    pos_err[5]=0.0;
+
+    //if(i==timesteps_-1)
     {  
       cost_val+=pos_err.lpNorm<1>();
     }
   }
+  //cerr<<cost_val<<endl;
   return cost_val;
 }
 vector<double> optProblem::inEqConstraints(vector<double> x) const
@@ -61,12 +67,7 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
   {
     for(int j=0;j<robot_kdl_.dof;++j)
     {
-
       vel_const[(i)*robot_kdl_.dof+j]=std::abs(x[(i+1)*robot_kdl_.dof+j]-x[(i)*robot_kdl_.dof+j])-vel_lim;
-      if(vel_const[(i)*robot_kdl_.dof+j]>0.1)
-      {
-        //cerr<<(i)*robot_kdl_.dof+j<<" "<<vel_const[(i)*robot_kdl_.dof+j]<<endl;
-      }
     }
   }
   //cerr<<vel_const[1]<<endl;
@@ -77,8 +78,7 @@ vector<double> optProblem::EqConstraints(vector<double> x) const
   // no constraint
   vector<double> ret(m_nec,0.0);
   // Equality constraint to ensure initial joint angles
-  
-  for (int i=0;i<7;++i)
+  for (int i=0;i<16;++i)
   {
     ret[i]=joints_0[i]-x[i];
     //cerr<<ret[i]<<endl;
@@ -87,6 +87,97 @@ vector<double> optProblem::EqConstraints(vector<double> x) const
   return  ret;
   
 }
+
+vector<double> optProblem::objGradient(vector<double> x) const
+{
+  vector<double> retval(m_dim,0.0);
+  vector<double> q;
+  vector<double> ee_pose_arr;
+  Eigen::VectorXd pos_err,pose_err;
+  Eigen::VectorXd gradient,finger_gradient;
+  gradient.resize(robot_kdl_.dof);
+  finger_gradient.resize(4);// finger dof
+  pose_err.resize(6);
+  q.resize(robot_kdl_.dof,0.0);
+
+  //int i=timesteps_-1;
+  for(int i=0;i<timesteps_;++i)
+  {
+    for(int j=0; j<robot_kdl_.dof;++j)
+    {
+      q[j]=x[(i)*robot_kdl_.dof+j];
+    }
+    vector<double> f_q(&q[3*4],&q[3*4+4]);
+
+    
+    ee_pose_arr=robot_kdl_.getFK(3,f_q,true);
+    Map<Eigen::VectorXd> ee_pose(&ee_pose_arr[0],6);// only position
+    
+    pos_err=des_poses[0]-ee_pose;
+
+    pose_err=pos_err;
+    pose_err[3]=0.0;
+    pose_err[4]=0.0;
+    pose_err[5]=0.0;
+    //pose_err[3]=pose_err[3]*-1.0;
+    //pose_err[4]=pose_err[4]*-1.0;
+
+    finger_gradient=-1.0*pose_err.transpose()*robot_kdl_.getJacobian(3,f_q);
+    for (int k=0;k<4;++k)
+    {
+      gradient[3*4+k]=finger_gradient[k];
+    }
+    for (int j=0;j<robot_kdl_.dof;++j)
+    {
+      retval[j+robot_kdl_.dof*(i)]=gradient[j];
+    }
+  }
+  
+  return retval;
+}
+
+vector<double> optProblem::inEqGradient(vector<double> x) const
+{
+  vector<double> retval(m_dim*m_nic,0.0);
+  for(int i=0;i<timesteps_-1;++i)
+  {
+      for(int j=0;j<robot_kdl_.dof;++j)
+      {
+
+        if(x[(i+1)*robot_kdl_.dof+j]-x[(i)*robot_kdl_.dof+j]<0.0)
+        {
+          retval[((i)*robot_kdl_.dof+j)*m_dim+(i+1)*robot_kdl_.dof+j]=-1.0;
+          retval[((i)*robot_kdl_.dof+j)*m_dim+(i)*robot_kdl_.dof+j]=1.0;
+        }
+        else
+        {
+          retval[((i)*robot_kdl_.dof+j)*m_dim+(i+1)*robot_kdl_.dof+j]=1.0;
+          retval[((i)*robot_kdl_.dof+j)*m_dim+(i)*robot_kdl_.dof+j]=-1.0;
+        }
+
+      }
+  }
+  return retval;
+}
+
+vector<double> optProblem::eqGradient(vector<double> x) const
+{
+  vector<double> retval(m_dim*m_nec,0.0);
+  // gradient:
+  for(int i=0;i<robot_kdl_.dof;++i)
+  {
+    for (int j=0;j<robot_kdl_.dof;++j)
+    {
+      if(i==j)
+      {
+        retval[i*m_dim+j]=-1.0;
+      }
+    }
+  }
+  
+  return retval;
+}
+
 vector<double> optProblem::gradient(const vector<double> x) const
 {
   vector<double> grad;
@@ -95,7 +186,6 @@ vector<double> optProblem::gradient(const vector<double> x) const
   vector<double> ineq_grad=inEqGradient(x);
   
   grad.resize(m_dim+m_dim*m_nec+m_dim*m_nic,0.0);
-
   for(int i=0;i<m_dim;i++)
   {
     grad[i]=obj_grad[i];
@@ -138,7 +228,6 @@ vector<double> optProblem::sparse_gradient(const vector<double> x) const
     }
   }
 
-
   for(int i=m_dim+m_dim*m_nec;i<m_dim+m_dim*m_nec+m_dim*m_nic;i++)
   {
     if(ineq_grad[i-m_dim-m_dim*m_nec]!=0.0)
@@ -148,86 +237,6 @@ vector<double> optProblem::sparse_gradient(const vector<double> x) const
   }
 
   return grad;
-}
-
-vector<double> optProblem::objGradient(vector<double> x) const
-{
-  vector<double> retval(m_dim,0.0);
-  vector<double> q;
-  vector<double> ee_pose_arr;
-  Eigen::VectorXd pos_err,pose_err;
-  Eigen::VectorXd gradient;
-  gradient.resize(7);
-  pose_err.resize(6);
-  pose_err[3]=0.0;
-  pose_err[4]=0.0;
-  pose_err[5]=0.0;
-  q.resize(robot_kdl_.dof,0.0);
-
-  int i=timesteps_-1;
-  //for(int i=0;i<timesteps_;++i)
-  {
-    for(int j=0; j<robot_kdl_.dof;++j)
-    {
-      q[j]=x[(i)*robot_kdl_.dof+j];
-    }   
-    ee_pose_arr=robot_kdl_.getFK(0,q,true);
-    Map<Eigen::VectorXd> ee_pose(&ee_pose_arr[0],6);// only position
-    
-    pos_err=des_poses[i]-ee_pose;
-
-    pose_err=pos_err;
-    gradient=-1.0*pose_err.transpose()*robot_kdl_.getJacobian(0,q);
-   
-    for (int j=0;j<robot_kdl_.dof;++j)
-    {
-      retval[j+robot_kdl_.dof*(i)]=gradient[j];
-    }
-  }
-  
-  return retval;
-}
-
-vector<double> optProblem::inEqGradient(vector<double> x) const
-{
-  vector<double> retval(m_dim*m_nic,0.0);
-  for(int i=0;i<timesteps_-1;++i)
-  {
-      for(int j=0;j<robot_kdl_.dof;++j)
-      {
-
-        if(x[(i+1)*robot_kdl_.dof+j]-x[(i)*robot_kdl_.dof+j]<0.0)
-        {
-          retval[((i)*robot_kdl_.dof+j)*m_dim+(i+1)*robot_kdl_.dof+j]=-1.0;
-          retval[((i)*robot_kdl_.dof+j)*m_dim+(i)*robot_kdl_.dof+j]=1.0;
-        }
-        else
-        {
-          retval[((i)*robot_kdl_.dof+j)*m_dim+(i+1)*robot_kdl_.dof+j]=1.0;
-          retval[((i)*robot_kdl_.dof+j)*m_dim+(i)*robot_kdl_.dof+j]=-1.0;
-        }
-
-      }
-  }
-  return retval;
-}
-
-vector<double> optProblem::eqGradient(vector<double> x) const
-{
-  vector<double> retval(m_dim*m_nec,0.0);
-  // gradient:
-  for(int i=0;i<7;++i)
-  {
-    for (int j=0;j<7;++j)
-    {
-      if(i==j)
-      {
-        retval[i*m_dim+j]=-1.0;
-      }
-    }
-  }
-  
-  return retval;
 }
 std::vector<std::pair<vector<double>::size_type, vector<double>::size_type>> optProblem::gradient_sparsity() const
 {
@@ -256,9 +265,9 @@ vector<vector<double>> optProblem::bounds() const
   vector<vector<double>> bound;
   vector<double> up_bounds;
   vector<double> low_bounds;
-  low_bounds.resize(robot_kdl_.dof*timesteps_,-2.5);
+  low_bounds.resize(robot_kdl_.dof*timesteps_,-0.5);
 
-  up_bounds.resize(robot_kdl_.dof*timesteps_,2.5);
+  up_bounds.resize(robot_kdl_.dof*timesteps_,0.5);
 
   bound.resize(2);
   bound[0]=low_bounds;
