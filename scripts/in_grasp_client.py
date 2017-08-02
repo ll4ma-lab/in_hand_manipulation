@@ -43,7 +43,6 @@ class inGraspClient:
         des_obj_pose.position.z=des_obj_pose_[2]
 
         quaternion = tf.transformations.quaternion_from_euler(des_obj_pose_[3],des_obj_pose_[4],des_obj_pose_[5])
-        print quaternion
         des_obj_pose.orientation.x=quaternion[0]
         des_obj_pose.orientation.y=quaternion[1]
         des_obj_pose.orientation.z=quaternion[2]

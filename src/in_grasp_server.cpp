@@ -86,7 +86,8 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   Eigen::MatrixXd des_thumb_mat=des_obj_mat*obj_offset.inverse();
 
   // Get des pose from mat:
-  //vector<double> des_pose=allegro_kdl.frame_to_pose_(des_thumb_mat,true);
+  //thumb_joints[0]=0.8;
+  //vector<double> des_pose_thumb=allegro_kdl.getFK(3,thumb_joints,true);
   vector<double> des_pose;
   des_pose.resize(6);
   des_pose[0]=des_thumb_mat(3,0);
@@ -117,7 +118,7 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   {
     int f=int(fingers_d[i]);
     vector<double> f_joints(&joints_0[f*4],&joints_0[f*4+4]);
-    
+    //cerr<<f_joints.size()<<endl;
     vector<double> f_pose_arr=allegro_kdl.getFK(f,f_joints,true);
     Map<Eigen::VectorXd> f_pose(&f_pose_arr[0],f_pose_arr.size());
     Eigen::VectorXd pose_diff=thumb_pose-f_pose;
@@ -137,31 +138,31 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   
   //cerr<<"data size "<<data_arr.size()<<endl;
   vector<double> vel_limits;
-  vel_limits.resize(16,1.4);
+  vel_limits.resize(16,0.15);
   // Creating opt problem instance:
   opt_problems::optProblem opt_problem(10,allegro_kdl,data_arr,vel_limits,joints_0);
 
   problem prob{trajectory_optimization{opt_problem}};
-  vector<double> tol(160,1e-4);
+  vector<double> tol(160,1e-3);
  
   prob.set_c_tol(tol);
   
   algorithm algo{snopt7(false,"/usr/local/lib/")};
   //algorithm algo{cmaes(500)};
-  population pop{prob,1u};
-
+  population pop{prob,10u};
+  /*
   vector<double> x_in(160,0.0);
 
   for(int i=0;i<10;++i)
   {
     for (int j=0;j<16;++j)
     {
-      x_in[i*16+j]=joints_0[j]+i*0.1;
+      x_in[i*16+j]=joints_0[j];
     }
   }
   vector<double> f_in=prob.fitness(x_in);
-  //pop.set_xf(0,x_in,f_in); 
-
+  pop.set_xf(0,x_in,f_in); 
+  */
   cerr<<"Solving"<<endl;  
   population pop_res = algo.evolve(pop);
   cerr<<"optimization completed!  Final cost: "<<pop_res.champion_f()[0]<<endl;
@@ -179,6 +180,7 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   joint_traj.joint_names=joint_names;    
 
   vector<double> j_arr;
+
   j_arr.resize(16);
   for (int i=0;i<j_best.size()/16;i++)
   { 
@@ -187,8 +189,18 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
     {
       j_arr[j]=j_best[i*16+j];
     }
+    
+    
     jt_pt.positions=j_arr;
     joint_traj.points.push_back(jt_pt);
+    /*
+    if(i==-1+j_best.size()/16)
+    {
+      vector<double> th_j(&j_arr[12],&j_arr[12+4]);
+      vector<double> th_pose=allegro_kdl.getFK(3,th_j,true);
+      cerr<<"Obj pose: "<<th_pose[0]<<" "<<th_pose[1]<<" "<<th_pose[2]<<" "<<th_pose[3]<<" "<<th_pose[4]<<" "<<th_pose[5]<<endl;
+    }
+    */
   }
 
   res.joint_traj=joint_traj;

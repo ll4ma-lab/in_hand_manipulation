@@ -65,16 +65,23 @@ double optProblem::objFunction(const vector<double> x) const
       q[j]=x[(i)*robot_kdl_.dof+j];
     }
     vector<double> f_q(&q[rigid_f*4],&q[rigid_f*4+4]);
-
+    
     ee_pose_arr=robot_kdl_.getFK(rigid_f,f_q,true);
     Map<Eigen::VectorXd> ee_pose(&ee_pose_arr[0],6);
+
+
     // object pose error:
+    
     obj_pos_err=des_poses[0]-ee_pose;
+
+    obj_pos_err[0]=obj_pos_err[0]*10.0;
+    obj_pos_err[1]=obj_pos_err[1]*10.0;
+    obj_pos_err[2]=obj_pos_err[2]*10.0;
     
-    obj_pos_err[3]=0.0;
-    obj_pos_err[4]=0.0;
-    obj_pos_err[5]=0.0;
-    
+    //obj_pos_err[3]=0.0;
+    //obj_pos_err[4]=0.0;
+    //obj_pos_err[5]=0.0;
+
     // Relaxed-Rigidity costs:
     
     for(int k=0;k<data_arr_[3].size();++k)
@@ -116,6 +123,7 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
 {
   // limiting velocity at joints
   vector<double> vel_const(m_nic,0.0);
+  
   for (int i=0; i<timesteps_-1; ++i)
   {
     for(int j=0;j<robot_kdl_.dof;++j)
@@ -159,7 +167,7 @@ vector<double> optProblem::objGradient(vector<double> x) const
 
   obj_pose_err.resize(6);
   q.resize(robot_kdl_.dof,0.0);
-  int rigid_f=int(data_arr_[1][0]);// rigid_finger
+  int rigid_f=int(data_arr_[2][0]);// rigid_finger
   
 
   Eigen::VectorXd pos_err,orient_err;
@@ -196,19 +204,20 @@ vector<double> optProblem::objGradient(vector<double> x) const
 
     obj_pose_err=des_poses[0]-ee_pose;
 
-    
+    obj_pose_err[0]=obj_pose_err[0]*10.0;
+    obj_pose_err[1]=obj_pose_err[1]*10.0;
+    obj_pose_err[2]=obj_pose_err[2]*10.0;
     obj_pose_err[3]=obj_pose_err[3]*-1.0;
     obj_pose_err[4]=obj_pose_err[4]*-1.0;
-    //obj_pose_err[5]=0.0;
     
-    obj_pose_err[3]=0.0;
-    obj_pose_err[4]=0.0;
-    obj_pose_err[5]=0.0;
+    //obj_pose_err[3]=0.0;
+    //obj_pose_err[4]=0.0;
+    //obj_pose_err[5]=0.0;
 
     if(i==timesteps_-1)
     {
       finger_gradient=-1.0*wd*obj_pose_err.transpose()*robot_kdl_.getJacobian(rigid_f,f_q);
-
+      //cerr<<rigid_f<<" "<<f_q[0]<<" "<<finger_gradient[0]<<endl;
       for (int k=0;k<4;++k)
       {
         gradient[rigid_f*4+k]+=finger_gradient[k];
@@ -237,7 +246,7 @@ vector<double> optProblem::objGradient(vector<double> x) const
         pos_err[4]=-1.0*pos_err[4]*wo;
         pos_err[5]=0.0;
         
-        finger_gradient=pos_err.transpose()*robot_kdl_.getJacobian(f,f_joints);
+        finger_gradient=-1.0*pos_err.transpose()*robot_kdl_.getJacobian(f,f_joints);
         for (int l=0;l<4;++l)
         {
           gradient[f*4+l]+=finger_gradient[l];
@@ -252,6 +261,9 @@ vector<double> optProblem::objGradient(vector<double> x) const
     {
       retval[j+robot_kdl_.dof*(i)]+=gradient[j];
     }
+    fill(gradient.begin(), gradient.end(), 0.0);
+ 
+
   }
 
   return retval;
