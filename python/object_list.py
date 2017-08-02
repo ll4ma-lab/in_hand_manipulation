@@ -233,7 +233,7 @@ class TrajList:
 class ObjectList:
     def __init__(self,csv_file,folder,tr_start=0):
         self.arr=[]
-        self.file=csv_file
+        self.file_=csv_file
         self.folder=folder
         i=0
         self.lines=[]

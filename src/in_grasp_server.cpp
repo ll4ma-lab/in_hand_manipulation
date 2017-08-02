@@ -1,4 +1,3 @@
-//
 
 // optimization:
 #include <optimization_pkg/wrapper/pagmo_wrapper.hpp>
@@ -39,7 +38,6 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
 
   
   vector<vector<double>> data_arr;
-  // data_arr =[des_pose;obj_frame]
 
   // Get initial object to thumb frame:
   tf::Pose init_pose;
@@ -72,7 +70,6 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   tf::Pose des_pose_tf;
   tf::poseMsgToTF(req.desired_object_pose,des_pose_tf);
   // convert desired object pose to thumb pose:
-
   R=des_pose_tf.getBasis();
   
   Eigen::MatrixXd des_obj_mat(4,4);
@@ -89,42 +86,82 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   Eigen::MatrixXd des_thumb_mat=des_obj_mat*obj_offset.inverse();
 
   // Get des pose from mat:
-  vector<double> j_des;
-  j_des.resize(4,0.6);
-  j_des[0]=1.3;
   //vector<double> des_pose=allegro_kdl.frame_to_pose_(des_thumb_mat,true);
-  vector<double> des_pose=allegro_kdl.getFK(3,j_des,true);
+  vector<double> des_pose;
+  des_pose.resize(6);
+  des_pose[0]=des_thumb_mat(3,0);
+  des_pose[1]=des_thumb_mat(3,1);
+  des_pose[2]=des_thumb_mat(3,2);
+  // Get euler xyz from rotation matrix:
+  tf::Matrix3x3 R_(des_thumb_mat(0,0),des_thumb_mat(0,1),des_thumb_mat(0,2),
+                   des_thumb_mat(1,0),des_thumb_mat(1,1),des_thumb_mat(1,2),
+                   des_thumb_mat(2,0),des_thumb_mat(2,1),des_thumb_mat(2,2));
+  R_.getRPY(des_pose[3],des_pose[4],des_pose[5]);
+  // Relaxed rigidity data:
+  // [des_obj_pose(6x1), rigid_finger,fingers(4x1),position_offset(n_f*3),orientation_offset(n_f*3)]
   
-  // Transform quaternion to euler:
-  
-  data_arr.resize(2);
-  vector<double> obj_frame;
-  obj_frame.resize(6);
-
-  // Create obj frame from thumb:
-
+  vector<int> fingers(begin(req.fingers), end(req.fingers));
+  vector<double> fingers_d(fingers.begin(),fingers.end());
+  vector<double> weights(begin(req.weights),end(req.weights));
+  vector<double> r_fin;
+  int r_f=req.rigid_finger;
+  r_fin.resize(1,r_f);
+  data_arr.resize(4+fingers.size()+fingers.size()); 
   data_arr[0]=des_pose;
-  data_arr[1]=obj_frame;
+  data_arr[1]=weights;
+  data_arr[2]=r_fin;
+  data_arr[3]=fingers_d;
+  vector<double> thumb_pose_arr=allegro_kdl.getFK(r_f,thumb_joints,true);
+  Map<Eigen::VectorXd> thumb_pose(&thumb_pose_arr[0],thumb_pose_arr.size());;
+  for(int i=0;i<fingers.size();++i)
+  {
+    int f=int(fingers_d[i]);
+    vector<double> f_joints(&joints_0[f*4],&joints_0[f*4+4]);
+    
+    vector<double> f_pose_arr=allegro_kdl.getFK(f,f_joints,true);
+    Map<Eigen::VectorXd> f_pose(&f_pose_arr[0],f_pose_arr.size());
+    Eigen::VectorXd pose_diff=thumb_pose-f_pose;
+    vector<double> position_offset;
+    position_offset.resize(pose_diff.size());
+    VectorXd::Map(&position_offset[0], pose_diff.size()) = pose_diff;
 
+    vector<double> orient_offset;
+    orient_offset.resize(pose_diff.size());
+    VectorXd::Map(&orient_offset[0], pose_diff.size()) = pose_diff;
+
+    // Computing position offset:
+    data_arr[4+i]=position_offset;
+    data_arr[4+i+fingers.size()]=orient_offset;
+  }
+
+  
+  //cerr<<"data size "<<data_arr.size()<<endl;
   vector<double> vel_limits;
-  vel_limits.resize(16,0.2);
+  vel_limits.resize(16,1.4);
   // Creating opt problem instance:
   opt_problems::optProblem opt_problem(10,allegro_kdl,data_arr,vel_limits,joints_0);
 
   problem prob{trajectory_optimization{opt_problem}};
-  vector<double> tol(160,1e-5);
+  vector<double> tol(160,1e-4);
  
   prob.set_c_tol(tol);
   
   algorithm algo{snopt7(false,"/usr/local/lib/")};
   //algorithm algo{cmaes(500)};
-  population pop{prob,10u};
-  /*
+  population pop{prob,1u};
+
   vector<double> x_in(160,0.0);
 
+  for(int i=0;i<10;++i)
+  {
+    for (int j=0;j<16;++j)
+    {
+      x_in[i*16+j]=joints_0[j]+i*0.1;
+    }
+  }
   vector<double> f_in=prob.fitness(x_in);
-  pop.set_xf(0,x_in,f_in); 
-  */
+  //pop.set_xf(0,x_in,f_in); 
+
   cerr<<"Solving"<<endl;  
   population pop_res = algo.evolve(pop);
   cerr<<"optimization completed!  Final cost: "<<pop_res.champion_f()[0]<<endl;

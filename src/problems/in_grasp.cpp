@@ -8,7 +8,7 @@ optProblem::optProblem(int dummy)
 }
 
 // Initializer
-optProblem::optProblem(int time_steps,manipulator_kdl::robotKDL robot_kdl,vector<vector<double>> des_poses_,vector<double> vel_limits, vector<double> init_joint_angles)
+optProblem::optProblem(int time_steps,manipulator_kdl::robotKDL robot_kdl,vector<vector<double>> data_arr,vector<double> vel_limits, vector<double> init_joint_angles)
 {
   m_dim=robot_kdl.dof*time_steps;
   m_nec=robot_kdl.dof;//robot_kdl.dof*time_steps;// no equality constraints
@@ -18,12 +18,11 @@ optProblem::optProblem(int time_steps,manipulator_kdl::robotKDL robot_kdl,vector
   des_poses.resize(2);
   joints_0=init_joint_angles;
   vel_lim=vel_limits[0];
-
-  //des_poses_ contains parameters for in_grasp manipulation
-  // 
-  for(int i=0;i<2;++i)
+  data_arr_=data_arr;
+  
+  for(int i=0;i<1;++i)
   {    
-    Map<Eigen::VectorXd> des_pose(&des_poses_[0][0],des_poses_[0].size());// only position
+    Map<Eigen::VectorXd> des_pose(&data_arr[0][0],data_arr[0].size());// only position
     des_poses[i]=des_pose;
   }
 }
@@ -35,43 +34,82 @@ double optProblem::objFunction(const vector<double> x) const
   vector<double> q;
   vector<double> ee_pose_arr;
   Eigen::VectorXd obj_pos_err;
-  Eigen::VectorXd pos_err;
-  int rigid_f=3;// rigid_finger
-  double wo,wr,wl;
-  wo=1.0;
-  wr=1.0;
+  Eigen::VectorXd pos_err,orient_err;
+  pos_err.resize(3);
+  orient_err.resize(3);
+  int rigid_f=int(data_arr_[2][0]);// rigid_finger
+
+  // position offsets:
+  vector<Eigen::VectorXd> pos_offsets;
+  
+  for(int k=0;k<data_arr_[3].size();++k)
+  {
+    vector<double> p_off=data_arr_[4+k];
+    Map<Eigen::VectorXd> pos_offset(&p_off[0],p_off.size());
+    pos_offsets.emplace_back(pos_offset);
+  }
+  
+  double wo,wr,wd;
+  wo=data_arr_[1][0];
+  wr=data_arr_[1][1];
+  wd=data_arr_[1][2];
+  
   q.resize(robot_kdl_.dof,0.0);
   for(int i=1; i<timesteps_;++i)
   {
+    double position_cost=0.0;
+    double orientation_cost=0.0;
     // Getting joint angles for current timestep:
     for(int j=0; j<robot_kdl_.dof;++j)
     {
       q[j]=x[(i)*robot_kdl_.dof+j];
     }
-
-    
     vector<double> f_q(&q[rigid_f*4],&q[rigid_f*4+4]);
 
     ee_pose_arr=robot_kdl_.getFK(rigid_f,f_q,true);
-    Map<Eigen::VectorXd> ee_pose(&ee_pose_arr[0],6);// only position
+    Map<Eigen::VectorXd> ee_pose(&ee_pose_arr[0],6);
     // object pose error:
     obj_pos_err=des_poses[0]-ee_pose;
-
-    // Relaxed-Rigidity costs:
-    // Position:
-    for(int k=0;k<
-
-
     
-
-
+    obj_pos_err[3]=0.0;
+    obj_pos_err[4]=0.0;
+    obj_pos_err[5]=0.0;
+    
+    // Relaxed-Rigidity costs:
+    
+    for(int k=0;k<data_arr_[3].size();++k)
+    {
+      int f=data_arr_[3][k];
+      if(f!=rigid_f)
+      {
+        // Position:
+        vector<double> f_joints(&q[f*4],&q[f*4+4]);
+        
+        vector<double> f_pose_arr=robot_kdl_.getFK(f,f_joints,true);
+        Map<Eigen::VectorXd> f_pose(&f_pose_arr[0],f_pose_arr.size());
+        
+        Eigen::VectorXd pose_diff=ee_pose-f_pose-pos_offsets[k];
+        pos_err=pose_diff.segment(0,3);
+        orient_err=pose_diff.segment(3,3);
+        orient_err[0]=0.0;
+        orient_err[2]=0.0;
+        position_cost+=pos_err.lpNorm<1>();
+        orientation_cost+=orient_err.lpNorm<1>();
+      }
+    }
     
     if(i==timesteps_-1)
-    {  
-      cost_val+=obj_pos_err.lpNorm<1>();
+    { 
+      cost_val+=wd*obj_pos_err.lpNorm<1>()+wr*position_cost+wo*orientation_cost;
     }
+    else
+    {
+      cost_val+=wr*position_cost+wo*orientation_cost;
+    }
+    
   }
-  //cerr<<cost_val<<endl;
+  //cerr<<"Cost computed"<<endl;
+  
   return cost_val;
 }
 vector<double> optProblem::inEqConstraints(vector<double> x) const
@@ -105,47 +143,117 @@ vector<double> optProblem::EqConstraints(vector<double> x) const
 
 vector<double> optProblem::objGradient(vector<double> x) const
 {
+
+  double wo,wr,wd;
+  wo=data_arr_[1][0];
+  wr=data_arr_[1][1];
+  wd=data_arr_[1][2];
   vector<double> retval(m_dim,0.0);
   vector<double> q;
   vector<double> ee_pose_arr;
-  Eigen::VectorXd pos_err,pose_err;
-  Eigen::VectorXd gradient,finger_gradient;
-  gradient.resize(robot_kdl_.dof);
-  finger_gradient.resize(4);// finger dof
-  pose_err.resize(6);
-  q.resize(robot_kdl_.dof,0.0);
 
-  int i=timesteps_-1;
-  //for(int i=0;i<timesteps_;++i)
+  Eigen::VectorXd obj_pose_err;
+  Eigen::VectorXd finger_gradient;
+  vector<double> gradient;
+  gradient.resize(robot_kdl_.dof,0.0);
+
+  obj_pose_err.resize(6);
+  q.resize(robot_kdl_.dof,0.0);
+  int rigid_f=int(data_arr_[1][0]);// rigid_finger
+  
+
+  Eigen::VectorXd pos_err,orient_err;
+  pos_err.resize(6);
+  orient_err.resize(6);
+  
+
+  // position offsets:
+  vector<Eigen::VectorXd> pos_offsets;
+  
+  for(int k=0;k<data_arr_[3].size();++k)
   {
+    vector<double> p_off=data_arr_[4+k];
+    Map<Eigen::VectorXd> pos_offset(&p_off[0],p_off.size());
+    pos_offsets.emplace_back(pos_offset);
+  }
+  
+
+  
+  //int i=timesteps_-1;
+  for(int i=0;i<timesteps_;++i)
+  {
+    
     for(int j=0; j<robot_kdl_.dof;++j)
     {
       q[j]=x[(i)*robot_kdl_.dof+j];
     }
-    vector<double> f_q(&q[3*4],&q[3*4+4]);
+    vector<double> f_q(&q[rigid_f*4],&q[rigid_f*4+4]);
 
     
-    ee_pose_arr=robot_kdl_.getFK(3,f_q,true);
+    ee_pose_arr=robot_kdl_.getFK(rigid_f,f_q,true);
+    
     Map<Eigen::VectorXd> ee_pose(&ee_pose_arr[0],6);// only position
-    
-    pos_err=des_poses[0]-ee_pose;
 
-    pose_err=pos_err;
-    
-    pose_err[3]=pose_err[3]*-1.0;
-    pose_err[4]=pose_err[4]*-1.0;
+    obj_pose_err=des_poses[0]-ee_pose;
 
-    finger_gradient=-1.0*pose_err.transpose()*robot_kdl_.getJacobian(3,f_q);
-    for (int k=0;k<4;++k)
+    
+    obj_pose_err[3]=obj_pose_err[3]*-1.0;
+    obj_pose_err[4]=obj_pose_err[4]*-1.0;
+    //obj_pose_err[5]=0.0;
+    
+    obj_pose_err[3]=0.0;
+    obj_pose_err[4]=0.0;
+    obj_pose_err[5]=0.0;
+
+    if(i==timesteps_-1)
     {
-      gradient[3*4+k]=finger_gradient[k];
+      finger_gradient=-1.0*wd*obj_pose_err.transpose()*robot_kdl_.getJacobian(rigid_f,f_q);
+
+      for (int k=0;k<4;++k)
+      {
+        gradient[rigid_f*4+k]+=finger_gradient[k];
+      }
     }
+    // Relaxed-Rigidity costs:
+
+    for(int k=0;k<data_arr_[3].size();++k)
+    {
+      int f=data_arr_[3][k];
+      if(f!=rigid_f)
+      {
+        // Position:
+        vector<double> f_joints(&q[f*4],&q[f*4+4]);
+        
+        vector<double> f_pose_arr=robot_kdl_.getFK(f,f_joints,true);
+        Map<Eigen::VectorXd> f_pose(&f_pose_arr[0],f_pose_arr.size());
+        
+        Eigen::VectorXd pose_diff=ee_pose-f_pose-pos_offsets[k];
+        pos_err=pose_diff;//.segment(0,3);
+        //orient_err=pose_diff;//.segment(3,3);
+        pos_err[0]=wr*pos_err[0];
+        pos_err[1]=wr*pos_err[1];
+        pos_err[2]=wr*pos_err[2];
+        pos_err[3]=0.0;
+        pos_err[4]=-1.0*pos_err[4]*wo;
+        pos_err[5]=0.0;
+        
+        finger_gradient=pos_err.transpose()*robot_kdl_.getJacobian(f,f_joints);
+        for (int l=0;l<4;++l)
+        {
+          gradient[f*4+l]+=finger_gradient[l];
+        }
+
+      }
+    }
+  
+ 
+    
     for (int j=0;j<robot_kdl_.dof;++j)
     {
-      retval[j+robot_kdl_.dof*(i)]=gradient[j];
+      retval[j+robot_kdl_.dof*(i)]+=gradient[j];
     }
   }
-  
+
   return retval;
 }
 
