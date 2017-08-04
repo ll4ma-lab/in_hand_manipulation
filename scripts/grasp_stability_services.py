@@ -70,6 +70,9 @@ class graspStability:
                 if(self.biotac.get_pdc()[i]>pdc):
                     # stop moving the finger i
                     j_delta[i*4:i*4+4]=np.zeros(4)
+                else:
+                    print str(i)+' pdc: '+str(self.biotac.get_pdc()[i])
+                    
             if((self.biotac.get_pdc()>pdc).all()):
                 reached_pressure=True
         print "grasped object"
