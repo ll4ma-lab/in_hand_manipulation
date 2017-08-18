@@ -24,7 +24,7 @@
     <build_depend> pcl_mesh_tools</build_depend>
     <build_depend>tf</build_depend>
     <build_depend>in_grasp_manipulation</build_depend>
-
+    <build_depend> pcl_ros </build_depend>
     
     
     <run_depend>allegro_driver</run_depend>
@@ -40,9 +40,9 @@
     <run_depend>pykdl_util</run_depend>
     <run_depend> pcl_mesh_tools</run_depend>
     <run_depend> tf </run_depend>
-
+    <run_depend> pcl_ros </run_depend>
 <run_depend> in_grasp_manipulation</run_depend>
-    <!-- The export tag contains other, unspecified, tags -->
+<!-- The export tag contains other, unspecified, tags -->
     <export>
         <!-- Other tools can request additional information be placed here -->
 

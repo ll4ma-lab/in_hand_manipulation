@@ -134,12 +134,24 @@ int main(int argc,char** argv)
   //finger_gait_call();
   ros::init(argc,argv,"finger_gait_server");
   ros::NodeHandle n;
+  c_check.min_env_size=50;
 
   // Setup collision checker:
   // Add object pointcloud:
-  c_check.add_obj_cloud();
-  // Publish object pointcloud:
+  tf::TransformListener tf_l;
+  c_check.tf_listen=&tf_l;
+
   ros::Publisher pub=n.advertise<pcl::PointCloud<PointXYZRGB>>("/hacd/env_objects",1);
+  c_check.pub_=pub;
+  //string obj_file="/home/bala/catkin_ws/src/urlg_robots_description/meshes/lbr4/convex_hull/vertices/link_1.ply";
+  //vector<string> f_names;
+  //f_names.push_back(obj_file);
+  string obj_file="/home/bala/catkin_ws/src/in_hand_manipulation/meshes/banana.ply";
+  vector<double> pose;
+  //c_check.initialize_robot_state(1,f_names);
+  c_check.add_obj_cloud(obj_file,pose);
+  
+  // Publish object pointcloud:
 
   // Add robot meshes:
   ros::ServiceServer service=n.advertiseService("/in_hand/primitive/finger_gaiting",finger_gait_call);
