@@ -220,18 +220,3 @@ if __name__=='__main__':
     #v_m.viz_ellipse(f_1,f_2,a,vert)
     v_m.viz_vertices(vert)
     v_m.viz_vertices(new_v,'new_v')
-    #f_1,f_2,a=fit_ellipse_pca(vert)
-    '''
-    print f_1
-    print f_2
-    print a
-    # Visualize contact region
-    # visualize ellipse:
-    v_m=viz_markers.VizInHand(o_mesh,cs_meshes)
-    pose=np.zeros(7)
-    pose[-1]=1.0
-    v_m.viz_reachability(pose,[2])
-    #v_m.viz_obj_mesh()
-    v_m.viz_ellipse(f_1,f_2,a,vert)
-    v_m.viz_vertices(vert)
-    '''
