@@ -1,4 +1,0 @@
-obj_mesh
-sensor_msgs/JointState joint_state
-std_msgs/Int64[] f_index
----

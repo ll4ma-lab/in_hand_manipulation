@@ -53,6 +53,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate messages in the 'msg' folder
  add_message_files(
    FILES
+   Ellipse.msg
    Grasp.msg
    GaitNode.msg
    GaitPlan.msg
@@ -61,9 +62,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
-  GetHandContact.srv
   GetEllipse.srv
-
   RelocateFinger.srv
   MoveObj.srv
   GetGaitPlan.srv
@@ -76,6 +75,7 @@ add_service_files(
    sensor_msgs
    std_msgs
    geometry_msgs
+   grasp_gaits
  )
 
 ###################################

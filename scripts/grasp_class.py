@@ -15,6 +15,7 @@ def flatten(lis):
              yield item
 
 from pathos.multiprocessing import ProcessingPool as Pool
+
 class object:
     def __init__(self,mesh,build_g_mat=False):
         self.mesh=trimesh.load_mesh(mesh)
@@ -79,10 +80,11 @@ class grasp:
 
          
          
-    def generate_contact_surfaces(self,load_from_file=False):
+    def generate_contact_surfaces(self,load_from_file=False,prefix_path=''):
         
         contact_surfaces=[[] for i in range(max(self.fingers)+1)]
-        cs=['f0.stl','f1.stl','f2.stl','f3.stl']
+        cs=[prefix_path+'f0.stl',prefix_path+'f1.stl',prefix_path+'f2.stl',prefix_path+'f3.stl']
+
         if(not load_from_file):
             self.map=Pool().map
 

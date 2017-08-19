@@ -17,6 +17,6 @@ std_msgs/Int64[] f_index
 geometry_msgs/PointStamped[] contact_pts
 geometry_msgs/Vector3[] contact_normals
 geometry_msgs/PoseStamped obj_pose
-std_msgs/Float64MultiArray ellipses
+grasp_gaits/Ellipse[] ellipses
 std_msgs/String[] reachable_ws_mesh
 std_msgs/String obj_mesh

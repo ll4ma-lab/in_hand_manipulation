@@ -1,4 +1,4 @@
 geometry_msgs/PoseStamped obj_pose
 std_msgs/Int64[] f_index
 ---
-std_msgs/Float64MultiArray ellipses
+grasp_gaits/Ellipse[] ellipses

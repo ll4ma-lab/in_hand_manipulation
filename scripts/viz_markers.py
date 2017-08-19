@@ -3,11 +3,12 @@ import rospy
 from visualization_msgs.msg import Marker, MarkerArray
 import numpy as np
 class VizInHand:
-    def __init__(self,obj_mesh,finger_meshes):
+    def __init__(self,obj_mesh='',finger_meshes=[''],init_node=True):
         self.obj_mesh=obj_mesh
         self.finger_meshes=finger_meshes
         # initialize node
-        rospy.init_node('marker_viz')
+        if(init_node):
+            rospy.init_node('marker_viz')
         # initialize publisher
         self.obj_pub=rospy.Publisher('obj_marker',Marker,queue_size=1)
 
@@ -50,7 +51,7 @@ class VizInHand:
 
     def viz_vertices(self,v,t='cs'):
         #print len(v)
-        scale=0.005
+        scale=0.001
         v_pub=rospy.Publisher(t,MarkerArray,queue_size=1)
         m_arr=MarkerArray()
         r=1.0
@@ -196,6 +197,41 @@ class VizInHand:
         while(not rospy.is_shutdown()):
             obj_m.header.stamp=rospy.Time()
             self.obj_pub.publish(obj_m)
+
+    def viz_cpts(self,cpts,t='cpt',rgb=[1.0,0.1,0.1]):
+        scale=0.005
+        self.v_pub=rospy.Publisher(t,MarkerArray,queue_size=1)
+        m_arr=MarkerArray()
+        for i in range(len(cpts)):
+            pt=cpts[i]
+            obj_m=Marker()
+            obj_m.header.frame_id='palm_link'
+            obj_m.header.stamp=rospy.Time()
+            obj_m.id=i
+            obj_m.type=Marker.SPHERE
+            obj_m.action=Marker.ADD
+            obj_m.scale.x=scale
+            obj_m.scale.y=scale
+            obj_m.scale.z=scale
+            obj_m.color.a=1.0
+            obj_m.color.r=rgb[0]
+            obj_m.color.g=rgb[1]
+            obj_m.color.b=rgb[2]
+            obj_m.pose.position.x=pt.point.x
+            obj_m.pose.position.y=pt.point.y
+            obj_m.pose.position.z=pt.point.z
+            obj_m.pose.orientation.x=0.0
+            obj_m.pose.orientation.y=0.0
+            obj_m.pose.orientation.z=0.0
+            obj_m.pose.orientation.w=1.0
+            m_arr.markers.append(obj_m)
+        i=0
+        self.loop_rate=rospy.Rate(10)
+        while(not rospy.is_shutdown() and i<10):
+            self.v_pub.publish(m_arr)
+            self.loop_rate.sleep()
+            i+=1
+    
     def viz_nodes(self,pose_arr,initial_pose,desired_pose):
         scale=0.005
         self.v_pub=rospy.Publisher('rrt/tree',MarkerArray,queue_size=1)
@@ -286,13 +322,7 @@ class VizInHand:
         obj_m.color.r=0.2
         obj_m.color.g=0.2
         obj_m.color.b=0.2
-        obj_m.pose.position.x=pose[0]
-        obj_m.pose.position.y=pose[1]
-        obj_m.pose.position.z=pose[2]
-        obj_m.pose.orientation.x=pose[3]
-        obj_m.pose.orientation.y=pose[4]
-        obj_m.pose.orientation.z=pose[5]
-        obj_m.pose.orientation.w=pose[6]
+        obj_m.pose=pose.pose
         i=0
         self.loop_rate=rospy.Rate(10)
         while(not rospy.is_shutdown() and i<5):

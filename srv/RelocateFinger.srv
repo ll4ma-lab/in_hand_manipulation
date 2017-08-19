@@ -1,4 +1,8 @@
-grasp_gaits/Grasp init_grasp
-std_msgs/Int64[] f_index
+geometry_msgs/PoseStamped obj_pose
+geometry_msgs/PointStamped[] contact_pts
+int64 f_idx
+geometry_msgs/PointStamped des_contact_pt
+grasp_gaits/Ellipse ellipse
 ---
-grasp_gaits/Grasp updated_grasp
+geometry_msgs/PointStamped next_contact_pt
+float64 stability_score
