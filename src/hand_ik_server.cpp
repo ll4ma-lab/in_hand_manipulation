@@ -83,8 +83,17 @@ bool hand_ik_call(in_hand_manipulation::GetHandIK::Request &req,
 
   sensor_msgs::JointState goal_state;
   goal_state=req.init_joint_state;
-  goal_state.position=j_best;
-
+  
+  for(int j=0;j<req.f_index.size();++j)
+  {
+    int f=req.f_index[j].data;
+    for(int i=0;i<4;++i)
+    {
+      joints_0[f*4+i]=j_best[f*4+i];
+    }
+  }
+  goal_state.position=joints_0;
+  
   res.joint_state=goal_state;
   return true;   
 }

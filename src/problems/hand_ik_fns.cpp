@@ -93,25 +93,28 @@ vector<double> optProblem::objGradient(vector<double> x) const
   int n_f=4;
   for (int f=0;f<n_f;f++)
   {
-    vector<double> f_q(&q[f*4],&q[f*4+4]);
+    if(des_poses[n_f][f]==1)
+    { 
+      vector<double> f_q(&q[f*4],&q[f*4+4]);
+      
+      ee_pose_arr=robot_kdl_.getFK(f,f_q,true);
     
-    ee_pose_arr=robot_kdl_.getFK(f,f_q,true);
+      Map<Eigen::VectorXd> ee_pose(&ee_pose_arr[0],3);// only position
+      
+      f_pos_err=des_poses[f]-ee_pose;
+      f_pose_err[0]=f_pos_err[0];
+      f_pose_err[1]=f_pos_err[1];
+      f_pose_err[2]=f_pos_err[2];
+      f_pose_err[3]=0.0;
+      f_pose_err[4]=0.0;
+      f_pose_err[5]=0.0;
     
-    Map<Eigen::VectorXd> ee_pose(&ee_pose_arr[0],3);// only position
-
-    f_pos_err=des_poses[f]-ee_pose;
-    f_pose_err[0]=f_pos_err[0];
-    f_pose_err[1]=f_pos_err[1];
-    f_pose_err[2]=f_pos_err[2];
-    f_pose_err[3]=0.0;
-    f_pose_err[4]=0.0;
-    f_pose_err[5]=0.0;
-    
-    finger_gradient=-1.0*f_pose_err.transpose()*robot_kdl_.getJacobian(f,f_q);
-
-    for (int k=0;k<4;++k)
-    {
-      gradient[f*4+k]+=finger_gradient[k];
+      finger_gradient=-1.0*f_pose_err.transpose()*robot_kdl_.getJacobian(f,f_q);
+      
+      for (int k=0;k<4;++k)
+      {
+        gradient[f*4+k]+=finger_gradient[k];
+      }
     }
   }  
   for (int j=0;j<robot_kdl_.dof;++j)

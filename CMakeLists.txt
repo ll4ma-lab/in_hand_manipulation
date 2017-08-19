@@ -44,6 +44,7 @@ add_service_files(
   DisableGraspStability.srv
   PlanFingerGait.srv
   GetHandIK.srv
+  GetHandContact.srv
   )
 generate_messages(
   DEPENDENCIES
