@@ -4,8 +4,6 @@ from in_hand_manipulation.srv import PlanFingerGait
 if __name__='__main__':
 
     # Run ros service client:
-
-    
     # Initialize object and reachable workspace
 
     # Get initial object pose, contact points and joint angles of initial grasp

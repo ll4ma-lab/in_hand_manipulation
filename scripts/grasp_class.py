@@ -39,13 +39,13 @@ class object:
 
         
 class grasp:
-    def __init__(self,fingers,mesh_files):
+    def __init__(self,fingers,mesh_files,obj_mesh='NA'):
         self.fingers=fingers
         self.finger_meshes=[[] for i in range(max(fingers)+1)]
         for i in fingers:
             # Load finger meshes
             self.finger_meshes[i]=object(mesh_files[i])
-
+        self.obj_mesh=obj_mesh
     def update_mesh(self,fing,mesh):
         self.meshes[fing]=mesh
 
@@ -53,7 +53,8 @@ class grasp:
     def load_object(self,obj_mesh):
         self.object=object(obj_mesh,False)
 
-
+    def reset_object(self):
+         self.object=object(self.obj_mesh,False)
     def contact_surface_generation(self,data):
         try:
           inter_d=data[2].intersection(data[1],engine='scad')
@@ -72,7 +73,7 @@ class grasp:
               # enlarge cs:
               c_surf.apply_scale(1.2)
               # subtract :
-              c_surf=c_surf.difference(self.object.mesh,engine='blender')
+              c_surf=c_surf.difference(self.object.mesh,engine='scad')
 
          self.contact_surfaces[idx]=c_surf
 

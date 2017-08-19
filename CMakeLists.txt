@@ -63,7 +63,7 @@ add_service_files(
   FILES
   GetHandContact.srv
   GetEllipse.srv
-  GetIK.srv
+
   RelocateFinger.srv
   MoveObj.srv
   GetGaitPlan.srv

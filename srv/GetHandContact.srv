@@ -1,4 +1,4 @@
-grasp_gaits/Grasp init_grasp
+obj_mesh
+sensor_msgs/JointState joint_state
 std_msgs/Int64[] f_index
 ---
-grasp_gaits/Grasp updated_grasp
