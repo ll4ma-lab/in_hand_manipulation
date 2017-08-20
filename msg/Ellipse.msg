@@ -9,4 +9,5 @@ float64[] c
 float64[] f_1
 float64[] f_2
 float64[] proj_mat
-
+float64[] plane_normal
+float64 plane_d

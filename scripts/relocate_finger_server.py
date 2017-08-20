@@ -19,21 +19,37 @@ class relocateOpt:
         U_r[2,:]=self.ellipse.proj_mat[4:6]
         # Turn it to a matrix:
         self.U_r=U_r
-        
-    def constraint(self,q):
+
+    def plane_constraint(self,q):
+        a=self.ellipse.plane_normal
+        d=np.ravel(np.matrix(q)*np.matrix(a).T)-self.ellipse.plane_d
+        return d
+
+    def plane_constraint_grad(self,q):
+        grad=np.array([self.ellipse.plane_normal[0],self.ellipse.plane_normal[1],self.ellipse.plane_normal[2]])
+        return grad
+
+    def ellipse_constraint(self,q):        
         q_2d=np.ravel(np.matrix(q-self.ellipse.c)*self.U_r)
         r=(np.sum(np.abs(self.ellipse.f_1-q_2d)))+(np.sum(np.abs(self.ellipse.f_2-q_2d)))
+        #print str(r)+' '+str(self.ellipse.a*2.0)
         return r
+
+    def ellipse_constraint_grad(self,q):
+        q_2d=np.ravel(np.matrix(q-self.ellipse.c)*self.U_r)
+        grad=np.zeros(3)
+        grad=1.0*np.ravel((np.matrix(q_2d)*self.U_r.transpose()+self.ellipse.c))
+        return grad
     
     
     def constraint_fn(self,q):
         G=[]
-        G.append(self.constraint(q))
+        G.append(self.plane_constraint(q))
+        G.append(self.ellipse_constraint(q))
         return G
 
     def cost_fn(self,q):
         r=np.sum(np.abs(self.des_pt[0:3]-q[0:3]))
-        #print r
         return r
     
     def cost_fn_gradient(self,q):
@@ -41,16 +57,13 @@ class relocateOpt:
         grad[0:3]=-1.0*(self.des_pt[0:3]-q[0:3])
         return list(grad)
 
-    def constraint_grad(self,q):
-        q_2d=np.ravel(np.matrix(q-self.ellipse.c)*self.U_r)
-        grad=np.zeros(3)
-        #grad=s
-        return grad
+
     def constraint_fn_gradient(self,q):
         G=[]
-        grad=np.zeros(3)
-        grad+=self.constraint_grad(q)
-        G.append(list(grad))
+        grad1=self.plane_constraint_grad(q)
+        G.append(list(grad1))
+        grad2=self.ellipse_constraint_grad(q)
+        G.append(list(grad2))
         return G
     
     def objfunc(self,q):
@@ -80,8 +93,8 @@ class relocateServer:
         low_bounds=np.ones(3)*-0.5
         up_bounds=np.ones(3)*0.5
         
-        cnst_bounds_up=np.ones(1)*0.0
-        cnst_bounds_low=np.ones(1)*2*req.ellipse.a
+        cnst_bounds_low=np.array([0.0,0.0])# plane,ellipse
+        cnst_bounds_up=np.array([0.0,req.ellipse.a*2.0])# plane,ellipse
         
         q0=np.ones(3)*0.1
         
@@ -92,18 +105,22 @@ class relocateServer:
         opt_prob.addVarGroup('q',len(q0),type='c',value=q0,upper=up_bounds,lower=low_bounds)
         
         # In equality Constraints:
-        opt_prob.addConGroup('g',1,type='i',lower=cnst_bounds_low,upper=cnst_bounds_up)
-        
-        method=getattr(pyOpt,'SLSQP')
+        opt_prob.addConGroup('g',2,type='i',lower=cnst_bounds_low,upper=cnst_bounds_up)
+
         max_iter=1000
-        #opt_options={'Iterations limit':max_iter,'Solution':'No','iPrint':0,'iSumm':0,'Problem Type':'Feasible point'}
-        #opt_options={'Iterations limit':max_iter,'Solution':'Yes','iPrint':1,'iSumm':1,'Problem Type':'Minimize'}
+        '''
+        method=getattr(pyOpt,'SLSQP')
         slsqp_options={'MAXIT':max_iter,'ACC':1e-4}
         optimizer=method(options=slsqp_options)
-
+        '''
+        
+        method=getattr(pyOpt,'SNOPT')
+        #opt_options={'Iterations limit':max_iter,'Solution':'No','iPrint':0,'iSumm':0,'Problem Type':'Feasible point'}
+        opt_options={'Iterations limit':max_iter,'Solution':'Yes','iPrint':1,'iSumm':1,'Problem Type':'Minimize'}
+        optimizer=method(options=opt_options)
         print "Optimizing"
-        [fstr,xstr,inform]=optimizer(opt_prob,sens_type='FD')
-        #[fstr,xstr,inform]=optimizer(opt_prob,sens_type=wrap.grad_obj_func)
+        #[fstr,xstr,inform]=optimizer(opt_prob,sens_type='FD')
+        [fstr,xstr,inform]=optimizer(opt_prob,sens_type=wrap.grad_obj_func)
         print inform
         print 'Final cost: '+str(fstr)
 

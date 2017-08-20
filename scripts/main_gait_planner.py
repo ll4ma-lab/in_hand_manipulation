@@ -197,10 +197,10 @@ if __name__=='__main__':
     viz.viz_cpts([c_pts[0]],t='cpt',rgb=[1.0,0.0,0.0])
     
     # Desired contact points:
-    obj_pose.pose.position.y-=0.03
+    obj_pose.pose.position.y-=0.15
     obj_pose.pose.position.x+=0.03
     _,d_pts=hand_contact.call(obj_pose,js,f_index=[0,1,2,3])
-    obj_pose.pose.position.y+=0.03
+    obj_pose.pose.position.y+=0.15
     obj_pose.pose.position.x-=0.03
     viz.viz_cpts([d_pts[0]],t='d_cpt',rgb=[0.0,1.0,0.0])    
 

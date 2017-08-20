@@ -45,15 +45,20 @@ class ellipseApprox:
             e_data.f_2=f2
             e_data.proj_mat=U_r
             e_data.c=c
+            
+            # Get hyperplane:
+            new_v=(np.matrix(u_r)*e_r.T).T+c
+            normal,d=self.get_hyperplane(new_v[0:3])
+            e_data.plane_normal=normal
+            e_data.plane_d=d
             e_arr.append(e_data)
             if(i==0):
                 # viz ellipses
-                new_v=(np.matrix(u_r)*e_r.T).T+c
                 self.viz.viz_vertices(new_v,t='ellipse')
                 self.viz.viz_vertices(vert,t='cs')
         
         self.grasp.object=t_obj
-
+        
         return GetEllipseResponse(e_arr)
     
     def get_ellipse_2d(self,vert_2d):
@@ -64,6 +69,16 @@ class ellipseApprox:
         f2=[-c,0.0]
         return f1,f2,a
 
+    def get_hyperplane(self,pts):
+        #TODO: make it n dimensional
+        # currently only works for 3d
+        v_1=pts[0]-pts[1]
+        v_2=pts[0]-pts[2]
+        normal=np.cross(v_1,v_2)
+        d=np.ravel(normal*pts[0].T)
+        return np.ravel(normal),d[0]
+        
+        
     def median_cluster(self,v):
         mean=np.mean(v,axis=0)
         med=np.median(v,axis=0)
