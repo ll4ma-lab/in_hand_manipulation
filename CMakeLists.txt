@@ -47,7 +47,9 @@ generate_messages(
    sensor_msgs
  )
 
-
+catkin_package(
+  
+)
 include_directories(
   ${catkin_INCLUDE_DIRS}
   /home/bala/pkgs/pagmo_plugins_nonfree/include

@@ -1,6 +1,8 @@
 from in_grasp_client import inGraspClient
 import sys
 import time
+
+
 # Find package with allegro model
 from rospkg import RosPack
 
