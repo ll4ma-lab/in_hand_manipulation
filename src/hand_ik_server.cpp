@@ -73,9 +73,9 @@ bool hand_ik_call(in_hand_manipulation::GetHandIK::Request &req,
   algorithm algo{snopt7(false,"/usr/local/lib/")};
   //algorithm algo{cmaes(500)};
   population pop{prob,10u};
-  cerr<<"Solving"<<endl;  
+  //cerr<<"Solving"<<endl;  
   population pop_res = algo.evolve(pop);
-  cerr<<"optimization completed!  Final cost: "<<pop_res.champion_f()[0]<<endl;
+  //cerr<<"optimization completed!  Final cost: "<<pop_res.champion_f()[0]<<endl;
 
 
 

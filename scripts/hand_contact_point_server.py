@@ -1,9 +1,11 @@
+#!/usr/bin/env python
 import rospy
 from in_hand_manipulation.srv import GetHandContact
 import numpy as np
 import trimesh
 import copy
 from geometry_msgs.msg import PointStamped
+
 # hand model:
 import sys
 from rospkg import RosPack
