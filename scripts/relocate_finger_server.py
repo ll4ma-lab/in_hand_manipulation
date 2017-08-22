@@ -17,6 +17,9 @@ class relocateOpt:
         U_r[0,:]=self.ellipse.proj_mat[0:2]
         U_r[1,:]=self.ellipse.proj_mat[2:4]
         U_r[2,:]=self.ellipse.proj_mat[4:6]
+        self.ellipse.f_1=np.ravel(self.ellipse.f_1)
+        self.ellipse.f_2=np.ravel(self.ellipse.f_2)
+        self.ellipse.c=np.ravel(self.ellipse.c)
         # Turn it to a matrix:
         self.U_r=U_r
 
@@ -31,14 +34,15 @@ class relocateOpt:
 
     def ellipse_constraint(self,q):        
         q_2d=np.ravel(np.matrix(q-self.ellipse.c)*self.U_r)
-        r=(np.sum(np.abs(self.ellipse.f_1-q_2d)))+(np.sum(np.abs(self.ellipse.f_2-q_2d)))
-        #print str(r)+' '+str(self.ellipse.a*2.0)
+        r=(np.sum(np.abs(self.ellipse.f_1-q_2d)))+(np.sum(np.abs(self.ellipse.f_2-q_2d)))-2*self.ellipse.a
         return r
 
     def ellipse_constraint_grad(self,q):
-        q_2d=np.ravel(np.matrix(q-self.ellipse.c)*self.U_r)
+        #q_2d=np.ravel(np.matrix(q-self.ellipse.c)*self.U_r)
         grad=np.zeros(3)
-        grad=1.0*np.ravel((np.matrix(q_2d)*self.U_r.transpose()+self.ellipse.c))
+        grad=1.0*np.ravel((np.matrix(self.ellipse.f_1+self.ellipse.f_2)*self.U_r.transpose()))
+
+
         return grad
     
     
@@ -93,8 +97,8 @@ class relocateServer:
         low_bounds=np.ones(3)*-0.5
         up_bounds=np.ones(3)*0.5
         
-        cnst_bounds_low=np.array([0.0,0.0])# plane,ellipse
-        cnst_bounds_up=np.array([0.0,req.ellipse.a*2.0])# plane,ellipse
+        cnst_bounds_low=np.array([0.0,-req.ellipse.a*2.0])# plane,ellipse
+        cnst_bounds_up=np.array([0.0,0.0])# plane,ellipse
         
         q0=np.ones(3)*0.1
         
@@ -119,8 +123,8 @@ class relocateServer:
         opt_options={'Iterations limit':max_iter,'Solution':'Yes','iPrint':1,'iSumm':1,'Problem Type':'Minimize'}
         optimizer=method(options=opt_options)
         print "Optimizing"
-        #[fstr,xstr,inform]=optimizer(opt_prob,sens_type='FD')
-        [fstr,xstr,inform]=optimizer(opt_prob,sens_type=wrap.grad_obj_func)
+        [fstr,xstr,inform]=optimizer(opt_prob,sens_type='FD')
+        #[fstr,xstr,inform]=optimizer(opt_prob,sens_type=wrap.grad_obj_func)
         print inform
         print 'Final cost: '+str(fstr)
 
@@ -133,7 +137,6 @@ class relocateServer:
 if __name__=='__main__':
     # 
     rospy.init_node('relocate_finger_server')
-
     relocate_server=relocateServer()
     rospy.Service('regrasp_planner/relocate_finger',RelocateFinger ,relocate_server.optimize)
     rospy.spin()

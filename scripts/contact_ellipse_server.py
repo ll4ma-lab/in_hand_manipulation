@@ -52,7 +52,7 @@ class ellipseApprox:
             e_data.plane_normal=normal
             e_data.plane_d=d
             e_arr.append(e_data)
-            if(i==0):
+            if(i==3):
                 # viz ellipses
                 self.viz.viz_vertices(new_v,t='ellipse')
                 self.viz.viz_vertices(vert,t='cs')

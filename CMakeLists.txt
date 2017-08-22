@@ -66,6 +66,7 @@ add_service_files(
   RelocateFinger.srv
   MoveObj.srv
   GetGaitPlan.srv
+  RelocateObj.srv
 )
 
 

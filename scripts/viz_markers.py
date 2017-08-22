@@ -199,7 +199,7 @@ class VizInHand:
             self.obj_pub.publish(obj_m)
 
     def viz_cpts(self,cpts,t='cpt',rgb=[1.0,0.1,0.1]):
-        scale=0.005
+        scale=0.01
         self.v_pub=rospy.Publisher(t,MarkerArray,queue_size=1)
         m_arr=MarkerArray()
         for i in range(len(cpts)):
@@ -307,7 +307,9 @@ class VizInHand:
             self.loop_rate.sleep()
             i+=1
             
-    def viz_obj_mesh(self,pose):
+    def viz_obj_mesh(self,pose,t='obj_marker',rgb=[0.5,0.5,0.5],a=0.4):
+        obj_pub=rospy.Publisher(t,Marker,queue_size=1)
+
         obj_m=Marker()
         obj_m.header.frame_id='palm_link'
         obj_m.header.stamp=rospy.Time()
@@ -318,16 +320,16 @@ class VizInHand:
         obj_m.scale.x=1.0
         obj_m.scale.y=1.0
         obj_m.scale.z=1.0
-        obj_m.color.a=0.5
-        obj_m.color.r=0.2
-        obj_m.color.g=0.2
-        obj_m.color.b=0.2
+        obj_m.color.a=a
+        obj_m.color.r=rgb[0]
+        obj_m.color.g=rgb[1]
+        obj_m.color.b=rgb[2]
         obj_m.pose=pose.pose
         i=0
         self.loop_rate=rospy.Rate(10)
         while(not rospy.is_shutdown() and i<5):
             obj_m.header.stamp=rospy.Time()
-            self.obj_pub.publish(obj_m)
+            obj_pub.publish(obj_m)
             self.loop_rate.sleep()
             i+=1
 
