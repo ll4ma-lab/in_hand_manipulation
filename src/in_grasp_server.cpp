@@ -193,14 +193,7 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
     
     jt_pt.positions=j_arr;
     joint_traj.points.push_back(jt_pt);
-    /*
-    if(i==-1+j_best.size()/16)
-    {
-      vector<double> th_j(&j_arr[12],&j_arr[12+4]);
-      vector<double> th_pose=allegro_kdl.getFK(3,th_j,true);
-      cerr<<"Obj pose: "<<th_pose[0]<<" "<<th_pose[1]<<" "<<th_pose[2]<<" "<<th_pose[3]<<" "<<th_pose[4]<<" "<<th_pose[5]<<endl;
-    }
-    */
+    
   }
 
   res.joint_traj=joint_traj;

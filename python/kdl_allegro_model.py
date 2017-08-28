@@ -53,13 +53,13 @@ class allegroKinematics:
         object_frames=[[np.eye(4)]for i in range(4)]
         inv_object_frames=[[np.eye(4)]for i in range(4)]
         object_frames[finger]=f_T_o
-        inv_object_frames[finger]=inv(f_T_o)
+        inv_object_frames[finger]=np.matrix(inv(f_T_o))
         fingers=self.fingers[self.fingers!=finger]
         for i in fingers:            
             # Creating frames for other fingers:
             i_T_o=inv(np.matrix(self.end_effector_pose(joints[i*4:i*4+4],i)))*np.matrix(t_T_f)*np.matrix(f_T_o)
             object_frames[i]=np.matrix(i_T_o)
-            inv_object_frames[i]=inv(np.matrix(i_T_o))
+            inv_object_frames[i]=np.matrix(inv(np.matrix(i_T_o)))
 
         finger_dist=[[0.0,0.0,0.0] for i in range(self.FINGERS)]
         
@@ -70,7 +70,7 @@ class allegroKinematics:
         u=joints
         i=finger
         for k in self.fingers:
-            T_mat=(self.end_effector_pose(u[i*self.DOF:i*self.DOF+self.DOF],i))*self.end_effector_pose(u[k*self.DOF:k*self.DOF+self.DOF],k)    
+            T_mat=inv(self.end_effector_pose(u[i*self.DOF:i*self.DOF+self.DOF],i))*self.end_effector_pose(u[k*self.DOF:k*self.DOF+self.DOF],k)    
             diff=np.ravel(T_mat[0:3,3])
             finger_dist[k]=diff
             a=self.end_effector_pose_array(u[i*self.DOF:i*self.DOF+self.DOF],i)[3:6]
@@ -196,8 +196,10 @@ class allegroKinematics:
         
         self.time_contacts=time_contacts
 
-    def object_pose(self,joints,finger=3,get_quat=False):
+    def object_pose(self,joints,finger=3,get_quat=False,get_T_mat=False):
         obj_T=self.end_effector_pose(joints[finger*4:finger*4+4],finger)*self.object_frames[finger]
+        if(get_T_mat):
+            return obj_T
         if get_quat:
             obj_pose=np.zeros(7)
         else:
@@ -223,6 +225,15 @@ class allegroKinematics:
         des_finger_pose[0:3]=des_f[0:3,3].ravel()
         des_finger_pose[3:6]=R.GetRPY()
         return des_finger_pose
+
+    def get_pose_array(self,obj_T):
+        obj_pose=np.zeros(6)
+        R=PyKDL.Rotation(obj_T[0,0],
+                      obj_T[0,1],obj_T[0,2],obj_T[1,0],obj_T[1,1],obj_T[1,2],obj_T[2,0],obj_T[2,1],obj_T[2,2])
+
+        obj_pose[3:6]=np.array(R.GetRPY())
+        obj_pose[0:3]=np.ravel(obj_T[0:3,3])
+        return obj_pose
 
     def finger_rigid_pose(self,u,f0,f1):
         # gives the pose of f1 given f0 in the reference frame of rigid f1

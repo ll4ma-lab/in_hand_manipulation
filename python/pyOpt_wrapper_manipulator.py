@@ -39,8 +39,8 @@ class OptimalController:
 
         if(self.DYN_constraint):
             # Add inequality constraint limits
-            lower_limit_velocity=np.ones(T*self.robot.m)*(-0.1)
-            upper_limit_velocity=np.ones(T*self.robot.m)*(0.1)
+            lower_limit_velocity=np.ones(T*self.robot.m)*(-10.1)
+            upper_limit_velocity=np.ones(T*self.robot.m)*(10.1)
 
         # Add variables
         opt_prob.addVarGroup('q',len(q0),type='c',value=q0,upper=opt_up_bounds,lower=opt_low_bounds)
@@ -49,8 +49,9 @@ class OptimalController:
         #opt_prob.addConGroup('g',(T)*self.robot.m+T,type='i',lower=lower_limits,upper=upper_limits)
         method=getattr(pyOpt,self.method)
         optimizer=method(options=self.opt_options)
-
+        
         [fstr,xstr,inform]=optimizer(opt_prob,sens_type=self.grad_obj_func)
+        #[fstr,xstr,inform]=optimizer(opt_prob,sens_type='FD')
         print inform
         print 'Final cost: '+str(fstr)
         q_star=xstr

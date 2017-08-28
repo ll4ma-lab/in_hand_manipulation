@@ -51,7 +51,7 @@ class OptFns:
             cost+=self.final_cost(x_d[-1],u[-1],self.robot)
         else:
             # This case works when you want to optimize for only one time-step
-            cost+=self.final_cost(x_d,u,self.robot)
+            cost+=self.final_cost(x_d,u[-1],self.robot)
         #print cost
         
         return cost

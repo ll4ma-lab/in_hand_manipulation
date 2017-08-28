@@ -9,17 +9,17 @@ class inGraspClient:
         # Initialize variables:
         self.weights=[1.0,1.0,1.0,1.0]
         
-    def call_server(self,j_arr,obj_pose,des_obj_pose,fingers=[0,1,2,3],rig_finger=3):
-        j0=JointState()
-        j0.position=j_arr
+    def call_server(self,js,obj_pose,des_obj_pose,fingers=[0,1,2,3],rig_finger=3):
+        #j0=JointState()
+        #j0.position=j_arr
 
         rospy.wait_for_service('/in_hand/primitive/in_grasp_manipulation')
         get_in_grasp_plan=rospy.ServiceProxy('/in_hand/primitive/in_grasp_manipulation',InGraspManipulation)
         
         
 
-        j_traj=get_in_grasp_plan(j0,obj_pose,des_obj_pose,self.weights,fingers,rig_finger)
-        return j_traj
+        j_traj=get_in_grasp_plan(js,obj_pose,des_obj_pose,self.weights,fingers,rig_finger,1)
+        return j_traj.n_js,j_traj.n_obj_pose
 
     def call_server_list(self,j_arr,obj_pose_,des_obj_pose_,weights=[1.0,1.0,1.0,1.0],fingers=[0,1,2,3],rig_finger=3):
         j0=JointState()
@@ -54,7 +54,7 @@ class inGraspClient:
         
         
 
-        j_traj=get_in_grasp_plan(j0,obj_pose,des_obj_pose,weights,fingers,rig_finger)
+        j_traj=get_in_grasp_plan(j0,obj_pose,des_obj_pose,weights,fingers,rig_finger,10)
         
         return j_traj.joint_traj
 

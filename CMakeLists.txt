@@ -36,6 +36,7 @@ find_package(ccd REQUIRED)
  add_service_files(
    FILES
    InGraspManipulation.srv
+   InGraspManipulationSd.srv
  )
 
 ## Generate added messages and services with any dependencies listed here

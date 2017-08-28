@@ -4,5 +4,8 @@ geometry_msgs/Pose desired_object_pose
 float64[] weights
 int16[] fingers
 int16 rigid_finger
+int16 T
 ---
+sensor_msgs/JointState n_js
+geometry_msgs/PoseStamped n_obj_pose
 trajectory_msgs/JointTrajectory joint_traj
