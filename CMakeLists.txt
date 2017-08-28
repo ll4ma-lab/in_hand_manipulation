@@ -64,9 +64,11 @@ add_service_files(
   FILES
   GetEllipse.srv
   RelocateFinger.srv
+  RelocateFingerKin.srv
   MoveObj.srv
   GetGaitPlan.srv
   RelocateObj.srv
+  RelocateObjSd.srv
 )
 
 

@@ -2,6 +2,17 @@
 import rospy
 from visualization_msgs.msg import Marker, MarkerArray
 import numpy as np
+# import required allegro model files
+from rospkg import RosPack
+rp=RosPack()
+rp.list()
+import sys
+path_=rp.get_path('optimization_pkg')+'/scripts'
+sys.path.insert(0,path_)
+from trajectory_pub import *
+import time
+
+
 class VizInHand:
     def __init__(self,obj_mesh='',finger_meshes=[''],init_node=True):
         self.obj_mesh=obj_mesh
@@ -12,6 +23,16 @@ class VizInHand:
         # initialize publisher
         self.obj_pub=rospy.Publisher('obj_marker',Marker,queue_size=1)
 
+    def viz_js(self,js,t_name='regrasp_planner/in_grasp_traj'):
+        traj_server=trajectoryServer(100,robot_name='allegro',topic_name=t_name,init_node=False)
+        time.sleep(1.0)
+        js.name=['index_joint_0', 'index_joint_1', 'index_joint_2', 'index_joint_3', 'middle_joint_0', 'middle_joint_1', 'middle_joint_2', 'middle_joint_3', 'ring_joint_0', 'ring_joint_1', 'ring_joint_2', 'ring_joint_3', 'thumb_joint_0', 'thumb_joint_1', 'thumb_joint_2', 'thumb_joint_3']
+        j_t=traj_server.get_jtraj(js)
+
+        traj_server.viz_joint_traj(j_t,'allegro_mount')
+
+
+        
     def viz_reachability(self,pose,meshes,arr=[0,1,2,3],t='R_fingers',a=0.1):
         f_pub=rospy.Publisher(t,MarkerArray,queue_size=1)
         m_arr=MarkerArray()
@@ -198,6 +219,40 @@ class VizInHand:
             obj_m.header.stamp=rospy.Time()
             self.obj_pub.publish(obj_m)
 
+    def viz_pts(self,cpts,t='cpt',rgb=[0.0,0.0,1.0]):
+        scale=0.01
+        self.v_pub=rospy.Publisher(t,MarkerArray,queue_size=1)
+        m_arr=MarkerArray()
+        for i in range(len(cpts)):
+            pt=cpts[i]
+            obj_m=Marker()
+            obj_m.header.frame_id='palm_link'
+            obj_m.header.stamp=rospy.Time()
+            obj_m.id=i
+            obj_m.type=Marker.SPHERE
+            obj_m.action=Marker.ADD
+            obj_m.scale.x=scale
+            obj_m.scale.y=scale
+            obj_m.scale.z=scale
+            obj_m.color.a=1.0
+            obj_m.color.r=rgb[0]
+            obj_m.color.g=rgb[1]
+            obj_m.color.b=rgb[2]
+            obj_m.pose.position.x=pt[0]
+            obj_m.pose.position.y=pt[1]
+            obj_m.pose.position.z=pt[2]
+            obj_m.pose.orientation.x=0.0
+            obj_m.pose.orientation.y=0.0
+            obj_m.pose.orientation.z=0.0
+            obj_m.pose.orientation.w=1.0
+            m_arr.markers.append(obj_m)
+        i=0
+        self.loop_rate=rospy.Rate(10)
+        while(not rospy.is_shutdown() and i<10):
+            self.v_pub.publish(m_arr)
+            self.loop_rate.sleep()
+            i+=1
+
     def viz_cpts(self,cpts,t='cpt',rgb=[1.0,0.1,0.1]):
         scale=0.01
         self.v_pub=rospy.Publisher(t,MarkerArray,queue_size=1)
@@ -232,6 +287,7 @@ class VizInHand:
             self.loop_rate.sleep()
             i+=1
     
+
     def viz_nodes(self,pose_arr,initial_pose,desired_pose):
         scale=0.005
         self.v_pub=rospy.Publisher('rrt/tree',MarkerArray,queue_size=1)
