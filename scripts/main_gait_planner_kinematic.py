@@ -192,7 +192,7 @@ if __name__=='__main__':
     # Get object pose
     obj_pose=PoseStamped()
     obj_pose.pose.position.x=0.06
-    obj_pose.pose.position.y=-0.05
+    obj_pose.pose.position.y=0.06
     obj_pose.pose.position.z=0.00
     obj_pose.pose.orientation.x=0.0
     obj_pose.pose.orientation.y=0.1
@@ -204,7 +204,7 @@ if __name__=='__main__':
     js=JointState()
     js.position=np.ones(16)*0.3
     #js.position[1]=0.5
-    js.position[12]=1.4
+    js.position[12]=1.3
     js.position[14]=0.3
     js.position[15]=0.8
     # Get initial contact points:
@@ -220,15 +220,15 @@ if __name__=='__main__':
     
     viz.viz_js(t_name="finger_gait",js=n_js)
     # Desired contact points:
-    obj_pose.pose.position.y+=0.12
+    obj_pose.pose.position.y-=0.10
     #obj_pose.pose.position.x-=0.02
-    js.position[12]=1.1
+    js.position[12]=1.5
     #js.position[15]=0.8
     js.position[14]=0.1
     _,d_pts=hand_contact.call(obj_pose, js, f_index=[0,1,2,3], transform_points=True, initial_obj_pose=initial_obj_pose)
     
     # Build obj_contact points:
-    obj_pose.pose.position.y-=0.12
+    obj_pose.pose.position.y+=0.10
     #obj_pose.pose.position.x+=0.02
 
     # Build transform matrices for contact points:
@@ -248,9 +248,9 @@ if __name__=='__main__':
     k=0
     thresh=0.003
     relocate_client=relocateClient()
-    #in_grasp_client=inGraspSdClient()
-    relocate_obj_client=relocateObjClient()
-    in_grasp_obj_client=in_grasp_client.inGraspClient()
+    in_grasp_sd_client=inGraspSdClient()
+    #relocate_obj_client=relocateObjClient()
+    #in_grasp_obj_client=in_grasp_client.inGraspClient()
     js=n_js
     #n_obj_pose=relocate_obj_client.call(f_index,d_pts,obj_pose,c_pts)
     #viz.viz_obj_mesh(n_obj_pose,a=1.0,rgb=[1.0,0.0,0.0])
@@ -263,6 +263,7 @@ if __name__=='__main__':
             f=i
             _,js,_=relocate_client.call(obj_pose,c_pts,f,d_pts[f],js)
 
+        viz.viz_js(t_name="finger_gait",js=js)
         _,c_pts=hand_contact.call(obj_pose,js,f_index,transform_points=False,initial_obj_pose=obj_pose)
         diff=np.zeros(4)
         for i in range(len(d_pts)):
@@ -274,22 +275,22 @@ if __name__=='__main__':
             print diff
             break
 
-        
+
         viz.viz_cpts(c_pts,t='cpt',rgb=[1.0,0.0,0.0])
 
-        viz.viz_js(t_name="finger_gait",js=js)
+
 
         #raw_input("Relocated!")
 
         # Relocate object to move workspace:
         # inputs: f_index,contact points, ellipses, object pose
         # outputs: object_pose
-        #js,n_obj_pose=in_grasp_client.call(f_index,d_pts,obj_pose,js,T=1)
+        js,n_obj_pose=in_grasp_sd_client.call(f_index,d_pts,obj_pose,js,T=1)
 
-        n_obj_pose=relocate_obj_client.call(f_index,d_pts,obj_pose,c_pts)
-        viz.viz_obj_mesh(n_obj_pose,t='svd',a=0.7,rgb=[1.0,0.0,0.0])
+        #n_obj_pose=relocate_obj_client.call(f_index,d_pts,obj_pose,c_pts)
+        #viz.viz_obj_mesh(n_obj_pose,t='svd',a=0.7,rgb=[1.0,0.0,0.0])
         #raw_input("found new object pose")
-        js,n_obj_pose=in_grasp_obj_client.call_server(js,obj_pose.pose,n_obj_pose.pose,f_index)
+        #js,n_obj_pose=in_grasp_obj_client.call_server(js,obj_pose.pose,n_obj_pose.pose,f_index)
 
         obj_mat=get_T_mat(n_obj_pose.pose)
         for i in range(len(d_pts)):

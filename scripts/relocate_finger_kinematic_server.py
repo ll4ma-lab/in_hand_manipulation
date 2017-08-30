@@ -8,6 +8,7 @@ import pyOpt
 from geometry_msgs.msg import PointStamped
 import trimesh
 import copy
+
 # hand model:
 import sys
 from rospkg import RosPack
@@ -31,8 +32,7 @@ class relocateOpt:
         # Robot model:
         self.robot_model=robot_kdl
 
-    def mesh_constraint(self,q):        
-       
+    def mesh_constraint(self,q):               
         r=0.0
         return r
 
@@ -40,10 +40,38 @@ class relocateOpt:
         grad=np.zeros(16)
         return grad
     
-    
+    def stability_constraint(self,q):
+        # Add cost for stability:
+        # Ensure thumb is forming a equilateral triangle around the other two fingers
+        r=0.0
+        f_pose=self.robot_model.end_effector_pose_array(q[self.f*4:self.f*4+4],self.f)[0:3]
+        f_poses=copy.deepcopy(self.robot_model.f_poses)
+        f_poses[self.f]=f_pose
+        cent=np.mean(f_poses[0:2],axis=0)
+        r=np.sum(np.abs(cent[1]-f_poses[3])[1])
+        #print r
+        return r
+        
+            
+    def stability_constraint_grad(self,q):
+        grad=np.zeros(16)
+        
+        f_pose=self.robot_model.end_effector_pose_array(q[self.f*4:self.f*4+4],self.f)[0:3]
+        f_poses=copy.deepcopy(self.robot_model.f_poses)
+        f_poses[self.f]=f_pose
+        cent=np.mean(f_poses[0:2],axis=0)
+        r=cent[1]-(f_poses[3])[1]
+        n_f_pose=(f_pose-self.robot_model.f_poses[self.f])[0:3]
+        n_f_pose[0]=0.0
+        n_f_pose[2]=0.0
+        #print n_f_pose
+        grad[self.f*4:self.f*4+4]=1.0*(np.matrix(n_f_pose)
+                                        *self.robot_model.jacobian(q[self.f*4:self.f*4+4],self.f))
+        return grad
+            
     def constraint_fn(self,q):
         G=[]
-        G.append(self.mesh_constraint(q))
+        G.append(self.stability_constraint(q))
         return G
 
     def cost_fn(self,q):
@@ -60,7 +88,7 @@ class relocateOpt:
 
     def constraint_fn_gradient(self,q):
         G=[]
-        grad=self.mesh_constraint_grad(q)
+        grad=self.stability_constraint_grad(q)
         G.append(list(grad))
         return G
     
@@ -97,18 +125,29 @@ class relocateServer:
 
         trans=[req.obj_pose.pose.position.x, req.obj_pose.pose.position.y, req.obj_pose.pose.position.z]
         t_obj.transform(quat,trans)
-
+        q0=np.ravel(req.js.position)
+        # Get object centroid:
+        f_poses=[]
+        q=q0
+        for i in range(4):
+            f_pose=self.robot_kdl.end_effector_pose_array(q[i*4:i*4+4],i)[0:3]
+            f_poses.append(f_pose)
+        obj_cent=np.mean(f_poses,axis=0)
+        print obj_cent
+        self.robot_kdl.obj_cent=obj_cent
+        self.robot_kdl.f_poses=f_poses
+        # 
+        wrap=relocateOpt(des_pt,t_obj,self.robot_kdl,req.f_idx)
         
-        wrap=relocateOpt(des_pt,t_obj,robot_kdl,req.f_idx)
         # setup optimizaiton:
         # Bounds for variables:
         low_bounds=self.robot_kdl.bounds[0]
         up_bounds=self.robot_kdl.bounds[1]
 
         cnst_bounds_low=np.array([0.0])# plane,ellipse
-        cnst_bounds_up=np.array([1.0])# plane,ellipse
+        cnst_bounds_up=np.array([0.01])# plane,ellipse
         
-        q0=np.ravel(req.js.position)
+
 
         opt_prob=pyOpt.Optimization('TP37 Constrained Problem',wrap.objfunc)
         opt_prob.addObj('f')
