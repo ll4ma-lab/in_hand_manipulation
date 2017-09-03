@@ -66,7 +66,7 @@ bool hand_ik_call(in_hand_manipulation::GetHandIK::Request &req,
   opt_problems::optProblem opt_problem(1,allegro_kdl,data_arr,vel_limits,joints_0);
 
   problem prob{trajectory_optimization{opt_problem}};
-  vector<double> tol(0,1e-3);
+  vector<double> tol(0,1e-4);
  
   prob.set_c_tol(tol);
   
@@ -75,7 +75,7 @@ bool hand_ik_call(in_hand_manipulation::GetHandIK::Request &req,
   population pop{prob,10u};
   //cerr<<"Solving"<<endl;  
   population pop_res = algo.evolve(pop);
-  //cerr<<"optimization completed!  Final cost: "<<pop_res.champion_f()[0]<<endl;
+  cerr<<"optimization completed!  Final cost: "<<pop_res.champion_f()[0]<<endl;
 
 
 
@@ -83,7 +83,7 @@ bool hand_ik_call(in_hand_manipulation::GetHandIK::Request &req,
 
   sensor_msgs::JointState goal_state;
   goal_state=req.init_joint_state;
-  
+  joints_0=req.init_joint_state.position;
   for(int j=0;j<req.f_index.size();++j)
   {
     int f=req.f_index[j].data;

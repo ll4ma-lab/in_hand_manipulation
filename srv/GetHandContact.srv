@@ -1,6 +1,8 @@
 geometry_msgs/PoseStamped obj_pose
 sensor_msgs/JointState joint_state
 std_msgs/Int64[] f_index
+bool transform_points
+geometry_msgs/PoseStamped initial_obj_pose
 ---
 int64[] vertex_idx_arr
 geometry_msgs/PointStamped[] contact_pts

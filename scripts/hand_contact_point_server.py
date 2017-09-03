@@ -34,7 +34,19 @@ class handContactServer:
     def call(self,req):
         # move object mesh:
         t_obj=copy.deepcopy(self.obj_trimesh)
+        if(req.transform_points==True):
+            i_obj=copy.deepcopy(self.obj_trimesh)
+            quat=[req.initial_obj_pose.pose.orientation.w,
+                  req.initial_obj_pose.pose.orientation.x,
+                  req.initial_obj_pose.pose.orientation.y,
+                  req.initial_obj_pose.pose.orientation.z]
 
+            trans=[req.initial_obj_pose.pose.position.x, req.initial_obj_pose.pose.position.y, req.initial_obj_pose.pose.position.z]
+            i_obj.transform(quat,trans)
+
+        else:
+            i_obj=t_obj
+            
         quat=[req.obj_pose.pose.orientation.w,
               req.obj_pose.pose.orientation.x,
               req.obj_pose.pose.orientation.y,
@@ -60,18 +72,20 @@ class handContactServer:
         c_pts=[]
         for i in vert_arr:
             cpt=PointStamped()
-            pt=t_obj.mesh.vertices[i]
+            pt=i_obj.mesh.vertices[i]
             cpt.point.x=pt[0]
             cpt.point.y=pt[1]
             cpt.point.z=pt[2]
             c_pts.append(cpt)
+
+        
         return vert_arr,c_pts
     
 if __name__=='__main__':
     #
     rospy.init_node('hand_contact_server')
 
-    obj_mesh=g_path+'/data/object_models/box.stl'
+    obj_mesh=g_path+'/data/object_models/banana_bin.stl'
     hand_server=handContactServer(obj_mesh)
 
     rospy.Service('in_hand_manipulation/get_hand_contacts',GetHandContact,hand_server.call)
