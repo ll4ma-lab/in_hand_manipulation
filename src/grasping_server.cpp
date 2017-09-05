@@ -61,7 +61,7 @@ bool grasp_call(in_hand_manipulation::GetGrasp::Request &req, in_hand_manipulati
   data_arr[2]=obj_pose_low_bounds;
   data_arr[3]=obj_pose_up_bounds;
   vector<double> cpt_dist;
-  cpt_dist.push_back(-0.005);
+  cpt_dist.push_back(-0.004);
   data_arr[4]=cpt_dist;
   
   // Build allegro kdl tree:
@@ -90,33 +90,34 @@ bool grasp_call(in_hand_manipulation::GetGrasp::Request &req, in_hand_manipulati
   allegro_kdl.f_dof=4;
   vector<double> vel_limits;
   vel_limits.resize(2,0.15);
-  cerr<<"creating opt problem"<<endl;
+  //cerr<<"creating opt problem"<<endl;
   int t_steps=1;
   opt_problems::optProblem opt_problem_(t_steps,allegro_kdl,c_check,data_arr,vel_limits,init_joints);
-  cerr<<opt_problem_.m_dim<<endl;
+  //cerr<<opt_problem_.m_dim<<endl;
 
-  cerr<<"creating pagmo problem"<<endl;
+  //cerr<<"creating pagmo problem"<<endl;
   problem prob{trajectory_optimization{opt_problem_}};
-  cerr<<"Created pagmo problem"<<endl;
-  vector<double> tol(8,1e-3);// for constraints
+  //cerr<<"Created pagmo problem"<<endl;
+  vector<double> tol(8,1e-4);// for constraints
   
-  cerr<<"Setting tolerances"<<endl;
+  //cerr<<"Setting tolerances"<<endl;
   prob.set_c_tol(tol);
-  cerr<<"Linking to snop"<<endl;
+  //cerr<<"Linking to snop"<<endl;
   algorithm algo{snopt7(false,"/usr/local/lib/")};
   //algorithm algo{cmaes(500)};
-  cerr<<"creating population"<<endl;
+  //cerr<<"creating population"<<endl;
   population pop{prob,1u};
   vector<double> x0;
-  x0.resize(22,0.0);
+  x0.resize(22,0.3);
   vector<double> x_in=x0;
   vector<double> f_in=prob.fitness(x_in);
   pop.set_xf(0,x_in,f_in);
 
-  cerr<<"Solving"<<endl;  
+  //cerr<<"Solving"<<endl;   
   population pop_res = algo.evolve(pop);
   cerr<<"optimization completed!  Final cost: "<<pop_res.champion_f()[0]<<endl;
-
+  cerr<<"Equality constraints: "<<pop_res.champion_f()[1]<<" "<<pop_res.champion_f()[2]<<" "<<pop_res.champion_f()[3]<<" "<<pop_res.champion_f()[4]<<" "<<endl;
+  cerr<<"Inequality constraints: "<<pop_res.champion_f()[5]<<" "<<pop_res.champion_f()[6]<<" "<<pop_res.champion_f()[7]<<" "<<pop_res.champion_f()[8]<<" "<<endl;
 
 
   vector<double> j_best=pop_res.champion_x();
@@ -151,7 +152,7 @@ bool grasp_call(in_hand_manipulation::GetGrasp::Request &req, in_hand_manipulati
 int main(int argc,char** argv)
 {
   //finger_gait_call();
-  ros::init(argc,argv,"finger_gait_server");
+  ros::init(argc,argv,"grasp_server");
   ros::NodeHandle n;
   c_check.min_env_size=5;
 

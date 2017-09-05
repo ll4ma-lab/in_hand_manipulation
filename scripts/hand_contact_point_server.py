@@ -86,6 +86,7 @@ if __name__=='__main__':
     rospy.init_node('hand_contact_server')
 
     obj_mesh=g_path+'/data/object_models/banana_bin.stl'
+    obj_mesh='/home/bala/object_models/banana/google_16k/nontextured.stl'
     hand_server=handContactServer(obj_mesh)
 
     rospy.Service('in_hand_manipulation/get_hand_contacts',GetHandContact,hand_server.call)

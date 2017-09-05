@@ -30,6 +30,7 @@ find_package(catkin REQUIRED COMPONENTS
   trajectory_msgs
   tf
   in_grasp_manipulation
+  grasp_gaits
 )
 find_package(PCL 1.7 REQUIRED)
 
@@ -71,15 +72,20 @@ include_directories(
 set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRARIES}  ${CMAKE_DL_LIBS})
 
 add_library(finger_gaiting_planner STATIC src/problems/finger_gaiting_fns.cpp)
+add_library(finger_gaiting_sd_planner STATIC src/problems/finger_gaiting_fns_sd.cpp)
 add_library(grasp_planner STATIC src/problems/grasp_fns.cpp)
 add_library(hand_ik_fns STATIC src/problems/hand_ik_fns.cpp)
 
 target_link_libraries(finger_gaiting_planner ${catkin_LIBRARIES} ccd )
+target_link_libraries(finger_gaiting_sd_planner ${catkin_LIBRARIES} ccd )
 target_link_libraries(hand_ik_fns ${catkin_LIBRARIES} ccd )
 target_link_libraries(grasp_planner ${catkin_LIBRARIES} ccd )
 
 add_executable(finger_gaiting_server src/finger_gaiting_server.cpp)
 target_link_libraries(finger_gaiting_server ${PAGMO_LIBS}  ${catkin_LIBRARIES} finger_gaiting_planner)
+
+add_executable(finger_gaiting_sd_server src/finger_gaiting_sd_server.cpp)
+target_link_libraries(finger_gaiting_sd_server ${PAGMO_LIBS}  ${catkin_LIBRARIES} finger_gaiting_sd_planner)
 
 add_executable(hand_ik_server src/hand_ik_server.cpp)
 target_link_libraries(hand_ik_server  ${PAGMO_LIBS}  ${catkin_LIBRARIES} hand_ik_fns)

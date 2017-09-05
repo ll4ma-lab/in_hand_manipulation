@@ -308,8 +308,7 @@ std::vector<std::pair<vector<double>::size_type, vector<double>::size_type>> opt
   for (int i=0;i<m_nic;++i)
   {
     retval.emplace_back(i+m_nec+1,i);
-    retval.emplace_back(i+m_nec+1,i+robot_kdl_.dof);
-    
+    retval.emplace_back(i+m_nec+1,i+robot_kdl_.dof);    
   }
   return retval;
 }

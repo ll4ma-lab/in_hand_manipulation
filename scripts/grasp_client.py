@@ -34,11 +34,17 @@ class graspClient:
 if __name__=='__main__':
     g=graspClient()
     obj_pose=PoseStamped()
-    obj_pose.pose.position.x=0.08
+    obj_pose.pose.position.x=0.07
     obj_pose.pose.position.z=-0.02
     obj_pose.pose.position.y=0.0
     obj_pose.pose.orientation.z=0.174
     obj_pose.pose.orientation.w=0.985
+
+    obj_pose.pose.orientation.x=0.062
+    obj_pose.pose.orientation.y=0.704
+    obj_pose.pose.orientation.z=0.062
+    obj_pose.pose.orientation.w=0.704
+
     
     js,o_pose,cpts,g_score=g.call_server(obj_pose)
     
