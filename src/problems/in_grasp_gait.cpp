@@ -141,10 +141,9 @@ double optProblem::objFunction(const vector<double> x) const
     
     obj_pose_err=ee_des_pose-ee_pose;
 
-    //obj_pose_err[3]=0.0;
-    obj_pose_err[4]=0.0;
-    obj_pose_err[5]=0.0;
-    
+    obj_pose_err[3]=obj_pose_err[3]*-1.0;
+    obj_pose_err[4]=obj_pose_err[4]*-1.0;
+    obj_pose_err[5]=obj_pose_err[5]*1.0;    
     
     // Relaxed-Rigidity costs:
     
@@ -275,9 +274,9 @@ vector<double> optProblem::objGradient(vector<double> x) const
     // compute error in finger pose:
     
     obj_pose_err=ee_des_pose-ee_pose;
-    //obj_pose_err[3]=0.0;
-    obj_pose_err[4]=0.0;
-    obj_pose_err[5]=0.0;
+    obj_pose_err[3]=obj_pose_err[3]*-1.0;
+    obj_pose_err[4]=obj_pose_err[4]*-1.0;
+    obj_pose_err[5]=obj_pose_err[5]*1.0;
     if(i==timesteps_-1)
     {
       //cerr<<obj_pose_err.transpose()<<endl;
@@ -313,7 +312,7 @@ vector<double> optProblem::objGradient(vector<double> x) const
         pos_err[1]=wr*pos_err[1];
         pos_err[2]=wr*pos_err[2];
         pos_err[3]=0.0;
-        pos_err[4]=1.0*pos_err[4]*wo;
+        pos_err[4]=-1.0*pos_err[4]*wo;
         pos_err[5]=0.0;
         robot_kdl_.getPseudoInverse(robot_kdl_.getJacobian(f,f_joints),link_J,0.0001);
         
