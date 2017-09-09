@@ -4,6 +4,11 @@ project(in_grasp_manipulation)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
+set(BOOST_ROOT /home/bala/local/)
+## System dependencies are found with CMake's conventions
+find_package(Boost 1.61 REQUIRED COMPONENTS system filesystem)
+find_package(Pagmo REQUIRED)
+find_package(ccd REQUIRED)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -25,12 +30,10 @@ find_package(catkin REQUIRED COMPONENTS
   tf
 )
 
-set(BOOST_ROOT /home/bala/local/)
-## System dependencies are found with CMake's conventions
-find_package(Boost 1.61 REQUIRED COMPONENTS system filesystem)
-find_package(Pagmo REQUIRED)
-find_package(ccd REQUIRED)
 #find_package(Eigen REQUIRED)
+find_package(PCL 1.7 REQUIRED)
+
+find_package(Eigen3 REQUIRED)
 
 ## Generate services in the 'srv' folder
  add_service_files(
@@ -49,7 +52,7 @@ generate_messages(
  )
 
 catkin_package(
-  
+  CATKIN_DEPENDS std_msgs roscpp sensor_msgs
 )
 include_directories(
   ${catkin_INCLUDE_DIRS}
@@ -59,6 +62,13 @@ include_directories(
 set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRARIES}  ${CMAKE_DL_LIBS})
 
 add_library(in_grasp_planner STATIC src/problems/in_grasp.cpp)
-target_link_libraries(in_grasp_planner ccd ${catkin_LIBRARIES})
+target_link_libraries(in_grasp_planner ${catkin_LIBRARIES} ccd)
+
 add_executable(in_grasp_server src/in_grasp_server.cpp)
-target_link_libraries(in_grasp_server ${catkin_LIBRARIES} in_grasp_planner)
+target_link_libraries(in_grasp_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_planner)
+
+add_library(in_grasp_sd_planner STATIC src/problems/in_grasp_gait.cpp)
+target_link_libraries(in_grasp_sd_planner  ${PAGMO_LIBS} ${catkin_LIBRARIES} ccd)
+
+add_executable(in_grasp_sd_server src/in_grasp_sd_server.cpp)
+target_link_libraries(in_grasp_sd_server ${PAGMO_LIBS}  ${catkin_LIBRARIES} in_grasp_sd_planner)
