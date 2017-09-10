@@ -48,7 +48,7 @@ if __name__=='__main__':
     
     js,o_pose,cpts,g_score=g.call_server(obj_pose)
     
-    
+    print js.position
     # Publish joint traj:
 
     t_name='planner/grasp'

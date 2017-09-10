@@ -50,8 +50,8 @@ bool grasp_call(in_hand_manipulation::GetGrasp::Request &req, in_hand_manipulati
   
 
   
-  vector<double> obj_pose_low_bounds={0.0,0.0,0.0,0.0,0.0,0.0};
-  vector<double> obj_pose_up_bounds={0.0,0.0,0.0,0.0,0.0,0.0};
+  vector<double> obj_pose_low_bounds={-10.0,-10.0,-10.0,-10.0,-10.0,-10.0};
+  vector<double> obj_pose_up_bounds={10.0,10.0,10.0,10.0,10.0,10.0};
   // Setup data_arr for optimzation:
   // data_arr=[finger_des_pt,finger,f_joints]
   vector<vector<double>> data_arr;
@@ -61,7 +61,9 @@ bool grasp_call(in_hand_manipulation::GetGrasp::Request &req, in_hand_manipulati
   data_arr[2]=obj_pose_low_bounds;
   data_arr[3]=obj_pose_up_bounds;
   vector<double> cpt_dist;
-  cpt_dist.push_back(-0.004);
+  cpt_dist.push_back(-0.0051);
+  cpt_dist.push_back(-0.005);
+
   data_arr[4]=cpt_dist;
   
   // Build allegro kdl tree:
@@ -98,7 +100,7 @@ bool grasp_call(in_hand_manipulation::GetGrasp::Request &req, in_hand_manipulati
   //cerr<<"creating pagmo problem"<<endl;
   problem prob{trajectory_optimization{opt_problem_}};
   //cerr<<"Created pagmo problem"<<endl;
-  vector<double> tol(8,1e-4);// for constraints
+  vector<double> tol(4,1e-4);// for constraints
   
   //cerr<<"Setting tolerances"<<endl;
   prob.set_c_tol(tol);
@@ -106,12 +108,16 @@ bool grasp_call(in_hand_manipulation::GetGrasp::Request &req, in_hand_manipulati
   algorithm algo{snopt7(false,"/usr/local/lib/")};
   //algorithm algo{cmaes(500)};
   //cerr<<"creating population"<<endl;
-  population pop{prob,1u};
+  /*
   vector<double> x0;
-  x0.resize(22,0.3);
+  x0.resize(16,0.5);
   vector<double> x_in=x0;
+  //cerr<<"calling fitness:"<<endl;
   vector<double> f_in=prob.fitness(x_in);
-  pop.set_xf(0,x_in,f_in);
+  */
+  //cerr<<"calling pop: "<<endl;
+  population pop{prob,1u};
+  //pop.set_xf(0,x_in,f_in);
 
   //cerr<<"Solving"<<endl;   
   population pop_res = algo.evolve(pop);
