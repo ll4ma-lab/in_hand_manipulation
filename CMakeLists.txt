@@ -61,14 +61,17 @@ include_directories(
   )
 set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRARIES}  ${CMAKE_DL_LIBS})
 
-add_library(in_grasp_planner STATIC src/problems/in_grasp.cpp)
-target_link_libraries(in_grasp_planner ${catkin_LIBRARIES} ccd)
+#add_library(in_grasp_planner STATIC src/problems/in_grasp.cpp)
+#target_link_libraries(in_grasp_planner ${catkin_LIBRARIES} ccd)
 
-add_executable(in_grasp_server src/in_grasp_server.cpp)
-target_link_libraries(in_grasp_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_planner)
+#add_executable(in_grasp_server src/in_grasp_server.cpp)
+#target_link_libraries(in_grasp_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_planner)
 
 add_library(in_grasp_sd_planner STATIC src/problems/in_grasp_gait.cpp)
 target_link_libraries(in_grasp_sd_planner  ${PAGMO_LIBS} ${catkin_LIBRARIES} ccd)
 
-add_executable(in_grasp_sd_server src/in_grasp_sd_server.cpp)
-target_link_libraries(in_grasp_sd_server ${PAGMO_LIBS}  ${catkin_LIBRARIES} in_grasp_sd_planner)
+#add_executable(in_grasp_sd_server src/in_grasp_sd_server.cpp)
+#target_link_libraries(in_grasp_sd_server ${PAGMO_LIBS}  ${catkin_LIBRARIES} in_grasp_sd_planner)
+
+add_executable(in_grasp_reachable_server src/in_grasp_dpt_server.cpp)
+target_link_libraries(in_grasp_reachable_server ${PAGMO_LIBS}  ${catkin_LIBRARIES} in_grasp_sd_planner)
