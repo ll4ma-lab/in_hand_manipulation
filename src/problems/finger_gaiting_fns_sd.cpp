@@ -17,7 +17,7 @@ optProblem::optProblem(int time_steps,manipulator_kdl::robotKDL robot_kdl,collis
 {
   m_dim=robot_kdl.dof*time_steps;
   m_nec=0;// initial joint angle constraint + contact constraint
-  m_nic=robot_kdl.dof*(time_steps-1)+1+1+1+1;//+1;// velocity(4) collision(3) stability(1)
+  m_nic=robot_kdl.dof*(time_steps-1)+1+1+1+1;//+1;// velocity(4) collisio8n(3) stability(1)
   
   //m_nec=robot_kdl.dof;//robot_kdl.dof*time_steps;// no equality constraints
   //m_nic=robot_kdl.dof*(time_steps-1);// velocity constraints
@@ -232,12 +232,37 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
     }
     if(!(c_data[j][idx].distance>data_arr_[4][0] && c_data[j][idx].distance<data_arr_[4][1]))
     {
-      ret[robot_kdl_.dof*(timesteps_-1)+1+1]=std::abs(c_data[j][idx].distance)*10.0;      
+      ret[robot_kdl_.dof*(timesteps_-1)+1+1]=std::abs(c_data[j][idx].distance);      
     }
-
   }
+
+  // Stability constraint:
+  int idx=5;
+  vector<Eigen::VectorXd> cpt_arr;
+  cpt_arr.resize(4);
+  for(int i=0;i<4;++i)
+  {
+    vector<double> c_=data_arr_[idx+i];
+    Map<Eigen::VectorXd> cpt(&c_[0],3);
+    cpt_arr[i]=cpt;
+  }
+
+  vector<double> ee_p=robot_kdl_.getFK(finger,q,false);
+  Map<Eigen::VectorXd> f_pt(&ee_p[0],3);
+  // Compute error:
+  Eigen::VectorXd err=cpt_arr[finger]-f_pt;
+
+  double val=err.lpNorm<1>();
+  if(val>data_arr_[data_arr_.size()-1][0])
+  {
+    ret[m_nic-1]=val-data_arr_[data_arr_.size()-1][0];
+  }
+  //cerr<<ret[m_nic-1]<<endl;
+  // Add as a constraint:
+  c_checker.publish_robot_objects();
   return ret;
   }
+
 vector<double> optProblem::EqConstraints(vector<double> x) const
 {
   //cerr<<"Eq constraints"<<endl;
@@ -382,15 +407,15 @@ vector<double> optProblem::inEqGradient(vector<double> x) const
   vector<vector<collision_data>> c_data=c_checker.check_collisions(r_poses,f_idx);
   Eigen::VectorXd finger_gradient(4);
   finger_gradient.setZero();
-
+  Eigen::MatrixXd link_J;
   for (int j=0;j<c_data.size();++j)
   {
     // link jacobian:
     vector<double> f_q(&q[joint_idx_low[j]],&q[joint_idx_up[j]]);
     Map<Eigen::VectorXd> link_pose(&r_poses[j][0],3);
-    Eigen::MatrixXd link_J;
+    
     robot_kdl_.getPseudoInverse(robot_kdl_.getLinkJacobian(kdl_link_idx[j],f_q).block(0,0,3,f_q.size()), link_J,0.0001);
-    double min_dist=std::abs(c_data[j][0].distance);
+    //double min_dist=std::abs(c_data[j][0].distance);
     int idx=0;
     for (int i=0;i<c_data[j].size();++i)
     {
@@ -458,12 +483,12 @@ vector<double> optProblem::inEqGradient(vector<double> x) const
   }
   c_data=c_checker.check_self_collisions(r_poses,f_idx,coll_idx);
 
-  
+  //Eigen::MatrixXd link_J;
   for (int j=0;j<c_data.size();++j)
   {
     vector<double> f_q(&q[joint_idx_low[j]],&q[joint_idx_up[j]]);
     Map<Eigen::VectorXd> link_pose(&r_poses[j][0],3);
-    Eigen::MatrixXd link_J;
+  
     robot_kdl_.getPseudoInverse(robot_kdl_.getLinkJacobian(kdl_link_idx[j],f_q).block(0,0,3,f_q.size()), link_J,0.0001);
   
     for (int i=0;i<c_data[j].size();++i)
@@ -495,7 +520,7 @@ vector<double> optProblem::inEqGradient(vector<double> x) const
 
   link_idx={3,6,9,12};
   f_idx={link_idx[finger]};
-  Eigen::MatrixXd link_J;
+  //Eigen::MatrixXd link_J;
   robot_kdl_.getPseudoInverse(robot_kdl_.getJacobian(finger,q).block(0,0,3,4),link_J,0.0001);
 
   ee_pose_arr=robot_kdl_.getFK(finger,q,false);
@@ -534,10 +559,44 @@ vector<double> optProblem::inEqGradient(vector<double> x) const
   }
   for(int k=0;k<robot_kdl_.dof;++k)
   {
-    retval[(4+2)*m_dim+robot_kdl_.dof+k]=finger_gradient[k]*10.0;
+    retval[(4+2)*m_dim+robot_kdl_.dof+k]=finger_gradient[k];
 
   }
 
+  // Stability constraint gradient:
+  int idx=5;
+  vector<Eigen::VectorXd> cpt_arr;
+  cpt_arr.resize(4);
+  for(int i=0;i<4;++i)
+  {
+    vector<double> c_=data_arr_[idx+i];
+    Map<Eigen::VectorXd> cpt(&c_[0],3);
+    cpt_arr[i]=cpt;
+  }
+
+  vector<double> ee_p=robot_kdl_.getFK(finger,q,false);
+  Map<Eigen::VectorXd> f_pt(&ee_p[0],3);
+  // Compute error:
+  Eigen::VectorXd err=cpt_arr[finger]-f_pt;
+
+  double val=err.lpNorm<1>();
+  if(val>data_arr_[data_arr_.size()-1][0])
+  {
+    //ret[m_nic-1]=val-data_arr_[data_arr_.size()-1][0];
+  
+
+    //Eigen::MatrixXd link_J;
+    robot_kdl_.getPseudoInverse(robot_kdl_.getJacobian(finger,q).block(0,0,3,4),link_J,0.0001);
+    finger_gradient=-1.0*link_J*err;
+    for(int k=0;k<robot_kdl_.dof;++k)
+    {
+      retval[(7)*m_dim+robot_kdl_.dof+k]=finger_gradient[k];
+      
+    }
+  }
+  
+
+  
   
   return retval;
 }
@@ -556,6 +615,9 @@ vector<double> optProblem::eqGradient(vector<double> x) const
   {
     q[j]=x[robot_kdl_.dof+j];
   }
+
+
+  
   return retval;
   
 }
@@ -612,19 +674,24 @@ vector<double> optProblem::sparse_gradient(const vector<double> x) const
   }
   */
   
-  grad.emplace_back(ineq_grad[robot_kdl_.dof*3+0]);
-  grad.emplace_back(ineq_grad[robot_kdl_.dof*3+1]);
-  grad.emplace_back(ineq_grad[robot_kdl_.dof*3+2]);
-  grad.emplace_back(ineq_grad[robot_kdl_.dof*3+3]);
+  grad.emplace_back(ineq_grad[4*m_dim+robot_kdl_.dof+0]);
+  grad.emplace_back(ineq_grad[4*m_dim+robot_kdl_.dof+1]);
+  grad.emplace_back(ineq_grad[4*m_dim+robot_kdl_.dof+2]);
+  grad.emplace_back(ineq_grad[4*m_dim+robot_kdl_.dof+3]);
   
-  grad.emplace_back(ineq_grad[robot_kdl_.dof*5+0]);
-  grad.emplace_back(ineq_grad[robot_kdl_.dof*5+1]);
-  grad.emplace_back(ineq_grad[robot_kdl_.dof*5+2]);
-  grad.emplace_back(ineq_grad[robot_kdl_.dof*5+3]);
+  grad.emplace_back(ineq_grad[5*m_dim+robot_kdl_.dof+0]);
+  grad.emplace_back(ineq_grad[5*m_dim+robot_kdl_.dof+1]);
+  grad.emplace_back(ineq_grad[5*m_dim+robot_kdl_.dof+2]);
+  grad.emplace_back(ineq_grad[5*m_dim+robot_kdl_.dof+3]);
 
   for(int i=0;i<robot_kdl_.dof;++i)
   {
     grad.emplace_back(ineq_grad[6*m_dim+robot_kdl_.dof+i]);
+  }
+
+  for(int i=0;i<robot_kdl_.dof;++i)
+  {
+    grad.emplace_back(ineq_grad[7*m_dim+robot_kdl_.dof+i]);
   }
 
   return grad;
@@ -666,6 +733,12 @@ std::vector<std::pair<vector<double>::size_type, vector<double>::size_type>> opt
   retval.emplace_back(1+m_nec+robot_kdl_.dof*(timesteps_-1)+2, 5);
   retval.emplace_back(1+m_nec+robot_kdl_.dof*(timesteps_-1)+2, 6);
   retval.emplace_back(1+m_nec+robot_kdl_.dof*(timesteps_-1)+2, 7);
+  
+  retval.emplace_back(1+m_nec+robot_kdl_.dof*(timesteps_-1)+3, 4);
+  retval.emplace_back(1+m_nec+robot_kdl_.dof*(timesteps_-1)+3, 5);
+  retval.emplace_back(1+m_nec+robot_kdl_.dof*(timesteps_-1)+3, 6);
+  retval.emplace_back(1+m_nec+robot_kdl_.dof*(timesteps_-1)+3, 7);
+  
 
   return retval;
 }

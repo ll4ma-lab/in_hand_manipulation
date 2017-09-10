@@ -77,12 +77,23 @@ bool finger_gait_call(grasp_gaits::RelocateFingerKin::Request &req,  grasp_gaits
   data_arr[0]=finger_des_pt;
   data_arr[1]=finger;
   data_arr[2]=f_joints;
-
   vector<double> cpt_dist;
-  cpt_dist.push_back(-0.005);
+  cpt_dist.push_back(-0.01);
   cpt_dist.push_back(0.00);
   data_arr[4]=cpt_dist;
 
+  // Add contact points for stability computation:
+  for(int i=0;i<req.contact_pts.size();++i)
+  {
+    vector<double> cpt;
+    cpt.push_back(req.contact_pts[i].point.x);
+    cpt.push_back(req.contact_pts[i].point.y);
+    cpt.push_back(req.contact_pts[i].point.z);
+    data_arr.push_back(cpt);
+  }
+  // stability threshold:
+  vector<double> st_th={0.01};
+  data_arr.push_back(st_th);
   
   // Build allegro kdl tree:
   string urdf_file="/home/bala/catkin_ws/src/in_grasp_manipulation/urdf/allegro.urdf";
@@ -135,7 +146,8 @@ bool finger_gait_call(grasp_gaits::RelocateFingerKin::Request &req,  grasp_gaits
   //cerr<<"creating pagmo problem"<<endl;
   problem prob{trajectory_optimization{opt_problem_}};
   //cerr<<"Created pagmo problem"<<endl;
-  vector<double> tol((t_steps-1)*4+1+1+1,1e-4);
+  vector<double> tol((t_steps-1)*4+1+1+1+1,1e-4);
+  //tol[tol.size()-1]=0.01;
   //cerr<<"Setting tolerances"<<endl;
   prob.set_c_tol(tol);
   //cerr<<"Linking to snop"<<endl;
