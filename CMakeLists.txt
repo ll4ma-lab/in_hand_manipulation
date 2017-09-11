@@ -4,8 +4,10 @@ project(in_grasp_manipulation)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
-set(BOOST_ROOT /home/bala/local/)
 ## System dependencies are found with CMake's conventions
+#find_package(Boost 1.61 REQUIRED COMPONENTS system filesystem)
+set(BOOST_ROOT /home/bala/local/)
+
 find_package(Boost 1.61 REQUIRED COMPONENTS system filesystem)
 find_package(Pagmo REQUIRED)
 find_package(ccd REQUIRED)
@@ -70,8 +72,15 @@ set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRA
 add_library(in_grasp_sd_planner STATIC src/problems/in_grasp_gait.cpp)
 target_link_libraries(in_grasp_sd_planner  ${PAGMO_LIBS} ${catkin_LIBRARIES} ccd)
 
+add_library(in_grasp_gait_traj_planner STATIC src/problems/in_grasp_gait_traj.cpp)
+target_link_libraries(in_grasp_gait_traj_planner  ${PAGMO_LIBS} ${catkin_LIBRARIES} ccd)
+
 #add_executable(in_grasp_sd_server src/in_grasp_sd_server.cpp)
 #target_link_libraries(in_grasp_sd_server ${PAGMO_LIBS}  ${catkin_LIBRARIES} in_grasp_sd_planner)
 
 add_executable(in_grasp_reachable_server src/in_grasp_dpt_server.cpp)
 target_link_libraries(in_grasp_reachable_server ${PAGMO_LIBS}  ${catkin_LIBRARIES} in_grasp_sd_planner)
+
+add_executable(in_grasp_gait_traj_server src/in_grasp_gait_traj_server.cpp)
+target_link_libraries(in_grasp_gait_traj_server ${PAGMO_LIBS}  ${catkin_LIBRARIES} in_grasp_gait_traj_planner)
+
