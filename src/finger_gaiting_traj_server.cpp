@@ -133,11 +133,11 @@ bool finger_gait_call(grasp_gaits::RelocateFingerKin::Request &req,  grasp_gaits
 
   
   // Setup optimization:
-  int t_steps=10;
+  int t_steps=req.T;
   allegro_kdl.dof=4;
   allegro_kdl.f_dof=4;
   vector<double> vel_limits;
-  vel_limits.resize(4,0.01);
+  vel_limits.resize(4,0.05); 
   //cerr<<"creating opt problem"<<endl;
   //opt_problems::optProblem opt_problem(1);
   opt_problems::optProblem opt_problem_(t_steps,allegro_kdl,c_check,data_arr,vel_limits,init_joints);
@@ -176,8 +176,8 @@ bool finger_gait_call(grasp_gaits::RelocateFingerKin::Request &req,  grasp_gaits
     }
   }
   
-  vector<double> x_in=x0;
-  vector<double> f_in=prob.fitness(x_in);
+  //vector<double> x_in=x0;
+  //vector<double> f_in=prob.fitness(x_in);
   //pop.set_xf(0,x_in,f_in);
 
   //cerr<<"Solving"<<endl;  
@@ -213,7 +213,7 @@ bool finger_gait_call(grasp_gaits::RelocateFingerKin::Request &req,  grasp_gaits
     trajectory_msgs::JointTrajectoryPoint jt_pt;
     for(int j=0;j<4;j++)
     {
-      j_arr[f_joints[j]]=j_best[i*4+j];
+      j_arr[f_joints[j]]=j_best[i*4+j]; 
     }    
     jt_pt.positions=j_arr;
     joint_traj.points.push_back(jt_pt);

@@ -151,7 +151,7 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
     {
       if(c_data[j][i].collision)
       {
-        ret[robot_kdl_.dof*(timesteps_-1)]+=c_data[j][i].distance;
+        //ret[robot_kdl_.dof*(timesteps_-1)]+=c_data[j][i].distance;
       }
     }
   }
@@ -202,7 +202,7 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
     {
       if(c_data[j][i].collision)
       {
-        ret[robot_kdl_.dof*(timesteps_-1)+1]+=c_data[j][i].distance;
+        //ret[robot_kdl_.dof*(timesteps_-1)+1]+=c_data[j][i].distance;
 
       }
     }
@@ -232,7 +232,7 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
     }
     if(!(c_data[j][idx].distance>data_arr_[4][0] && c_data[j][idx].distance<data_arr_[4][1]))
     {
-      ret[robot_kdl_.dof*(timesteps_-1)+1+1]=std::abs(c_data[j][idx].distance);      
+      //ret[robot_kdl_.dof*(timesteps_-1)+1+1]=std::abs(c_data[j][idx].distance);      
     }
   }
 
@@ -257,7 +257,8 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
   {
     ret[m_nic-1]=val-data_arr_[data_arr_.size()-1][0];
   }
-  //cerr<<ret[m_nic-1]<<endl;
+  
+  
   // Add as a constraint:
   c_checker.publish_robot_objects();
   return ret;
@@ -320,7 +321,8 @@ vector<double> optProblem::objGradient(vector<double> x) const
     Map<Eigen::VectorXd> ee_pose(&ee_pose_arr[0],3);// only position
     f_pose_err=des_poses[0]-ee_pose;
     Eigen::MatrixXd link_J;
-    robot_kdl_.getPseudoInverse(robot_kdl_.getJacobian(finger,q).block(0,0,3,4),link_J,0.0001);
+    link_J=robot_kdl_.getJacobian(finger,q).block(0,0,3,4).transpose();
+    //robot_kdl_.getPseudoInverse(robot_kdl_.getJacobian(finger,q).block(0,0,3,4),link_J,0.0001);
 
     if(i==timesteps_-1)
     {
@@ -413,9 +415,7 @@ vector<double> optProblem::inEqGradient(vector<double> x) const
     // link jacobian:
     vector<double> f_q(&q[joint_idx_low[j]],&q[joint_idx_up[j]]);
     Map<Eigen::VectorXd> link_pose(&r_poses[j][0],3);
-    
-    robot_kdl_.getPseudoInverse(robot_kdl_.getLinkJacobian(kdl_link_idx[j],f_q).block(0,0,3,f_q.size()), link_J,0.0001);
-    //double min_dist=std::abs(c_data[j][0].distance);
+    link_J=robot_kdl_.getLinkJacobian(kdl_link_idx[j],f_q).block(0,0,3,f_q.size()).transpose();
     int idx=0;
     for (int i=0;i<c_data[j].size();++i)
     {
@@ -435,7 +435,7 @@ vector<double> optProblem::inEqGradient(vector<double> x) const
   }
   for(int k=0;k<robot_kdl_.dof;++k)
   {
-    retval[4*m_dim+robot_kdl_.dof+k]=finger_gradient[k];
+    //retval[4*m_dim+robot_kdl_.dof+k]=finger_gradient[k];
   }
 
   // Add collision constraint between fingers:
@@ -488,8 +488,8 @@ vector<double> optProblem::inEqGradient(vector<double> x) const
   {
     vector<double> f_q(&q[joint_idx_low[j]],&q[joint_idx_up[j]]);
     Map<Eigen::VectorXd> link_pose(&r_poses[j][0],3);
-  
-    robot_kdl_.getPseudoInverse(robot_kdl_.getLinkJacobian(kdl_link_idx[j],f_q).block(0,0,3,f_q.size()), link_J,0.0001);
+    link_J=robot_kdl_.getLinkJacobian(kdl_link_idx[j],f_q).block(0,0,3,f_q.size()).transpose();
+    
   
     for (int i=0;i<c_data[j].size();++i)
     {
@@ -510,7 +510,7 @@ vector<double> optProblem::inEqGradient(vector<double> x) const
   
   for(int k=0;k<robot_kdl_.dof;++k)
   {
-    retval[5*m_dim+robot_kdl_.dof+k]=finger_gradient[k];
+    //retval[5*m_dim+robot_kdl_.dof+k]=finger_gradient[k];
   }
   // contact gradient:
   
@@ -521,7 +521,8 @@ vector<double> optProblem::inEqGradient(vector<double> x) const
   link_idx={3,6,9,12};
   f_idx={link_idx[finger]};
   //Eigen::MatrixXd link_J;
-  robot_kdl_.getPseudoInverse(robot_kdl_.getJacobian(finger,q).block(0,0,3,4),link_J,0.0001);
+  link_J=robot_kdl_.getJacobian(finger,q).block(0,0,3,4).transpose();
+  //robot_kdl_.getPseudoInverse(robot_kdl_.getJacobian(finger,q).block(0,0,3,4),link_J,0.0001);
 
   ee_pose_arr=robot_kdl_.getFK(finger,q,false);
   Map<Eigen::VectorXd>  link_pose(&ee_pose_arr[0],3);
@@ -559,7 +560,7 @@ vector<double> optProblem::inEqGradient(vector<double> x) const
   }
   for(int k=0;k<robot_kdl_.dof;++k)
   {
-    retval[(4+2)*m_dim+robot_kdl_.dof+k]=finger_gradient[k];
+    //retval[(4+2)*m_dim+robot_kdl_.dof+k]=finger_gradient[k];
 
   }
 
@@ -586,7 +587,8 @@ vector<double> optProblem::inEqGradient(vector<double> x) const
   
 
     //Eigen::MatrixXd link_J;
-    robot_kdl_.getPseudoInverse(robot_kdl_.getJacobian(finger,q).block(0,0,3,4),link_J,0.0001);
+    link_J=robot_kdl_.getJacobian(finger,q).block(0,0,3,4).transpose();
+    //robot_kdl_.getPseudoInverse(robot_kdl_.getJacobian(finger,q).block(0,0,3,4),link_J,0.0001);
     finger_gradient=-1.0*link_J*err;
     for(int k=0;k<robot_kdl_.dof;++k)
     {
