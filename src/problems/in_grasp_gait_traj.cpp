@@ -164,8 +164,9 @@ double optProblem::objFunction(const vector<double> x) const
       pt[2]=pose[2];      
       pts.push_back(pt);
     }
+
     //if(t==timesteps_-1)
-    {
+    {    /*
       // Get signed distance between reachable workspaces and the desired contact points:
       vector<int> link_idx={13,14,15,16};
       vector<collision_data> c_data=c_checker.check_pt_collisions(pts,link_idx);
@@ -190,14 +191,14 @@ double optProblem::objFunction(const vector<double> x) const
       obj_pose[0]+=delta_obj_pos[0]/4.0;
       obj_pose[1]+=delta_obj_pos[1]/4.0;
       obj_pose[2]+=delta_obj_pos[2]/4.0;
-      
-      des_f_mat=robot_kdl_.pose_to_frame(obj_pose)*data_mats[1];
+      */
+      des_f_mat=robot_kdl_.pose_to_frame(des_poses[0])*data_mats[1];
       des_f_arr=robot_kdl_.frame_to_pose_(des_f_mat,true);
       Map<Eigen::VectorXd> ee_des_pose(&des_f_arr[0],6);
       // compute error in finger pose:
       
       obj_pose_err=ee_des_pose-ee_pose;
-      
+      //cerr<<obj_pose_err[3]<<endl;
       
       obj_pose_err[3]=0.0;
       obj_pose_err[4]=0.0;
@@ -418,7 +419,7 @@ vector<double> optProblem::objGradient(vector<double> x) const
     Map<Eigen::VectorXd> obj_pose(&obj_pose_arr[0],6);
     Map<Eigen::VectorXd> obj_pos(&obj_pose_arr[0],3);
     // object pose error:
-    
+    /*
     // Transform desired contact points to new object pose:
     vector<vector<double>> pts;
     for(int i=0;i<data_arr_[3].size();++i)
@@ -455,17 +456,20 @@ vector<double> optProblem::objGradient(vector<double> x) const
     obj_pose[0]+=delta_obj_pos[0]/4.0;
     obj_pose[1]+=delta_obj_pos[1]/4.0;
     obj_pose[2]+=delta_obj_pos[2]/4.0;
-
+    */
     // Convert desired object pose to finger pose:
-    des_f_mat=robot_kdl_.pose_to_frame(obj_pose)*data_mats[1];
+    des_f_mat=robot_kdl_.pose_to_frame(des_poses[0])*data_mats[1];
     des_f_arr=robot_kdl_.frame_to_pose_(des_f_mat,true);
     Map<Eigen::VectorXd> ee_des_pose(&des_f_arr[0],6);
     // compute error in finger pose:
     
-    obj_pose_err=ee_des_pose-ee_pose;
-    obj_pose_err[3]=0.0;//obj_pose_err[3]*-1.0;
-    obj_pose_err[4]=0.0;//obj_pose_err[4]*-1.0;
-    obj_pose_err[5]=0.0;//obj_pose_err[5]*1.0;
+    //obj_pose_err=ee_des_pose-ee_pose;
+    obj_pose_err[3]=0.0;
+    obj_pose_err[4]=0.0;
+    obj_pose_err[5]=0.0;
+    obj_pose_err[3]=obj_pose_err[3]*-1.0;
+    obj_pose_err[4]=obj_pose_err[4]*-1.0;
+    obj_pose_err[5]=obj_pose_err[5]*1.0;
     //if(t==timesteps_-1)
     {
       //cerr<<obj_pose_err.transpose()<<endl;
@@ -872,5 +876,4 @@ vector<vector<double>> optProblem::bounds() const
   return bound;
   
 }
-
 

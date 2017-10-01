@@ -31,7 +31,7 @@ if __name__=='__main__':
     print fingers
     
     in_grasp=inGraspClient()
-    j_traj=in_grasp.call_server_list(j0,obj_pose,des_obj_pose,[0.01,1.0,1.0],fingers)
+    j_traj=in_grasp.call_server_list(j0,obj_pose,des_obj_pose,[0.0,0.0,1.0],fingers)
 
     np.set_printoptions(precision=2)
     # Publish joint traj:

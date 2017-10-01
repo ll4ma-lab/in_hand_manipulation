@@ -1,6 +1,6 @@
-#include "optimization_pkg/problems/opt_problem.hpp"
+#include "optimization_pkg/problems/opt_problem_full.hpp"
 //#include <tf/transform_datatypes.h>
-
+#define COLL_CHECK false
 using namespace opt_problems;
 
 optProblem::optProblem(int dummy)
@@ -243,7 +243,10 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
 
 
   vector<double> ret(m_nic,0.0);
-  
+  if(COLL_CHECK==false)
+  {
+    return ret;
+  }
   vector<vector<collision_data>> c_data;
 
   vector<double> palm_pose;
@@ -444,8 +447,8 @@ vector<double> optProblem::objGradient(vector<double> x) const
     if(i==timesteps_-1)
     {
       //cerr<<obj_pose_err.transpose()<<endl;
-      robot_kdl_.getPseudoInverse(robot_kdl_.getJacobian(rigid_f,f_q),link_J,0.0001);
-
+      //robot_kdl_.getPseudoInverse(,link_J,0.0001);
+      link_J=robot_kdl_.getJacobian(rigid_f,f_q).transpose();
       finger_gradient=-1.0*wd*link_J*obj_pose_err;
       //cerr<<finger_gradient.transpose()<<endl;
       for (int k=0;k<4;++k)
@@ -478,8 +481,8 @@ vector<double> optProblem::objGradient(vector<double> x) const
         pos_err[3]=0.0;
         pos_err[4]=-1.0*pos_err[4]*wo;
         pos_err[5]=0.0;
-        robot_kdl_.getPseudoInverse(robot_kdl_.getJacobian(f,f_joints),link_J,0.0001);
-        
+        //robot_kdl_.getPseudoInverse(robot_kdl_.getJacobian(f,f_joints),link_J,0.0001);
+        link_J=robot_kdl_.getJacobian(f,f_joints).transpose();
         finger_gradient=-1.0*link_J*pos_err;
         for (int l=0;l<4;++l)
         {
@@ -502,6 +505,11 @@ vector<double> optProblem::objGradient(vector<double> x) const
 vector<double> optProblem::inEqGradient(vector<double> x) const
 {
   vector<double> retval(m_dim*m_nic,0.0);
+  
+  if(COLL_CHECK==false)
+  {
+    return retval;
+  }
    vector<vector<collision_data>> c_data;
 
   vector<double> palm_pose;
@@ -646,7 +654,7 @@ vector<double> optProblem::eqGradient(vector<double> x) const
   return retval;
 }
 
-/*
+
 vector<double> optProblem::gradient(const vector<double> x) const
 {
   vector<double> grad;
@@ -675,7 +683,8 @@ vector<double> optProblem::gradient(const vector<double> x) const
 
   return grad;
 }
-*/
+
+/*
 vector<double> optProblem::sparse_gradient(const vector<double> x) const
 {
   vector<double> grad;
@@ -718,24 +727,9 @@ std::vector<std::pair<vector<double>::size_type, vector<double>::size_type>> opt
       retval.emplace_back(1+m_nec+i,j);
     }
   }
-
-  
-  /*
-  // Equality constraints:
-  for (int i=0;i<m_nec;++i)
-  {
-    retval.emplace_back(i+1,i);
-  }
-  // inequality constraints:
-  for (int i=0;i<m_nic;++i)
-  {
-    retval.emplace_back(i+m_nec+1,i);
-    retval.emplace_back(i+m_nec+1,i+robot_kdl_.dof);
-    
-  }
-  */
   return retval;
 }
+*/
 vector<vector<double>> optProblem::bounds() const
 {
   vector<vector<double>> bound;

@@ -173,7 +173,7 @@
   </gazebo>
   <joint name="index_joint_2" type="revolute">
     <axis xyz="0 1 0"/>
-    <limit effort="15" lower="-0.274" upper="1.809" velocity="7"/>
+    <limit effort="15" lower="0.0" upper="1.809" velocity="7"/>
     <parent link="index_link_1"/>
     <child link="index_link_2"/>
     <origin xyz="0 0 0.054"/>

@@ -1,4 +1,4 @@
-#include "optimization_pkg/problems/opt_problem.hpp"
+#include "optimization_pkg/problems/opt_problem_full.hpp"
 
 using namespace opt_problems;
 
@@ -74,13 +74,13 @@ double optProblem::objFunction(const vector<double> x) const
     
     obj_pos_err=des_poses[0]-ee_pose;
 
-    obj_pos_err[0]=obj_pos_err[0]*10.0;
-    obj_pos_err[1]=obj_pos_err[1]*10.0;
-    obj_pos_err[2]=obj_pos_err[2]*10.0;
+    obj_pos_err[0]=obj_pos_err[0];
+    obj_pos_err[1]=obj_pos_err[1];
+    obj_pos_err[2]=obj_pos_err[2];
     
-    //obj_pos_err[3]=0.0;
-    //obj_pos_err[4]=0.0;
-    //obj_pos_err[5]=0.0;
+    obj_pos_err[3]=0.0;
+    obj_pos_err[4]=0.0;
+    obj_pos_err[5]=0.0;
 
     // Relaxed-Rigidity costs:
     
@@ -107,46 +107,18 @@ double optProblem::objFunction(const vector<double> x) const
     
     if(i==timesteps_-1)
     { 
-      cost_val+=wd*obj_pos_err.lpNorm<1>()+wr*position_cost+wo*orientation_cost;
+      cost_val+=wd*obj_pos_err.lpNorm<1>();//+wr*position_cost+wo*orientation_cost;
+      //cerr<<cost_val<<endl;
     }
     else
     {
-      cost_val+=wr*position_cost+wo*orientation_cost;
+      //cost_val+=wr*position_cost+wo*orientation_cost;
     }
     
   }
-  //cerr<<"Cost computed"<<endl;
   
+  cerr<<cost_val<<endl;
   return cost_val;
-}
-vector<double> optProblem::inEqConstraints(vector<double> x) const
-{
-  // limiting velocity at joints
-  vector<double> vel_const(m_nic,0.0);
-  
-  for (int i=0; i<timesteps_-1; ++i)
-  {
-    for(int j=0;j<robot_kdl_.dof;++j)
-    {
-      vel_const[(i)*robot_kdl_.dof+j]=std::abs(x[(i+1)*robot_kdl_.dof+j]-x[(i)*robot_kdl_.dof+j])-vel_lim;
-    }
-  }
-  //cerr<<vel_const[1]<<endl;
-  return vel_const;
-}
-vector<double> optProblem::EqConstraints(vector<double> x) const
-{
-  // no constraint
-  vector<double> ret(m_nec,0.0);
-  // Equality constraint to ensure initial joint angles
-  for (int i=0;i<robot_kdl_.dof;++i)
-  {
-    ret[i]=joints_0[i]-x[i];
-    //cerr<<ret[i]<<endl;
-  }
-  
-  return  ret;
-  
 }
 
 vector<double> optProblem::objGradient(vector<double> x) const
@@ -173,7 +145,7 @@ vector<double> optProblem::objGradient(vector<double> x) const
   Eigen::VectorXd pos_err,orient_err;
   pos_err.resize(6);
   orient_err.resize(6);
-  
+
 
   // position offsets:
   vector<Eigen::VectorXd> pos_offsets;
@@ -187,8 +159,8 @@ vector<double> optProblem::objGradient(vector<double> x) const
   
 
   
-  //int i=timesteps_-1;
-  for(int i=0;i<timesteps_;++i)
+
+  for(int i=1;i<timesteps_;++i)
   {
     
     for(int j=0; j<robot_kdl_.dof;++j)
@@ -204,21 +176,19 @@ vector<double> optProblem::objGradient(vector<double> x) const
 
     obj_pose_err=des_poses[0]-ee_pose;
 
-    obj_pose_err[0]=obj_pose_err[0]*10.0;
-    obj_pose_err[1]=obj_pose_err[1]*10.0;
-    obj_pose_err[2]=obj_pose_err[2]*10.0;
-    obj_pose_err[3]=obj_pose_err[3]*-1.0;
-    obj_pose_err[4]=obj_pose_err[4]*-1.0;
+    obj_pose_err[0]=obj_pose_err[0];
+    obj_pose_err[1]=obj_pose_err[1];
+    obj_pose_err[2]=obj_pose_err[2];
     
-    //obj_pose_err[3]=0.0;
-    //obj_pose_err[4]=0.0;
-    //obj_pose_err[5]=0.0;
+    obj_pose_err[3]=0.0;
+    obj_pose_err[4]=0.0;
+    obj_pose_err[5]=0.0;
 
     if(i==timesteps_-1)
     {
       finger_gradient=-1.0*wd*obj_pose_err.transpose()*robot_kdl_.getJacobian(rigid_f,f_q);
-      //cerr<<rigid_f<<" "<<f_q[0]<<" "<<finger_gradient[0]<<endl;
-      for (int k=0;k<4;++k)
+      cerr<<finger_gradient.transpose()<<endl;
+      for (int k=0;k<4;++k) 
       {
         gradient[rigid_f*4+k]+=finger_gradient[k];
       }
@@ -246,10 +216,10 @@ vector<double> optProblem::objGradient(vector<double> x) const
         pos_err[4]=-1.0*pos_err[4]*wo;
         pos_err[5]=0.0;
         
-        finger_gradient=-1.0*pos_err.transpose()*robot_kdl_.getJacobian(f,f_joints);
+        //finger_gradient=-1.0*pos_err.transpose()*robot_kdl_.getJacobian(f,f_joints);
         for (int l=0;l<4;++l)
         {
-          gradient[f*4+l]+=finger_gradient[l];
+          //gradient[f*4+l]+=finger_gradient[l];
         }
 
       }
@@ -268,10 +238,27 @@ vector<double> optProblem::objGradient(vector<double> x) const
 
   return retval;
 }
+vector<double> optProblem::inEqConstraints(vector<double> x) const
+{
+  // limiting velocity at joints
+  vector<double> vel_const(m_nic,0.0);
+  /*
+  for (int i=0; i<timesteps_-1; ++i)
+  {
+    for(int j=0;j<robot_kdl_.dof;++j)
+    {
+      vel_const[(i)*robot_kdl_.dof+j]=std::abs(x[(i+1)*robot_kdl_.dof+j]-x[(i)*robot_kdl_.dof+j])-vel_lim;
+    }
+  }
+  */
+  //cerr<<vel_const[1]<<endl;
+  return vel_const;
+}
 
 vector<double> optProblem::inEqGradient(vector<double> x) const
 {
   vector<double> retval(m_dim*m_nic,0.0);
+  /*
   for(int i=0;i<timesteps_-1;++i)
   {
       for(int j=0;j<robot_kdl_.dof;++j)
@@ -290,7 +277,22 @@ vector<double> optProblem::inEqGradient(vector<double> x) const
 
       }
   }
+  */
   return retval;
+}
+vector<double> optProblem::EqConstraints(vector<double> x) const
+{
+  // no constraint
+  vector<double> ret(m_nec,0.0);
+  // Equality constraint to ensure initial joint angles
+  for (int i=0;i<robot_kdl_.dof;++i)
+  {
+    //ret[i]=joints_0[i]-x[i];
+    //cerr<<ret[i]<<endl;
+  }
+  
+  return  ret;
+  
 }
 
 vector<double> optProblem::eqGradient(vector<double> x) const
@@ -303,7 +305,7 @@ vector<double> optProblem::eqGradient(vector<double> x) const
     {
       if(i==j)
       {
-        retval[i*m_dim+j]=-1.0;
+        //retval[i*m_dim+j]=-1.0;
       }
     }
   }
@@ -339,6 +341,28 @@ vector<double> optProblem::gradient(const vector<double> x) const
 
   return grad;
 }
+
+vector<vector<double>> optProblem::bounds() const
+{
+  vector<vector<double>> bound;
+  vector<double> up_bounds;
+  vector<double> low_bounds;
+  for(int i=0;i<timesteps_;++i)
+  {
+    up_bounds.insert(up_bounds.end(), robot_kdl_.up_bounds.begin(), robot_kdl_.up_bounds.end());
+    low_bounds.insert(low_bounds.end(), robot_kdl_.low_bounds.begin(), robot_kdl_.low_bounds.end());
+  }
+  
+  
+  bound.resize(2);
+  bound[0]=low_bounds;
+  bound[1]=up_bounds;
+  return bound;
+  
+}
+
+/*
+
 vector<double> optProblem::sparse_gradient(const vector<double> x) const
 {
   vector<double> grad;
@@ -393,23 +417,5 @@ std::vector<std::pair<vector<double>::size_type, vector<double>::size_type>> opt
   }
   return retval;
 }
-vector<vector<double>> optProblem::bounds() const
-{
-  vector<vector<double>> bound;
-  vector<double> up_bounds;
-  vector<double> low_bounds;
-  for(int i=0;i<timesteps_;++i)
-  {
-    up_bounds.insert(up_bounds.end(), robot_kdl_.up_bounds.begin(), robot_kdl_.up_bounds.end());
-    low_bounds.insert(low_bounds.end(), robot_kdl_.low_bounds.begin(), robot_kdl_.low_bounds.end());
-  }
-  
-  
-  bound.resize(2);
-  bound[0]=low_bounds;
-  bound[1]=up_bounds;
-  return bound;
-  
-}
 
-
+*/

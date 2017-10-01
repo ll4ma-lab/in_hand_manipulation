@@ -179,10 +179,12 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulationSd::Request &req,in
   //cerr<<"setup optimization"<<endl;
   problem prob{trajectory_optimization{opt_problem}};
   vector<double> tol((t_steps-1)*(1+allegro_kdl.dof)+allegro_kdl.dof,1e-5);
- 
-  prob.set_c_tol(tol);
   
-  algorithm algo{snopt7(false,"/usr/local/lib/")};
+  prob.set_c_tol(tol);
+  pagmo::snopt7 sn_v(false,"/usr/local/lib/");
+  //.sn_v.set_integer_option("Iterations limit",1);
+
+  algorithm algo{sn_v}; 
   //algorithm algo{cmaes(500)};
   population pop{prob,1u};
   // Give initial seed:

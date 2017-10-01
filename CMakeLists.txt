@@ -30,6 +30,7 @@ find_package(catkin REQUIRED COMPONENTS
   trajectory_msgs
   pcl_mesh_tools
   tf
+  eigen_conversions
 )
 
 #find_package(Eigen REQUIRED)
@@ -54,7 +55,7 @@ generate_messages(
  )
 
 catkin_package(
-  CATKIN_DEPENDS std_msgs roscpp sensor_msgs
+  CATKIN_DEPENDS std_msgs roscpp sensor_msgs ll4ma_kdl
 )
 include_directories(
   ${catkin_INCLUDE_DIRS}
@@ -63,24 +64,27 @@ include_directories(
   )
 set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRARIES}  ${CMAKE_DL_LIBS})
 
-#add_library(in_grasp_planner STATIC src/problems/in_grasp.cpp)
-#target_link_libraries(in_grasp_planner ${catkin_LIBRARIES} ccd)
+add_library(in_grasp_planner STATIC src/problems/in_grasp.cpp)
+target_link_libraries(in_grasp_planner ${catkin_LIBRARIES} ccd)
 
-#add_executable(in_grasp_server src/in_grasp_server.cpp)
-#target_link_libraries(in_grasp_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_planner)
+add_executable(in_grasp_server src/in_grasp_server.cpp)
+target_link_libraries(in_grasp_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_planner)
 
-add_library(in_grasp_sd_planner STATIC src/problems/in_grasp_gait.cpp)
-target_link_libraries(in_grasp_sd_planner  ${PAGMO_LIBS} ${catkin_LIBRARIES} ccd)
+#add_library(in_grasp_sd_planner STATIC src/problems/in_grasp_gait.cpp)
+#target_link_libraries(in_grasp_sd_planner  ${PAGMO_LIBS} ${catkin_LIBRARIES} ccd)
 
-add_library(in_grasp_gait_traj_planner STATIC src/problems/in_grasp_gait_traj.cpp)
-target_link_libraries(in_grasp_gait_traj_planner  ${PAGMO_LIBS} ${catkin_LIBRARIES} ccd)
+#add_library(in_grasp_rr_const STATIC src/problems/in_grasp_rr_const.cpp)
+#target_link_libraries(in_grasp_rr_const  ${PAGMO_LIBS} ${catkin_LIBRARIES} ccd)
+
+#add_library(in_grasp_gait_traj_planner STATIC src/problems/in_grasp_gait_traj.cpp)
+#target_link_libraries(in_grasp_gait_traj_planner  ${PAGMO_LIBS} ${catkin_LIBRARIES} ccd)
 
 #add_executable(in_grasp_sd_server src/in_grasp_sd_server.cpp)
 #target_link_libraries(in_grasp_sd_server ${PAGMO_LIBS}  ${catkin_LIBRARIES} in_grasp_sd_planner)
 
-add_executable(in_grasp_reachable_server src/in_grasp_dpt_server.cpp)
-target_link_libraries(in_grasp_reachable_server ${PAGMO_LIBS}  ${catkin_LIBRARIES} in_grasp_sd_planner)
+#add_executable(in_grasp_reachable_server src/in_grasp_dpt_server.cpp)
+#target_link_libraries(in_grasp_reachable_server ${PAGMO_LIBS}  ${catkin_LIBRARIES} in_grasp_rr_const)
 
-add_executable(in_grasp_gait_traj_server src/in_grasp_gait_traj_server.cpp)
-target_link_libraries(in_grasp_gait_traj_server ${PAGMO_LIBS}  ${catkin_LIBRARIES} in_grasp_gait_traj_planner)
+#add_executable(in_grasp_gait_traj_server src/in_grasp_gait_traj_server.cpp)
+#target_link_libraries(in_grasp_gait_traj_server ${PAGMO_LIBS}  ${catkin_LIBRARIES} in_grasp_gait_traj_planner)
 

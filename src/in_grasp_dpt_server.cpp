@@ -1,6 +1,6 @@
 
 // optimization:
-#include <optimization_pkg/wrapper/pagmo_wrapper.hpp>
+#include <optimization_pkg/wrapper/pagmo_wrapper_full.hpp>
 
 // ROS:
 #include <ros/package.h>
@@ -178,23 +178,28 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulationSd::Request &req,in
   //opt_problems::optProblem opt_problem(1);
   //cerr<<"setup optimization"<<endl;
   problem prob{trajectory_optimization{opt_problem}};
-  vector<double> tol(1,1e-3);
+  vector<double> tol(2,1e-2);
  
   prob.set_c_tol(tol);
+  pagmo::snopt7 sn_v(true,"/usr/local/lib/");
   
-  algorithm algo{snopt7(false,"/usr/local/lib/")};
+  algorithm algo{sn_v};
   //algorithm algo{cmaes(500)};
-  population pop{prob,10u};
+  population pop{prob,1u};
   // Give initial seed:
-  //vector<double> x_in=joints_0;
-  //vector<double> f_in=prob.fitness(x_in);
+  vector<double> x_in=joints_0;
+  vector<double> f_in=prob.fitness(x_in);
   //pop.set_xf(0,x_in,f_in);
 
   cerr<<"Solving"<<endl;  
   population pop_res = algo.evolve(pop);
-  cerr<<"optimization completed!  Final cost: "<<pop_res.champion_f()[0]<<endl;
-
-
+  vector<double> f_best=pop_res.champion_f();
+  cerr<<"optimization completed!  Final cost: "<<f_best[0]<<endl;
+  for(int i=1;i<f_best.size();++i)
+  {
+    cerr<<f_best[i]<<" ";
+  }
+  cerr<<endl;
 
   vector<double> j_best=pop_res.champion_x();
 
@@ -294,7 +299,17 @@ int main(int argc,char** argv)
   }
   c_check.initialize_robot_state(r_files.size(),r_files);
 
-  string obj_file="/home/bala/object_models/banana/google_16k/vertices.ply";
+  string obj_name;
+  if (n.getParam("/obj_name", obj_name))
+  {
+    cerr<<"Object name!:"<<obj_name<<endl;
+  }
+
+  string obj_files_loc="/home/bala/object_models/";
+  
+  string obj_file="/google_16k/vertices.ply";
+  obj_file.insert(0,obj_name);
+  obj_file.insert(0,obj_files_loc);
 
   //string obj_file="/home/bala/catkin_ws/src/in_hand_manipulation/meshes/banana.ply";
   vector<double> pose;

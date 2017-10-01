@@ -1,6 +1,6 @@
 
 // optimization:
-#include <optimization_pkg/wrapper/pagmo_wrapper.hpp>
+#include <optimization_pkg/wrapper/pagmo_wrapper_full.hpp>
 // ROS:
 #include <ros/package.h>
 #include <ros/ros.h>
@@ -139,17 +139,18 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   //cerr<<"data size "<<data_arr.size()<<endl;
   vector<double> vel_limits;
   vel_limits.resize(16,0.15);
+  int t_steps_=2;
   // Creating opt problem instance:
-  opt_problems::optProblem opt_problem(10,allegro_kdl,data_arr,vel_limits,joints_0);
+  opt_problems::optProblem opt_problem(t_steps_,allegro_kdl,data_arr,vel_limits,joints_0);
 
   problem prob{trajectory_optimization{opt_problem}};
-  vector<double> tol(160,1e-3);
+  vector<double> tol(16*t_steps_,1e-5);
  
   prob.set_c_tol(tol);
   
   algorithm algo{snopt7(false,"/usr/local/lib/")};
   //algorithm algo{cmaes(500)};
-  population pop{prob,10u};
+  population pop{prob,1u};
   /*
   vector<double> x_in(160,0.0);
 
@@ -205,5 +206,6 @@ int main(int argc,char** argv)
   ros::init(argc,argv,"in_grasp_server");
   ros::NodeHandle n;
   ros::ServiceServer service=n.advertiseService("/in_hand/primitive/in_grasp_manipulation",in_grasp_call);
+  
   ros::spin();// Loop rate?
 }
