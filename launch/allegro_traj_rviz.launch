@@ -10,7 +10,7 @@
     <param name="publish_default_efforts" value="true"/>
     <param name="rate" value="100"/>
 </node>
-<!--node pkg="rviz" type="rviz" output="screen" name="rviz" 
-      args="-d $(find in_grasp_manipulation)/config/allegro.rviz" /-->
+<node pkg="rviz" type="rviz" output="screen" name="rviz" 
+      args="-d $(find in_grasp_manipulation)/config/allegro.rviz" />
 
 </launch>

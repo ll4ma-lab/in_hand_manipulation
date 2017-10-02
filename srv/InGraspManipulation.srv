@@ -5,6 +5,8 @@ float64[] weights
 int16[] fingers
 int16 rigid_finger
 int16 T
+sensor_msgs/JointState final_joints
+trajectory_msgs/JointTrajectory initial_jtraj
 ---
 sensor_msgs/JointState n_js
 geometry_msgs/PoseStamped n_obj_pose
