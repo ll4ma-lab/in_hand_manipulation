@@ -1,5 +1,5 @@
 // optimization:
-#include <optimization_pkg/wrapper/pagmo_wrapper_full.hpp>
+#include <optimization_pkg/wrapper/pagmo_wrapper.hpp>
 // ROS:
 #include <ros/package.h>
 #include <ros/ros.h>

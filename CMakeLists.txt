@@ -16,7 +16,6 @@ find_package(ccd REQUIRED)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  kdl_parser
   roscpp
   roslib
   rospy
@@ -24,13 +23,9 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   std_msgs
   visualization_msgs
-  ll4ma_kdl
   optimization_pkg
   message_generation
-  trajectory_msgs
-  pcl_mesh_tools
   tf
-  eigen_conversions
 )
 
 #find_package(Eigen REQUIRED)
@@ -49,13 +44,13 @@ find_package(Eigen3 REQUIRED)
 generate_messages(
    DEPENDENCIES
    std_msgs
-   trajectory_msgs
    geometry_msgs
    sensor_msgs
+   trajectory_msgs
  )
 
 catkin_package(
-  CATKIN_DEPENDS std_msgs roscpp sensor_msgs ll4ma_kdl
+  CATKIN_DEPENDS std_msgs roscpp sensor_msgs optimization_pkg message_generation
 )
 include_directories(
   ${catkin_INCLUDE_DIRS}

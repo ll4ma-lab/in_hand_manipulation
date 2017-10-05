@@ -1,4 +1,4 @@
-#include "optimization_pkg/problems/opt_problem_full.hpp"
+#include "optimization_pkg/problems/opt_problem.hpp"
 
 using namespace opt_problems;
 
@@ -56,7 +56,6 @@ double optProblem::objFunction(const vector<double> x) const
     Map<Eigen::VectorXd> pos_offset(&p_off[0],p_off.size());
     pos_offsets.emplace_back(pos_offset);
   }
-  
   double wo,wr,wd,wi;
   wo=data_arr_[1][0];
   wr=data_arr_[1][1];
@@ -283,7 +282,7 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
   {
     vel_const[(0)*robot_kdl_.dof+j]=std::abs(x[(0)*robot_kdl_.dof+j]-joints_0[j])-vel_lim;
   }
-  
+
   for (int i=0; i<timesteps_-1; ++i)
   {
     for(int j=0;j<robot_kdl_.dof;++j)
@@ -292,12 +291,14 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
     }
   }
 
-
+  
   return vel_const;
 }
 
 vector<double> optProblem::inEqGradient(vector<double> x) const
 {
+  // Full gradient:
+  /*
   vector<double> retval(m_dim*m_nic,0.0);
 
   for(int j=0;j<robot_kdl_.dof;++j)
@@ -336,6 +337,48 @@ vector<double> optProblem::inEqGradient(vector<double> x) const
         }
       }
   }
+  */
+  vector<double> retval(robot_kdl_.dof+2*(m_nic-robot_kdl_.dof),0.0);
+
+  
+  for(int j=0;j<robot_kdl_.dof;++j)
+  {
+    if(std::abs(x[j]-joints_0[j])>vel_lim)
+    {
+      if(x[j]-joints_0[j]<0.0)
+      {
+        retval[j]=-1.0;
+      }
+      else
+      {
+        retval[j]=1.0;
+      }
+    }
+  }
+  
+
+  
+  for(int i=0;i<timesteps_-1;++i)
+  {
+      for(int j=0;j<robot_kdl_.dof;++j)
+      {
+        if(std::abs(x[(i+1)*robot_kdl_.dof+j]-x[(i)*robot_kdl_.dof+j])>vel_lim)
+        {
+          if(x[(i+1)*robot_kdl_.dof+j]-x[(i)*robot_kdl_.dof+j]<0.0)
+          {
+            // retval[(i+1)*robot_kdl_.dof+j]
+            // retval[i*robot_kdl_.dof+j]
+            retval[(i+1)*robot_kdl_.dof+j]=-1.0;
+            retval[(i)*robot_kdl_.dof+j]=1.0;
+          }
+          else
+          {
+            retval[(i+1)*robot_kdl_.dof+j]=1.0;
+            retval[(i)*robot_kdl_.dof+j]=-1.0;
+          }
+        }
+      }
+  }
 
   return retval;
 }
@@ -370,7 +413,7 @@ vector<double> optProblem::eqGradient(vector<double> x) const
   */
   return retval;
 }
-
+/*
 vector<double> optProblem::gradient(const vector<double> x) const
 {
   vector<double> grad;
@@ -399,7 +442,7 @@ vector<double> optProblem::gradient(const vector<double> x) const
 
   return grad;
 }
-
+*/
 vector<vector<double>> optProblem::bounds() const
 {
   vector<vector<double>> bound;
@@ -419,13 +462,12 @@ vector<vector<double>> optProblem::bounds() const
   
 }
 
-/*
 
 vector<double> optProblem::sparse_gradient(const vector<double> x) const
 {
   vector<double> grad;
   vector<double> obj_grad=objGradient(x);
-  vector<double> eq_grad=eqGradient(x);
+  //vector<double> eq_grad=eqGradient(x);
   vector<double> ineq_grad=inEqGradient(x);
   
   grad.resize(m_dim,0.0);
@@ -435,20 +477,9 @@ vector<double> optProblem::sparse_gradient(const vector<double> x) const
     grad[i]=obj_grad[i];
   }
 
-  for(int i=m_dim;i<m_dim+m_dim*m_nec;i++)
+  for(int i=0;i<ineq_grad.size();i++)
   {
-    if(eq_grad[i-m_dim]!=0.0)
-    {
-      grad.emplace_back(eq_grad[i-m_dim]);
-    }
-  }
-
-  for(int i=m_dim+m_dim*m_nec;i<m_dim+m_dim*m_nec+m_dim*m_nic;i++)
-  {
-    if(ineq_grad[i-m_dim-m_dim*m_nec]!=0.0)
-    {
-      grad.emplace_back(ineq_grad[i-m_dim-m_dim*m_nec]);
-    }
+    grad.emplace_back(ineq_grad[i]);
   }
 
   return grad;
@@ -456,24 +487,28 @@ vector<double> optProblem::sparse_gradient(const vector<double> x) const
 std::vector<std::pair<vector<double>::size_type, vector<double>::size_type>> optProblem::gradient_sparsity() const
 {
   std::vector<std::pair<vector<double>::size_type, vector<double>::size_type>> retval;
+  
   // Objective gradient is dense
   for (int i=0;i<m_dim;++i)
   {
     retval.emplace_back(0,i);
   }
-  // Equality constraints:
-  for (int i=0;i<m_nec;++i)
-  {
-    retval.emplace_back(i+1,i);
-  }
+
   // inequality constraints:
-  for (int i=0;i<m_nic;++i)
+  // Initial joints:
+
+  for(int i=0;i<robot_kdl_.dof;++i)
   {
-    retval.emplace_back(i+m_nec+1,i);
-    retval.emplace_back(i+m_nec+1,i+robot_kdl_.dof);
-    
+    retval.emplace_back(1+m_nec+i,i);
   }
+
+  // Other timesteps:
+  for (int i=robot_kdl_.dof;i<m_nic;++i)
+  {
+    retval.emplace_back(i+m_nec+1,i-robot_kdl_.dof);
+    retval.emplace_back(i+m_nec+1,i);
+  }
+
   return retval;
 }
 
-*/
