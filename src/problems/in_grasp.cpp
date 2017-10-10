@@ -8,7 +8,8 @@ optProblem::optProblem(int dummy)
 }
 
 // Initializer
-optProblem::optProblem(int time_steps, manipulator_kdl::robotKDL robot_kdl, vector<vector<double>> data_arr, vector<double> vel_limits, vector<double> init_joint_angles)
+/*
+optProblem::optProblem(int time_steps, manipulator_kdl::robotKDL robot_kdl, vector<vector<double>> data_arr, vector<double> vel_limxits, vector<double> init_joint_angles)
 {
   m_dim=robot_kdl.dof*time_steps;
   m_nec=0;//robot_kdl.dof;
@@ -20,6 +21,34 @@ optProblem::optProblem(int time_steps, manipulator_kdl::robotKDL robot_kdl, vect
   vel_lim=vel_limits[0];
   data_arr_=data_arr;
 
+  Map<Eigen::VectorXd> des_pose(&data_arr[0][0],data_arr[0].size());// desired object pose
+  Map<Eigen::VectorXd> initial_pose(&data_arr[4+data_arr[3].size()][0],data_arr[4+data_arr[3].size()].size());// desired object pose
+  //des_poses[0]=initial_pose;
+  
+  //cerr<<"Initial pose: "<<endl;
+  //cerr<<des_poses[0].transpose()<<endl;
+  for(int i=0;i<time_steps;++i)
+  {
+    des_poses[i]=initial_pose+(des_pose-initial_pose)*(float(i+1)/float(time_steps-1));
+    //cerr<<des_poses[i].transpose()<<endl;
+  }
+  //cerr<<"final pose:"<<endl;
+  //cerr<<des_pose.transpose()<<endl;
+}
+*/
+// Initializer
+optProblem::optProblem(int time_steps, manipulator_kdl::robotKDL robot_kdl, vector<vector<double>> data_arr,vector<Eigen::MatrixXd> data_mats, vector<double> vel_limits, vector<double> init_joint_angles)
+{
+  m_dim=robot_kdl.dof*time_steps;
+  m_nec=0;//robot_kdl.dof;
+  m_nic=robot_kdl.dof*(time_steps);// velocity constraints
+  timesteps_=time_steps;
+  robot_kdl_=robot_kdl;
+  des_poses.resize(time_steps);
+  joints_0=init_joint_angles;
+  vel_lim=vel_limits[0];
+  data_arr_=data_arr;
+  data_mats_=data_mats;
   Map<Eigen::VectorXd> des_pose(&data_arr[0][0],data_arr[0].size());// desired object pose
   Map<Eigen::VectorXd> initial_pose(&data_arr[4+data_arr[3].size()][0],data_arr[4+data_arr[3].size()].size());// desired object pose
   //des_poses[0]=initial_pose;
@@ -92,7 +121,9 @@ double optProblem::objFunction(const vector<double> x) const
     obj_pos_err[4]=o_err[1];
     obj_pos_err[5]=o_err[2];
 
-     // Relaxed-Rigidity costs:
+    // Relaxed-Rigidity costs:
+    // get current thumb mat:
+    Eigen::MatrixXd  thumb_mat=robot_kdl_.getFKEigen(rigid_f,f_q);
     
     for(int k=0;k<data_arr_[3].size();++k)
     {
@@ -101,32 +132,35 @@ double optProblem::objFunction(const vector<double> x) const
       {
         // Position:
         vector<double> f_joints(&q[f*4],&q[f*4+4]);
+
+        Eigen::MatrixXd f_mat=robot_kdl_.getFKEigen(f,f_joints);
+        Eigen::MatrixXd des_mat=thumb_mat*data_mats_[f];
+
+
+	// compute difference between the two frames:
         
-        vector<double> f_pose_arr=robot_kdl_.getFK(f,f_joints,true);
-        Map<Eigen::VectorXd> f_pose(&f_pose_arr[0],f_pose_arr.size());
-        Eigen::VectorXd pose_diff=ee_pose-f_pose-pos_offsets[k];
+	
+        Eigen::VectorXd pose_diff(6);
+        
+        pose_diff[0]=des_mat(0,3)-f_mat(0,3);
+        pose_diff[1]=des_mat(1,3)-f_mat(1,3);
+        pose_diff[2]=des_mat(2,3)-f_mat(2,3);
+        
         
         // Compute orientation error:
-        vector<double> rr_o_d(ee_pose.data()+3, ee_pose.data()+6);
-        vector<double> o_1(f_pose.data()+3, f_pose.data()+6);
-        o_err=robot_kdl_.euler_diff(o_1,rr_o_d);
-        vector<double> o_offset(pos_offsets[k].data()+3, pos_offsets[k].data()+6);
-        o_err=robot_kdl_.euler_diff(o_err,o_offset);
-         
-        //robot_kdl_.euler_diff(o_1,rr_o_d);
+        o_err=robot_kdl_.euler_diff(f_mat,des_mat);
+        
         pos_err=pose_diff.segment(0,3);
-        orient_err=pose_diff.segment(3,3);
         
         orient_err[1]=o_err[1];
         orient_err[0]=0.0;
         orient_err[2]=0.0;
-
         position_cost+=pos_err.lpNorm<2>();
         orientation_cost+=orient_err.lpNorm<2>();
       }
     }
    
-    tot_pos_cost+=orientation_cost;
+    tot_pos_cost+=position_cost;
     if(i==timesteps_-1)
     {
       cost_val+=wd*obj_pos_err.lpNorm<2>()+wr*position_cost+wo*orientation_cost;
@@ -136,7 +170,7 @@ double optProblem::objFunction(const vector<double> x) const
       cost_val+=wi*obj_pos_err.lpNorm<2>()+wr*position_cost+wo*orientation_cost;
     }
   }
-  //cerr<<cost_val<<endl;
+  //cerr<<tot_pos_cost<<endl;
   return cost_val;
 }
 
@@ -225,6 +259,8 @@ vector<double> optProblem::objGradient(vector<double> x) const
    
 
      // Relaxed-Rigidity costs:
+    Eigen::MatrixXd  thumb_mat=robot_kdl_.getFKEigen(rigid_f,f_q);
+    Eigen::MatrixXd inv_thumb_mat=thumb_mat.inverse();
 
     for(int k=0;k<data_arr_[3].size();++k)
     {
@@ -234,24 +270,31 @@ vector<double> optProblem::objGradient(vector<double> x) const
         // Position:
         vector<double> f_joints(&q[f*4],&q[f*4+4]);
         
-        vector<double> f_pose_arr=robot_kdl_.getFK(f,f_joints,true);
-        Map<Eigen::VectorXd> f_pose(&f_pose_arr[0],f_pose_arr.size());
+        Eigen::MatrixXd f_mat=robot_kdl_.getFKEigen(f,f_joints);
+
+        Eigen::MatrixXd des_mat=thumb_mat*data_mats_[f];
+
+
+	// compute difference between these two frames:
+	// off_mat and data_mat
+        Eigen::VectorXd pose_diff(6);
+        pose_diff[0]=des_mat(0,3)-f_mat(0,3);
+        pose_diff[1]=des_mat(1,3)-f_mat(1,3);
+        pose_diff[2]=des_mat(2,3)-f_mat(2,3);
+
+        o_err=robot_kdl_.euler_diff(f_mat,des_mat);
         
-        Eigen::VectorXd pose_diff=ee_pose-f_pose-pos_offsets[k];
         pos_err=pose_diff;//.segment(0,3);
         //orient_err=pose_diff;//.segment(3,3);
         pos_err[0]=wr*pos_err[0];
         pos_err[1]=wr*pos_err[1];
         pos_err[2]=wr*pos_err[2];
         pos_err[3]=0.0;
-        pos_err[4]=0.0;//-1.0*pos_err[4]*wo;
+        pos_err[4]=0.0;
         pos_err[5]=0.0;
-        vector<double> rr_o_d(ee_pose.data()+3, ee_pose.data()+6);
-        vector<double> o_1(f_pose.data()+3, f_pose.data()+6);
-        o_err=robot_kdl_.euler_diff(o_1,rr_o_d);
-        vector<double> o_offset(pos_offsets[k].data()+3, pos_offsets[k].data()+6);
-        o_err=robot_kdl_.euler_diff(o_err,o_offset);
+        
         pos_err[4]=wo*(o_err[1]);
+       
         finger_gradient=-2.0*pos_err.transpose()*robot_kdl_.getJacobian(f,f_joints);
         for (int l=0;l<4;++l)
         {

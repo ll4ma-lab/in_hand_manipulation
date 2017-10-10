@@ -38,13 +38,14 @@ if __name__=='__main__':
     robot_kdl=allegroKinematics(fingers=[0,1,2,3])
     #des_obj_pose=robot_kdl.end_effector_pose_array(np.array([0.5,0.5,0.5,0.5]),3)
     #print des_obj_pose
-    weights=[0.001,1.0,0.1,0.1,100.0]# RR_orient, RR_pos, T, interp, vel limits
+    weights=[0.01,10.0,1.0,0.1,100.0]# RR_orient, RR_pos, T, interp, vel limits
     
     t_name='planner/in_grasp_traj'
     traj_server=trajectoryServer(100,robot_name='allegro',topic_name=t_name,init_node=True)
     time.sleep(1.0)
 
-    f_j=j0+0.01
+    f_j=j0.copy()-0.05
+    f_j[8:12]=j0[8:12]
     start = time.time()
     j_traj,n_pose=in_grasp.call_server_list(j0,obj_pose,des_obj_pose,weights,fingers,T=2,final_joints=f_j)
     end = time.time()
@@ -58,7 +59,7 @@ if __name__=='__main__':
     end = time.time()
     print(end - start)
     traj_server.viz_joint_traj(j_traj,'allegro_mount')
-
+    exit()
     k=0
     while(k<3):
         f_j=j_traj.points[-1].positions

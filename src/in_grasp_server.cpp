@@ -30,6 +30,7 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
 
   vector<double> joints_0;
   vector<double> final_joints;
+  vector<Eigen::MatrixXd> data_mat;
   joints_0.resize(16);
   final_joints.resize(16);
   for(int i=0;i<req.init_joints.position.size();++i)
@@ -132,19 +133,33 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   data_arr[4+fingers.size()]=thumb_pose_arr;
   
   Map<Eigen::VectorXd> thumb_pose(&thumb_pose_arr[0],thumb_pose_arr.size());;
-  
+
+  // compute offsets in thumb frame:
+  // thumb matrix w_T_th=thumb_mat
+  //compute inverse:
+  Eigen::MatrixXd thumb_inv=thumb_mat.inverse();
   for(int i=0;i<fingers.size();++i)
   {
     int f=int(fingers_d[i]);
+    // get joint angles for finger f:
     vector<double> f_joints(&joints_0[f*4],&joints_0[f*4+4]);
-    //cerr<<f_joints.size()<<endl;
+
+    //get finger mat w_T_f
+    Eigen::MatrixXd f_mat=allegro_kdl.getFKEigen(f,f_joints);
+
+    // Compute offset matrix:
+    Eigen::MatrixXd offset_mat=thumb_inv*f_mat;
+    data_mat.push_back(offset_mat);
     vector<double> f_pose_arr=allegro_kdl.getFK(f,f_joints,true);
     Map<Eigen::VectorXd> f_pose(&f_pose_arr[0],f_pose_arr.size());
     Eigen::VectorXd pose_diff=thumb_pose-f_pose;
     vector<double> position_offset;
     position_offset.resize(pose_diff.size());
-
-
+    
+    pose_diff[0]=offset_mat(0,3);
+    pose_diff[1]=offset_mat(1,3);
+    pose_diff[2]=offset_mat(2,3);
+    
     // Compute orientation offset:
 
     vector<double> thumb_orient(thumb_pose_arr.data()+3, thumb_pose_arr.data()+6);
@@ -170,7 +185,7 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   vel_limits.resize(16,req.weights[4]);
   int t_steps_=req.T;
   // Creating opt problem instance:
-  opt_problems::optProblem opt_problem(t_steps_,allegro_kdl,data_arr,vel_limits,joints_0);
+  opt_problems::optProblem opt_problem(t_steps_,allegro_kdl,data_arr,data_mat,vel_limits,joints_0);
 
   problem prob{trajectory_optimization{opt_problem}};
   vector<double> tol(16*(t_steps_),1e-3);
