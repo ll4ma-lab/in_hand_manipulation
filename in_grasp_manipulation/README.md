@@ -1,3 +1,4 @@
+test
 # In-Grasp Manipulation using Relaxed-Rigidity constraints
 This package performs trajectory optimization to obtain joint space trajectories for moving an object to a desired pose without changing the initial grasp.
 ##### Folders:
