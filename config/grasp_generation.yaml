@@ -1,0 +1,7 @@
+robot:
+	urdf:
+	ee_names:
+	base_names:
+	g_vec:
+object:
+	mesh:

@@ -3,7 +3,9 @@ geometry_msgs/PointStamped[] contact_pts
 int64 f_idx
 geometry_msgs/PointStamped des_contact_pt
 sensor_msgs/JointState js
+int64 T
 ---
 geometry_msgs/PointStamped next_contact_pt
 sensor_msgs/JointState n_js
 float64 stability_score
+trajectory_msgs/JointTrajectory joint_traj

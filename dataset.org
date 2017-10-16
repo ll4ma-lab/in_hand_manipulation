@@ -1,0 +1,8 @@
+* File structure:
+- Each object is a group with attributes:
+  - File location
+  - Initial Object pose
+- Each object also has a dataset of:
+    - Object poses
+    - Contact points
+    - Joint angles

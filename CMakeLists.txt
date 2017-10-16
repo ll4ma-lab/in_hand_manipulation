@@ -11,10 +11,11 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   sensor_msgs
   visualization_msgs
-  in_hand_manipulation
+  #in_hand_manipulation
   std_msgs
   geometry_msgs
   message_generation
+  trajectory_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -69,6 +70,8 @@ add_service_files(
   GetGaitPlan.srv
   RelocateObj.srv
   RelocateObjSd.srv
+  ComputeGD.srv
+  ComputeGDRaw.srv
 )
 
 
@@ -79,6 +82,7 @@ add_service_files(
    std_msgs
    geometry_msgs
    grasp_gaits
+   trajectory_msgs
  )
 
 ###################################

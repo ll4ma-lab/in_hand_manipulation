@@ -145,7 +145,7 @@ class relocateServer:
         up_bounds=self.robot_kdl.bounds[1]
 
         cnst_bounds_low=np.array([0.0])# plane,ellipse
-        cnst_bounds_up=np.array([0.01])# plane,ellipse
+        cnst_bounds_up=np.array([0.001])# plane,ellipse
         
 
 

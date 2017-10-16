@@ -14,7 +14,7 @@ import time
 
 
 class VizInHand:
-    def __init__(self,obj_mesh='',finger_meshes=[''],init_node=True):
+    def __init__(self,obj_mesh='',finger_meshes=[''],init_node=True,t_name=''):
         self.obj_mesh=obj_mesh
         self.finger_meshes=finger_meshes
         # initialize node
@@ -22,14 +22,12 @@ class VizInHand:
             rospy.init_node('marker_viz')
         # initialize publisher
         self.obj_pub=rospy.Publisher('obj_marker',Marker,queue_size=1)
-
+        self.traj_server=trajectoryServer(100,robot_name='allegro',topic_name=t_name,init_node=False)
     def viz_js(self,js,t_name='regrasp_planner/in_grasp_traj'):
-        traj_server=trajectoryServer(100,robot_name='allegro',topic_name=t_name,init_node=False)
-        time.sleep(1.0)
         js.name=['index_joint_0', 'index_joint_1', 'index_joint_2', 'index_joint_3', 'middle_joint_0', 'middle_joint_1', 'middle_joint_2', 'middle_joint_3', 'ring_joint_0', 'ring_joint_1', 'ring_joint_2', 'ring_joint_3', 'thumb_joint_0', 'thumb_joint_1', 'thumb_joint_2', 'thumb_joint_3']
-        j_t=traj_server.get_jtraj(js)
+        j_t=self.traj_server.get_jtraj(js)
 
-        traj_server.viz_joint_traj(j_t,'allegro_mount')
+        self.traj_server.viz_joint_traj(j_t,'allegro_mount')
 
 
         

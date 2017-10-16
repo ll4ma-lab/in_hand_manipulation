@@ -23,7 +23,7 @@ class transformMat:
             pose=np.zeros(6)
         else:
             pose=np.zeros(7)
-        pose[0:3]=T[0:3,3]
+        pose[0:3]=np.ravel(T[0:3,3])
 
         R=PyKDL.Rotation(T[0,0],T[0,1],T[0,2],
                          T[1,0],T[1,1],T[1,2],
@@ -42,7 +42,7 @@ class transformMat:
         quat=R.GetQuaternion()
         return quat
 
-    def rigid_svd(self,pts_a,pts_b):
+    def rigid_svd(self,pts_a,pts_b,Mat=False):
         # Find a rigid transformation from  pts_a to pts_b
         N=len(pts_a)
         # Convert points to a matrix:
@@ -70,7 +70,12 @@ class transformMat:
 
         # Check for reflection case:
         if(np.linalg.det(R)<0):
-            R[0:3,2]=R[0:3,2]*-1.0
+            print "reflection!"
+            R[0,2]=R[0,2]*-1.0
+            R[1,2]=R[1,2]*-1.0
+            R[2,2]=R[2,2]*-1.0
+            print np.linalg.det(R)
+            
         # translation:
         t=np.ravel(-R*centroid_a)
         t+=np.ravel(centroid_b)
@@ -82,7 +87,8 @@ class transformMat:
 
 
         # Transform points and check error:
-        
+        if(Mat):
+            return T
         # pose:
         pose=self.pose_T(T)
         return pose
