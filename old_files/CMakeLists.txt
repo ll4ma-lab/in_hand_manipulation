@@ -20,13 +20,10 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   sensor_msgs
   std_msgs
-  kdl_parser
-  ll4ma_kdl
   biotac_sensors
   optimization_pkg
   allegro_driver
   message_generation
-  pcl_mesh_tools
   trajectory_msgs
   tf
   in_grasp_manipulation
@@ -73,6 +70,8 @@ set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRA
 
 add_library(finger_gaiting_planner STATIC src/problems/finger_gaiting_fns.cpp)
 add_library(finger_gaiting_sd_planner STATIC src/problems/finger_gaiting_fns_sd.cpp)
+add_library(finger_gaiting_gd_planner STATIC src/problems/finger_gaiting_fns_gd.cpp)
+
 add_library(grasp_planner STATIC src/problems/grasp_fns.cpp)
 add_library(hand_ik_fns STATIC src/problems/hand_ik_fns.cpp)
 
@@ -82,6 +81,7 @@ add_library(finger_gaiting_traj STATIC src/problems/finger_gaiting_traj.cpp)
 
 target_link_libraries(finger_gaiting_planner ${catkin_LIBRARIES} ccd )
 target_link_libraries(finger_gaiting_sd_planner ${catkin_LIBRARIES} ccd )
+target_link_libraries(finger_gaiting_gd_planner ${catkin_LIBRARIES} ccd )
 target_link_libraries(hand_ik_fns ${catkin_LIBRARIES} ccd )
 target_link_libraries(grasp_planner ${catkin_LIBRARIES} ccd )
 target_link_libraries(finger_gaiting_traj ${catkin_LIBRARIES} ccd )
@@ -92,6 +92,9 @@ target_link_libraries(finger_gaiting_server ${PAGMO_LIBS}  ${catkin_LIBRARIES} f
 
 add_executable(finger_gaiting_sd_server src/finger_gaiting_sd_server.cpp)
 target_link_libraries(finger_gaiting_sd_server ${PAGMO_LIBS}  ${catkin_LIBRARIES} finger_gaiting_sd_planner)
+
+add_executable(finger_gaiting_gd_server src/finger_gaiting_gd_server.cpp)
+target_link_libraries(finger_gaiting_gd_server ${PAGMO_LIBS}  ${catkin_LIBRARIES} finger_gaiting_gd_planner)
 
 add_executable(finger_gaiting_traj_server src/finger_gaiting_traj_server.cpp)
 target_link_libraries(finger_gaiting_traj_server ${PAGMO_LIBS}  ${catkin_LIBRARIES} finger_gaiting_traj)

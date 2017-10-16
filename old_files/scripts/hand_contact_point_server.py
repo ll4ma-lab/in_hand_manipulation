@@ -30,8 +30,16 @@ class handContactServer:
         self.robot_kdl=allegroKinematics(fingers=[0,1,2,3])
         
         print 'Initialized hand contact server'
-        
+
+    def update_mesh(self,obj_mesh):
+        self.obj_trimesh=tri_obj(obj_mesh,False)
+        self.obj_fname=obj_mesh
+
     def call(self,req):
+        obj_name=rospy.get_param('/obj_name')
+        
+        obj_mesh='/home/bala/object_models/'+obj_name+'/google_16k/nontextured.stl'
+        self.update_mesh(obj_mesh)
         # move object mesh:
         t_obj=copy.deepcopy(self.obj_trimesh)
         if(req.transform_points==True):
@@ -85,8 +93,10 @@ if __name__=='__main__':
     #
     rospy.init_node('hand_contact_server')
 
-    obj_mesh=g_path+'/data/object_models/banana_bin.stl'
-    obj_mesh='/home/bala/object_models/banana/google_16k/nontextured.stl'
+    obj_name=rospy.get_param('/obj_name')
+    
+    obj_mesh='/home/bala/object_models/'+obj_name+'/google_16k/nontextured.stl'
+    print obj_mesh
     hand_server=handContactServer(obj_mesh)
 
     rospy.Service('in_hand_manipulation/get_hand_contacts',GetHandContact,hand_server.call)

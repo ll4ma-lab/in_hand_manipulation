@@ -1,0 +1,4 @@
+
+sensor_msgs/JointState hand_preshape
+---
+bool reached

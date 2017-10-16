@@ -1,6 +1,6 @@
 
 // optimization:
-#include <optimization_pkg/wrapper/pagmo_wrapper.hpp>
+#include <optimization_pkg/wrapper/pagmo_wrapper_full.hpp>
 // ROS:
 #include <ros/package.h>
 #include <ros/ros.h>
@@ -78,8 +78,8 @@ bool finger_gait_call(grasp_gaits::RelocateFingerKin::Request &req,  grasp_gaits
   data_arr[1]=finger;
   data_arr[2]=f_joints;
   vector<double> cpt_dist;
-  cpt_dist.push_back(-0.01);
-  cpt_dist.push_back(0.00);
+  cpt_dist.push_back(-0.005);
+  cpt_dist.push_back(-0.001);
   data_arr[4]=cpt_dist;
 
   // Add contact points for stability computation:
@@ -92,7 +92,7 @@ bool finger_gait_call(grasp_gaits::RelocateFingerKin::Request &req,  grasp_gaits
     data_arr.push_back(cpt);
   }
   // stability threshold:
-  vector<double> st_th={0.01};
+  vector<double> st_th={0.02,-1.0};
   data_arr.push_back(st_th);
   
   // Build allegro kdl tree:
@@ -134,51 +134,26 @@ bool finger_gait_call(grasp_gaits::RelocateFingerKin::Request &req,  grasp_gaits
 
   
   // Setup optimization:
-  int t_steps=2;
+  int t_steps=1;
   allegro_kdl.dof=4;
   vector<double> vel_limits;
   vel_limits.resize(4,100.15);
+
   //cerr<<"creating opt problem"<<endl;
   //opt_problems::optProblem opt_problem(1);
   opt_problems::optProblem opt_problem_(t_steps,allegro_kdl,c_check,data_arr,vel_limits,init_joints);
-  //cerr<<opt_problem_.m_dim<<endl;
-
-  //cerr<<"creating pagmo problem"<<endl;
   problem prob{trajectory_optimization{opt_problem_}};
-  //cerr<<"Created pagmo problem"<<endl;
-  vector<double> tol((t_steps-1)*4+1+1+1+1,1e-4);
-  //tol[tol.size()-1]=0.01;
-  //cerr<<"Setting tolerances"<<endl;
+  vector<double> tol(4,1e-2);
   prob.set_c_tol(tol);
-  //cerr<<"Linking to snop"<<endl;
   pagmo::snopt7 sn_v(false,"/usr/local/lib/");
-  std::map<std::string, int> options_=sn_v.get_integer_options();
-  cerr<<options_.size()<<endl;
-
-  for(map<string,int>::iterator it = options_.begin(); it != options_.end(); ++it)
-  {
-    cerr<<"options"<<endl;
-    cerr << it->first <<" "<<it->second<<endl;
-  }
-  cerr<<"no options"<<endl;
+  sn_v.set_integer_option("Iterations limit",100);
+  sn_v.set_numeric_option("Linesearch tolerance",0.1);
   algorithm algo{sn_v};
-  //cerr<<algo.get_integer_options();
-  //algorithm algo{cmaes(500)};
-  //cerr<<"creating population"<<endl;
-  population pop{prob,10u};
-  vector<double> x0;
-  x0.resize(8,0.0);
-  for(int i=0;i<4;++i)
-  {
-    x0[i]=init_joints[i];
-    x0[i+4]=init_joints[i];
-  }
-  
-  vector<double> x_in=x0;
-  vector<double> f_in=prob.fitness(x_in);
-  //pop.set_xf(0,x_in,f_in);
+  population pop{prob,1u};
 
-  //cerr<<"Solving"<<endl;  
+
+  
+  cerr<<"Solving"<<endl;  
   population pop_res = algo.evolve(pop);
   cerr<<"optimization completed!  Final cost: "<<pop_res.champion_f()[0]<<endl;
   cerr<<"constraints: ";
@@ -190,7 +165,34 @@ bool finger_gait_call(grasp_gaits::RelocateFingerKin::Request &req,  grasp_gaits
   cerr<<endl;
 
   vector<double> j_best=pop_res.champion_x();
+  
+  /*
+  // Collision refinement:
+  cerr<<"Collision refinement"<<endl;
+  data_arr[data_arr.size()-1][1]=2.0;
+  opt_problems::optProblem opt_problem_coll(t_steps,allegro_kdl,c_check,data_arr,vel_limits,init_joints);
+  problem prob_coll{trajectory_optimization{opt_problem_coll}};
+  
+  prob_coll.set_c_tol(tol);
+  algorithm algo_coll{sn_v};
+  population pop_coll{prob_coll,100u};
 
+  
+  vector<double> x_in=j_best;
+  vector<double> f_in=prob_coll.fitness(x_in);
+  pop_coll.set_xf(0,x_in,f_in);
+  cerr<<"Solving"<<endl;  
+  pop_res = algo_coll.evolve(pop_coll);
+  cerr<<"optimization completed!  Final cost: "<<pop_res.champion_f()[0]<<endl;
+  cerr<<"constraints: ";
+  for(int i=1;i<pop_res.champion_f().size();++i)
+  {
+    cerr<<pop_res.champion_f()[i]<<' ';
+  }
+  cerr<<endl;
+  
+  j_best=pop_res.champion_x();
+  */
   
   //trajectory_msgs::JointTrajectory joint_traj;
   std::vector<std::string> joint_names={"index_joint_0","index_joint_1","index_joint_2","index_joint_3",
@@ -259,11 +261,18 @@ int main(int argc,char** argv)
   }
   c_check.initialize_robot_state(r_files.size(),r_files);
 
-  //string obj_file="/home/bala/catkin_ws/src/urlg_robots_description/meshes/lbr4/convex_hull/vertices/link_1.ply";
-  //vector<string> f_names;
-  //f_names.push_back(obj_file);
-  string obj_file="/home/bala/object_models/banana/google_16k/vertices.ply";
+  string obj_name;
+  if (n.getParam("/obj_name", obj_name))
+  {
+    cerr<<"Object name!:"<<obj_name<<endl;
+  }
 
+  string obj_files_loc="/home/bala/object_models/";
+  
+  string obj_file="/google_16k/vertices.ply";
+  obj_file.insert(0,obj_name);
+  obj_file.insert(0,obj_files_loc);
+  cerr<<"Obj "<<obj_file<<endl;
   //string obj_file="/home/bala/catkin_ws/src/in_hand_manipulation/meshes/banana.ply";
   vector<double> pose;
   //c_check.initialize_robot_state(1,f_names);
