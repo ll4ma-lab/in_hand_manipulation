@@ -61,6 +61,7 @@ class inGraspClient:
         return j_traj.joint_traj, j_traj.n_obj_pose
 
 
+
 '''
 if __name__=='__main__':
     # in grasp data:
