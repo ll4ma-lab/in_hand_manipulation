@@ -1,0 +1,4 @@
+geometry_msgs/PoseStamped obj_pose
+std_msgs/Int64[] f_index
+---
+grasp_gaits/Ellipse[] ellipses

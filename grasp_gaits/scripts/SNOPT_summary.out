@@ -1,0 +1,49 @@
+
+         ==============================
+         S N O P T  7.5-1.4  (Dec 2015)
+         ==============================
+
+ ==============================
+ S N O P T  7.5-1.4  (Dec 2015)
+ ==============================
+1
+ 
+ 
+ SNMEMB EXIT 100 -- finished successfully
+ SNMEMB EXIT 100 -- finished successfully
+ SNMEMB INFO 104 -- memory requirements estimated
+ SNMEMB INFO 104 -- memory requirements estimated
+
+         ==============================
+         S N O P T  7.5-1.4  (Dec 2015)
+         ==============================
+
+ ==============================
+ S N O P T  7.5-1.4  (Dec 2015)
+ ==============================
+      iPrint               1
+ iPrint               1
+ XXX  Keyword not recognized:         IPRINT
+ XXX  Keyword not recognized:         IPRINT
+      Minimize
+      Iterations limit              10
+      iSumm               1
+ iSumm               1
+ XXX  Keyword not recognized:         ISUMM
+ XXX  Keyword not recognized:         ISUMM
+      Solution Yes
+
+ XXX  The bounds on  nlcon     1  are inconsistent.   bl =   0.6511096E-02   bu =    0.000000
+
+ XXX  The bounds on  nlcon     1  are inconsistent.   bl =   0.6511096E-02   bu =    0.000000
+
+ XXX  Invalid arguments bl, bu:      1 inconsistent bounds or infinite equal bounds.
+
+ XXX  Invalid arguments bl, bu:      1 inconsistent bounds or infinite equal bounds.
+1
+ 
+ 
+ SNOPTC EXIT  90 -- input arguments out of range
+ SNOPTC EXIT  90 -- input arguments out of range
+ SNOPTC INFO  91 -- invalid input argument
+ SNOPTC INFO  91 -- invalid input argument

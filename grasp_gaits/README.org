@@ -1,0 +1,31 @@
+#+Title: In-hand Re-grasp planning using Finger gaiting and in-grasp manipulation
+#+STARTUP: content
+#+AUTHOR: Balakumar Sundaralingam, LL4MA Lab. [bala@cs.utah.edu]
+#+TOC:2
+* Structure:
+Look at program_structure.pdf for an outline of the proposed algorithm.
+
+* Messages:
+
+
+* Services:
+- GetHandContact.srv
+- GetEllipse.srv
+- GetIK.srv
+- RelocateFinger.srv
+- MoveObj.srv
+- GetGaitPlan.srv
+
+* Implementation details:
+** TODO GetIK:
+   Given fingertip points in the reachable workspace of the fingers, this service finds the joint angles to reach the points. Current implemetation uses snopt with a quadratic cost on FK and constraints on the joint angle limits.
+** TODO GetHandContact:
+   This service finds the vertex on the object mesh that is closest to the fingetip location in the palm frame. Current implementation finds the closest vertex to a point in 3D space using trimesh python library.
+** TODO GetEllipse:
+   Given the reachable workspace of the fingers and the object mesh, this service finds 2D ellipses on the surface of the object that is reachable by the fingers. Currently only one ellipse is fitted per finger. Current implementation involves getting the intersection between the object mesh and the reachable workspace. Followed by clustering to find the largest surface cluster. PCA is done on this cluster to find a plane, to fit a 2D ellipse.
+** TODO RelocateFinger:
+   finger gaiting
+** TODO MoveObj:
+   in-grasp manipulation
+** TODO GetGaitPlan:
+   Get full plan

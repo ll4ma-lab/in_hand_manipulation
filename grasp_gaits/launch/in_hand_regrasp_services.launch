@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+  <node name="cpt_server" pkg="in_hand_manipulation" type="hand_contact_point_server.py" output="screen"/>
+  <node name="handIK_server" pkg="in_hand_manipulation" type="hand_ik_server" />
+  <!--node name="relocate_server" pkg="grasp_gaits" type="relocate_finger_kinematic_server.py" output="screen"/-->
+  <!--node name="in_grasp_server" pkg="in_grasp_manipulation" type="in_grasp_server.py" output="screen"/-->
+</launch>
