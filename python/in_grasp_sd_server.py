@@ -24,6 +24,7 @@ path_g=rp.get_path('grasp_gaits')
 sys.path.insert(0,path_g+'/scripts')
 import grasp_class
 import viz_markers
+import frames
 class Grasp:
     def __init__(self,joint_angles,obj_offset,contact_fingers=[0,1,3],palm_pose=np.zeros(6)):
         self.joint_angles=joint_angles
@@ -31,9 +32,10 @@ class Grasp:
         self.obj_offset=obj_offset
 
 class inGraspPlanner:
-    def __init__(self,f_meshes,viz=[]):
+    def __init__(self,f_meshes,o_mesh,viz=[]):
         self.robot_model=allegroKinematics(delta_t,fingers=[0])
         self.f_meshes=f_meshes
+        self.o_mesh=o_mesh
         self.viz=viz
         print "Created inGraspPlanner"
 
@@ -55,7 +57,7 @@ class inGraspPlanner:
                             req.des_contact_pts[i].point.z]))
 
         
-        weights=[10.0,100.0,0.0,0.0,5000]
+        weights=[100.0,10.0,0.1,0.0,50]
         f_index=[]
         for i in range(len(req.f_index)):
             f_index.append(req.f_index[i].data)
@@ -66,6 +68,7 @@ class inGraspPlanner:
         self.update_weights(weights,T)
         self.robot_model.f_meshes=self.f_meshes
         self.robot_model.viz=self.viz
+        self.robot_model.o_mesh=self.o_mesh
         # Get contact point frames:
         cpts_mat=[]
 
@@ -77,6 +80,7 @@ class inGraspPlanner:
             cpts_mat.append(o_T_c)
         self.robot_model.cpts_mat=cpts_mat
         self.robot_model.cpts=des_pts
+        self.robot_model.frames=frames.transformMat()
         u_arr,n_pose=self.plan(des_obj_pose,T)
         
 
@@ -124,9 +128,9 @@ class inGraspPlanner:
 
         f_T_O=np.linalg.inv(thumb_pose)*t_T_O
         self.robot_model.object_frames=self.robot_model.update_object_frame(f_T_O,joints.copy(),finger=3)    
-        self.robot_model.final_obj_dim_weights=np.array([100.0,100.0,100.0,-1.0,-1.0,1.0])
+        self.robot_model.final_obj_dim_weights=np.array([100.0,100.0,100.0,1.0,1.0,1.0])
 
-        self.robot_model.obj_dim_weights=np.array([100.0,100.0,100.0,1.0,1.0,-1.0])
+        self.robot_model.obj_dim_weights=np.array([1.0,1.0,1.0,1.0,1.0,1.0])
 
     def update_weights(self,weights,T):
         self.robot_model.psi=[0.0,1.0,0.0]
@@ -212,7 +216,7 @@ def main():
               'file://'+path_g+'/data/robot_models/poisson_ring.ply',
               'file://'+path_g+'/data/robot_models/poisson_thumb.ply']
 
-    obj_mesh=path_g+'/data/object_models/box.stl'
+    obj_mesh=path_g+'/data/object_models/banana.stl'
     # import object mesh, robot meshes
     grasp_g=grasp_class.grasp([0,1,2,3],robot_meshes,obj_mesh)
     # visualize f_mesh
@@ -220,7 +224,7 @@ def main():
     pose=np.zeros(7)
     pose[-1]=1.0
     viz.viz_reachability(pose,f_meshes,a=0.5)
-    in_grasp=inGraspPlanner(grasp_g.finger_meshes)
+    in_grasp=inGraspPlanner(grasp_g.finger_meshes,grasp_g.obj_mesh)
     rospy.Service('in_hand/primitive/in_grasp_manipulation',InGraspManipulationSd,in_grasp.call)
     rospy.spin()
     

@@ -1,6 +1,6 @@
 # The cost functions are combined into a single function to allow for faster computation
 import numpy as np
-from numpy.linalg import inv
+from numpy.linalg import inv,pinv
 import PyKDL
 
 def cost(x_des,u,dyn_model,t_step=-1): 
@@ -38,6 +38,7 @@ def cost(x_des,u,dyn_model,t_step=-1):
     l=l_f+l_orient+l_linear
     
     return l
+
 def cost_gradient(x_des,u,dyn_model,t_step=-1):
     wp=dyn_model.wp
     wr=dyn_model.wr
@@ -52,8 +53,8 @@ def cost_gradient(x_des,u,dyn_model,t_step=-1):
         des_finger_pose=np.ravel(dyn_model.linear_finger_poses[t_step])
         diff_pose=des_finger_pose-dyn_model.end_effector_pose_array(u[f0*4:f0*4+4],f0)
         diff_pose_d=np.unwrap(diff_pose)*dyn_model.obj_dim_weights
-        jacobian=dyn_model.jacobian_full(u[f0*4:f0*4+4],f0)
-        gradient_fk[f0*4:f0*4+4]+=-wl*2.0*np.array(np.matrix(diff_pose_d)*np.matrix(jacobian)).ravel()
+        jacobian=pinv(dyn_model.jacobian_full(u[f0*4:f0*4+4],f0))
+        gradient_fk[f0*4:f0*4+4]+=-wl*2.0*np.array(np.matrix(diff_pose_d).transpose()*np.matrix(jacobian)).ravel()
 
 
     # distance cost
@@ -67,7 +68,7 @@ def cost_gradient(x_des,u,dyn_model,t_step=-1):
         T_mat=inv_f0*f1_mat
         dist=np.ravel(T_mat[0:3,3])-dyn_model.finger_dist[i]
         const_vec=wr*2.0*dist*dyn_model.obj_dim_weights[0:3]
-        gradient_fk[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF]+=np.ravel(np.matrix(const_vec)*inv_f0[0:3,0:3]*dyn_model.jacobian_full(u[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)[0:3,:])
+        #gradient_fk[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF]+=np.ravel(pinv(dyn_model.jacobian_full(u[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)[0:3,:])np.matrix(const_vec)*inv_f0[0:3,0:3])
        
         # for finger f0:
         #T_mat=inv_f1*f0_mat
@@ -82,7 +83,7 @@ def cost_gradient(x_des,u,dyn_model,t_step=-1):
         diff=np.multiply(diff-dyn_model.orient_rig[i],dyn_model.psi)*dyn_model.obj_dim_weights[3:6]
       
         #gradient_fk[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF]+=2.0*wo*np.ravel(np.matrix(-diff)*dyn_model.jacobian_full(u[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0)[3:6,:])
-        gradient_fk[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF]+=2.0*wo*np.ravel(np.matrix(diff)*dyn_model.jacobian_full(u[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)[3:6,:])
+        gradient_fk[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF]+=2.0*wo*pinv(dyn_model.jacobian_full(u[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)[3:6,:])*np.ravel(np.matrix(diff))
 
     gradient=gradient_fk
     return gradient
@@ -103,21 +104,19 @@ def final_cost(x_des,u,dyn_model):
     f0=i
     f_pose=dyn_model.end_effector_pose_array(u[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0)
     diff_pose_d=np.zeros(6)
-    off=np.zeros(3)
+    off=0.0
+    d_pts=[]
     for k in dyn_model.fingers:
         n_pt=np.ravel((c_obj_pose*dyn_model.cpts_mat[k])[0:3,3])
         v_pt,d,_=dyn_model.f_meshes[k].mesh.nearest.on_surface([n_pt])
         d=dyn_model.f_meshes[k].mesh.nearest.signed_distance([n_pt,n_pt])[0]
         #dyn_model.viz.viz_pts([n_pt,v_pt[0]],t='n_cpt')
         if(d>0):
-            off+=np.array(n_pt-v_pt[0])
-    obj_pose=c_obj_pose.copy()
-    obj_pose[0:3,3]=obj_pose[0:3,3]+np.matrix(off).T
-    n_f_pose=(obj_pose*dyn_model.inv_object_frames[finger])
-    n_pose=dyn_model.get_pose_array(n_f_pose)
-    l_obj+=np.sum(np.abs(n_pose-f_pose))*wp
-     
-
+            off+=np.sum(np.abs(n_pt-v_pt[0]))
+            d_pts.append(v_pt[0])
+    if(len(d_pts)>2):
+        l_obj+=off*wp
+    
     f0=i
     # distance cost:
     l_f=0.0
@@ -129,7 +128,6 @@ def final_cost(x_des,u,dyn_model):
         dist=np.ravel(T_mat[0:3,3])-dyn_model.finger_dist[i]
         l_f+=wr*(np.sum(np.abs(dist)))
         # orientation cost
-
 
         a=dyn_model.end_effector_pose_array(u[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0)[3:6]
         b=dyn_model.end_effector_pose_array(u[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)[3:6]
@@ -154,11 +152,18 @@ def final_cost_gradient(x_des,u,dyn_model):
     
 
     finger=3#dyn_model.fingers[i]
-    jacobian=dyn_model.jacobian_full(u[finger*4:finger*4+4],finger)
+    jacobian=pinv(dyn_model.jacobian_full(u[finger*4:finger*4+4],finger))
     gradient_all_joints=np.zeros(4)
     c_obj_pose=dyn_model.object_pose(u,get_T_mat=True)
+    obj_pose=dyn_model.object_pose(u)
     f0=finger
     f_pose=dyn_model.end_effector_pose_array(u[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0)
+    # Using SVD to match the points:
+    # Desired points:
+    des_pts=[]
+    # Nearest points on mesh:
+    near_pts=[]
+
     #diff_pose_d=np.zeros(3)
     off=np.zeros(3)
     for k in dyn_model.fingers:
@@ -167,17 +172,18 @@ def final_cost_gradient(x_des,u,dyn_model):
         v_pt,d,_=dyn_model.f_meshes[k].mesh.nearest.on_surface([n_pt])
         d=dyn_model.f_meshes[k].mesh.nearest.signed_distance([n_pt,n_pt])[0]
         if(d>0):
-            off+=np.array(n_pt-v_pt[0])
+            des_pts.append(n_pt)
+            near_pts.append(v_pt[0])
+            #off+=np.array(n_pt-v_pt[0])
 
-    obj_pose=c_obj_pose.copy()
-    n_obj_pose=obj_pose.copy()
-    obj_pose[0:3,3]=obj_pose[0:3,3]+np.matrix(off).T
-    #print n_obj_pose-obj_pose
-    n_f_pose=(obj_pose*dyn_model.inv_object_frames[finger])
-    n_pose=dyn_model.get_pose_array(n_f_pose)
-    diff_pose_d=wp*(n_pose-f_pose)*dyn_model.final_obj_dim_weights
-    grad=np.array(np.matrix(diff_pose_d)*np.matrix(jacobian)).ravel()
-    gradient_all_joints+=grad
+    if(len(des_pts)>2):
+        n_pose=dyn_model.frames.rigid_svd(des_pts,near_pts)
+        n_pose=obj_pose+n_pose
+        n_f_pose=(dyn_model.frames.T_pose(n_pose)*dyn_model.inv_object_frames[finger])
+        n_pose=dyn_model.get_pose_array(n_f_pose)
+        diff_pose_d=-1.0*wp*(n_pose-f_pose)*dyn_model.final_obj_dim_weights
+        grad=np.array(np.matrix(jacobian)*np.matrix(diff_pose_d).transpose()).ravel()
+        gradient_all_joints+=grad
     
     
 
@@ -195,14 +201,8 @@ def final_cost_gradient(x_des,u,dyn_model):
         T_mat=inv_f0*f1_mat
         dist=np.ravel(T_mat[0:3,3])-dyn_model.finger_dist[i]
         const_vec=wr*1.0*dist*dyn_model.obj_dim_weights[0:3]
-        gradient_fk[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF]+=np.ravel(np.matrix(const_vec)*inv_f0[0:3,0:3]*dyn_model.jacobian_full(u[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)[0:3,:])
-        '''
-        # for finger 0:
-        T_mat=inv_f1*f0_mat
-        dist=np.ravel(T_mat[0:3,3])+dyn_model.finger_dist[i]
-        const_vec=0.1*wr*2.0*dist*dyn_model.obj_dim_weights[0:3]
-        gradient_fk[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF]+=np.ravel(np.matrix(const_vec)*  inv_f1[0:3,0:3]*dyn_model.jacobian_full(u[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],                       f0)[0:3,:])
-        '''
+        gradient_fk[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF]+=(np.ravel(pinv(
+            dyn_model.jacobian_full(u[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF], i)[0:3,:])*                                                                         (np.matrix(const_vec)*inv_f0[0:3,0:3]).transpose()))
         # orientation cost
   
         a=dyn_model.end_effector_pose_array(u[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0)[3:6]
@@ -212,7 +212,7 @@ def final_cost_gradient(x_des,u,dyn_model):
       
 
         #gradient_fk[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF]+=2.0*wo*np.ravel(np.matrix(-diff)*dyn_model.jacobian_full(u[f0*dyn_model.DOF:f0*dyn_model.DOF+dyn_model.DOF],f0)[3:6,:])
-        gradient_fk[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF]+=2.0*wo*np.ravel(np.matrix(diff)*dyn_model.jacobian_full(u[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)[3:6,:])
+        gradient_fk[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF]+=2.0*wo*np.ravel(pinv(dyn_model.jacobian_full(u[i*dyn_model.DOF:i*dyn_model.DOF+dyn_model.DOF],i)[3:6,:])*np.matrix(diff).transpose())
         
     gradient=gradient_fk
     return gradient

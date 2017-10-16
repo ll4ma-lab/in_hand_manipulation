@@ -2,6 +2,7 @@ import rospy
 from in_grasp_manipulation.srv import InGraspManipulation
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Pose
+from trajectory_msgs.msg import JointTrajectory,JointTrajectoryPoint
 import numpy as np
 import tf
 class inGraspClient:
@@ -21,10 +22,11 @@ class inGraspClient:
         j_traj=get_in_grasp_plan(js,obj_pose,des_obj_pose,self.weights,fingers,rig_finger,1)
         return j_traj.n_js,j_traj.n_obj_pose
 
-    def call_server_list(self,j_arr,obj_pose_,des_obj_pose_,weights=[1.0,1.0,1.0,1.0],fingers=[0,1,2,3],rig_finger=3):
+    def call_server_list(self,j_arr,obj_pose_,des_obj_pose_,weights=[1.0,1.0,1.0,1.0],fingers=[0,1,2,3],rig_finger=3,T=10,final_joints=np.array([]),initial_j_traj=JointTrajectory()):
         j0=JointState()
         j0.position=j_arr
-
+        j_final=JointState()
+        j_final.position=final_joints
         obj_pose=Pose()
         obj_pose.position.x=obj_pose_[0]
         obj_pose.position.y=obj_pose_[1]
@@ -54,9 +56,10 @@ class inGraspClient:
         
         
 
-        j_traj=get_in_grasp_plan(j0,obj_pose,des_obj_pose,weights,fingers,rig_finger,10)
+        j_traj=get_in_grasp_plan(j0,obj_pose,des_obj_pose,weights,fingers,rig_finger,T,j_final,initial_j_traj)
         
-        return j_traj.joint_traj
+        return j_traj.joint_traj, j_traj.n_obj_pose
+
 
 
 '''

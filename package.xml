@@ -40,7 +40,7 @@
   <!-- Use test_depend for packages you need only for testing: -->
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>kdl_parser</build_depend>
+
   <build_depend>pykdl_utils</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>roslib</build_depend>
@@ -49,13 +49,10 @@
   <build_depend>std_msgs</build_depend>
   <build_depend>visualization_msgs</build_depend>
   <build_depend> optimization_pkg</build_depend>
-  <build_depend> ll4ma_kdl</build_depend>
   <build_depend> trajectory_msgs</build_depend>
   <build_depend>message_generation</build_depend>
-  <build_depend> pcl_mesh_tools</build_depend>
   <build_depend>tf</build_depend>
   
-  <run_depend>kdl_parser</run_depend>
   <run_depend>pykdl_utils</run_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>roslib</run_depend>
@@ -63,11 +60,10 @@
   <run_depend>sensor_msgs</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>visualization_msgs</run_depend>
+  <run_depend> message_generation</run_depend>
   <run_depend> message_runtime</run_depend>
-  <run_depend> ll4ma_kdl</run_depend>
   <run_depend> optimization_pkg</run_depend>
   <run_depend> trajectory_msgs</run_depend>
-  <run_depend> pcl_mesh_tools</run_depend>
   <run_depend> tf </run_depend>
   <!-- The export tag contains other, unspecified, tags -->
   <export>
