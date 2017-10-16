@@ -1,0 +1,6 @@
+sensor_msgs/JointState init_joints
+geometry_msgs/Pose object_pose
+geometry_msgs/Pose desired_finger_pose
+int16 finger
+---
+trajectory_msgs/JointTrajectory joint_traj

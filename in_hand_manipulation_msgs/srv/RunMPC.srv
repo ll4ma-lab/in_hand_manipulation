@@ -1,0 +1,7 @@
+sensor_msgs/JointState init_joints
+int16 T
+geometry_msgs/PoseArray obj_traj
+trajectory_msgs/JointTrajectory joint_traj
+---
+sensor_msgs/JointState reached_js
+geometry_msgs/PoseStamped reached_obj_pose
