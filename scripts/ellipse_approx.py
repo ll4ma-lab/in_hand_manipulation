@@ -172,6 +172,7 @@ if __name__=='__main__':
     quat_=tf.transformations.quaternion_from_euler(rpy[0],rpy[1],rpy[2])
     
     quat=[quat_[-1],quat_[0],quat_[1],quat_[2]]
+    print quat
     trans=[0.08,-0.08,0.015]
     grasp_g.object.transform(quat,trans)
 

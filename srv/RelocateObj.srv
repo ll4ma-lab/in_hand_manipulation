@@ -1,0 +1,7 @@
+std_msgs/Int64[] f_index
+grasp_gaits/Ellipse[] ellipses
+geometry_msgs/PoseStamped obj_pose
+geometry_msgs/PointStamped[] contact_pts
+geometry_msgs/PointStamped[] des_contact_pts
+---
+geometry_msgs/PoseStamped n_obj_pose

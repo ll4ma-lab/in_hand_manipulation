@@ -1,4 +1,4 @@
-grasp_gaits/Grasp init_grasp
+geometry_msgs/PoseStamped obj_pose
 std_msgs/Int64[] f_index
 ---
-grasp_gaits/Grasp updated_grasp
+grasp_gaits/Ellipse[] ellipses

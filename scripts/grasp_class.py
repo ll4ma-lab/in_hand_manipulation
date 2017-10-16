@@ -15,6 +15,7 @@ def flatten(lis):
              yield item
 
 from pathos.multiprocessing import ProcessingPool as Pool
+
 class object:
     def __init__(self,mesh,build_g_mat=False):
         self.mesh=trimesh.load_mesh(mesh)
@@ -39,13 +40,13 @@ class object:
 
         
 class grasp:
-    def __init__(self,fingers,mesh_files):
+    def __init__(self,fingers,mesh_files,obj_mesh='NA'):
         self.fingers=fingers
         self.finger_meshes=[[] for i in range(max(fingers)+1)]
         for i in fingers:
             # Load finger meshes
             self.finger_meshes[i]=object(mesh_files[i])
-
+        self.obj_mesh=obj_mesh
     def update_mesh(self,fing,mesh):
         self.meshes[fing]=mesh
 
@@ -53,7 +54,8 @@ class grasp:
     def load_object(self,obj_mesh):
         self.object=object(obj_mesh,False)
 
-
+    def reset_object(self):
+         self.object=object(self.obj_mesh,False)
     def contact_surface_generation(self,data):
         try:
           inter_d=data[2].intersection(data[1],engine='scad')
@@ -72,16 +74,17 @@ class grasp:
               # enlarge cs:
               c_surf.apply_scale(1.2)
               # subtract :
-              c_surf=c_surf.difference(self.object.mesh,engine='blender')
+              c_surf=c_surf.difference(self.object.mesh,engine='scad')
 
          self.contact_surfaces[idx]=c_surf
 
          
          
-    def generate_contact_surfaces(self,load_from_file=False):
+    def generate_contact_surfaces(self,load_from_file=False,prefix_path='',NEED_ALL_MESHES=False):
         
         contact_surfaces=[[] for i in range(max(self.fingers)+1)]
-        cs=['f0.stl','f1.stl','f2.stl','f3.stl']
+        cs=[prefix_path+'f0.stl',prefix_path+'f1.stl',prefix_path+'f2.stl',prefix_path+'f3.stl']
+
         if(not load_from_file):
             self.map=Pool().map
 
@@ -106,17 +109,20 @@ class grasp:
                     try:
                          data_arr=contact_surfaces[i].difference(self.object.mesh,engine='scad')
                          contact_surfaces[i]=data_arr
-                         trimesh.io.export.export_mesh(contact_surfaces[i],cs[i], file_type='stl')
+                         #trimesh.io.export.export_mesh(contact_surfaces[i],cs[i], file_type='stl')
                     except:
                          print "Failed to find difference"+str(i)
-                         trimesh.io.export.export_mesh(contact_surfaces[i],cs[i], file_type='stl')
+                         #trimesh.io.export.export_mesh(contact_surfaces[i],cs[i], file_type='stl')
             
         else:
             for i in self.fingers:
                 contact_surfaces[i]=trimesh.load_mesh(cs[i])
         #Removing points that are inside the object:
         obj=trimesh.proximity.ProximityQuery(self.object.mesh)
-
+        if(NEED_ALL_MESHES==True):
+             for i in self.fingers:
+                  if(contact_surfaces[i]==[]):
+                       return False
         for i in self.fingers:
           if(contact_surfaces[i]!=[]):
                points=contact_surfaces[i].vertices                
@@ -150,7 +156,7 @@ class grasp:
                pcl.save(p,"contact_surface.ply")
                '''
         self.contact_surfaces=contact_surfaces
-
+        return True
     def generate_grasp(self,threshold,n):
         #trimesh.io.export.export_mesh(contact_surfaces,'inter.stl', file_type='stl')
         good_grasps=[]
@@ -158,22 +164,23 @@ class grasp:
         # Pick random point from each contact surface?
         count=0
         sampling_count=0
-        while(count<3 and sampling_count<n):
+        while(count<10 and sampling_count<n):
             sampling_count+=1
             grasp_points=[]
             #grasp_points=[[] for i in range(max(self.fingers)+1)]
             for i in self.fingers:
-                grasp_points.append(np.array(self.contact_surfaces[i].vertices[np.random.randint(0,len(self.contact_surfaces[i].vertices))]))
+                 grasp_points.append(np.array(self.contact_surfaces[i].vertices[np.random.randint(0,
+                                                                                      len(
+                                                                                     self.contact_surfaces[i].vertices))]))
             # Compute virtual frame origin
             vf_origin=np.mean(grasp_points,axis=0)
             # Check with object centroid
             psi=[1.0,0.0,1.0]
             err=np.linalg.norm((vf_origin-self.object.centroid)*psi)
-            
             if(err<threshold):
-                print vf_origin
-                print self.object.centroid
-                print err
+                #print vf_origin
+                #print self.object.centroid
+                #print err
                 good_grasps.append(grasp_points)
                 count+=1
         self.good_grasps=good_grasps
