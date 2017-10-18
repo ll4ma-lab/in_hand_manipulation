@@ -26,6 +26,7 @@ find_package(catkin REQUIRED COMPONENTS
   optimization_pkg
   message_generation
   tf
+  in_hand_manipulation_msgs
 )
 
 #find_package(Eigen REQUIRED)
@@ -38,7 +39,7 @@ find_package(Eigen3 REQUIRED)
    FILES
    InGraspManipulation.srv
    InGraspManipulationSd.srv
-   RunMPC.srv
+   #RunMPC.srv
  )
 
 ## Generate added messages and services with any dependencies listed here
@@ -66,8 +67,8 @@ target_link_libraries(in_grasp_planner ${catkin_LIBRARIES} ccd)
 add_executable(in_grasp_server src/in_grasp_server.cpp)
 target_link_libraries(in_grasp_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_planner)
 
-add_executable(one_step_mpc src/controllers/one_step_mpc.cpp)
-target_link_libraries(one_step_mpc ${catkin_LIBRARIES})
+#add_executable(one_step_mpc src/controllers/one_step_mpc.cpp)
+#target_link_libraries(one_step_mpc ${catkin_LIBRARIES})
 #add_library(in_grasp_sd_planner STATIC src/problems/in_grasp_gait.cpp)
 #target_link_libraries(in_grasp_sd_planner  ${PAGMO_LIBS} ${catkin_LIBRARIES} ccd)
 

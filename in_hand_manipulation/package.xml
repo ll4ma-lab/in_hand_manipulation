@@ -15,7 +15,7 @@
     <build_depend>pykdl_utils</build_depend>
     <build_depend>std_msgs</build_depend>
     <build_depend>sensor_msgs</build_depend>
-    <build_depend>biotac_sensors</build_depend>
+
     <build_depend>optimization_pkg</build_depend>
     <build_depend>allegro_driver</build_depend>
     <build_depend>message_generation</build_depend>
@@ -24,7 +24,7 @@
     
     <run_depend>allegro_driver</run_depend>
     <run_depend>optimization_pkg</run_depend>
-    <run_depend>biotac_sensors</run_depend>
+
     <run_depend>roscpp</run_depend>
     <run_depend>sensor_msgs</run_depend>
     <run_depend>std_msgs</run_depend>

@@ -52,7 +52,8 @@
   <build_depend> trajectory_msgs</build_depend>
   <build_depend>message_generation</build_depend>
   <build_depend>tf</build_depend>
-  
+  <build_depend>  in_hand_manipulation_msgs </build_depend>
+  <run_depend>   in_hand_manipulation_msgs </run_depend>
   <run_depend>pykdl_utils</run_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>roslib</run_depend>

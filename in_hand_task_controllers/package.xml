@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<package format="2">
-  <name>task_controllers</name>
+<package format="1">
+  <name>in_hand_task_controllers</name>
   <version>0.0.0</version>
   <description>The task_controllers package</description>
 
@@ -56,22 +56,23 @@
   <build_depend>sensor_msgs</build_depend>
   <build_depend>tf</build_depend>
   <build_depend>trajectory_msgs</build_depend>
-  <build_export_depend>geometry_msgs</build_export_depend>
-  <build_export_depend>ll4ma_kdl</build_export_depend>
-  <build_export_depend>roscpp</build_export_depend>
-  <build_export_depend>rospy</build_export_depend>
-  <build_export_depend>sensor_msgs</build_export_depend>
-  <build_export_depend>tf</build_export_depend>
-  <build_export_depend>trajectory_msgs</build_export_depend>
-  <exec_depend>geometry_msgs</exec_depend>
-  <exec_depend>ll4ma_kdl</exec_depend>
-  <exec_depend>roscpp</exec_depend>
-  <exec_depend>rospy</exec_depend>
-  <exec_depend>sensor_msgs</exec_depend>
-  <exec_depend>tf</exec_depend>
-  <exec_depend>trajectory_msgs</exec_depend>
-
-
+  <build_depend> hand_task_controllers</build_depend>
+  <build_depend> in_hand_manipulation_msgs</build_depend>
+  <build_depend> roslib </build_depend>
+  <build_depend> tf_conversions </build_depend>
+  
+  
+  <run_depend> roslib </run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>ll4ma_kdl</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>trajectory_msgs</run_depend>
+  <run_depend> hand_task_controllers </run_depend>
+  <run_depend> in_hand_manipulation_msgs</run_depend>
+  <run_depend> tf_conversions </run_depend>
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->

@@ -4,12 +4,15 @@ import time
 import tf_api
 import copy
 import pickle
+from geometry_msgs.msg import PoseArray, Pose
+from in_hand_manipulation_msgs.srv import RunMPC
 # Find package with allegro model
 from rospkg import RosPack
 import subprocess
 # import required allegro model files
 rp=RosPack()
 rp.list()
+path_in_hand_data=rp.get_path('in_hand_manipulation_data')+'/data/in_grasp_manipulation'
 
 path_in_grasp=rp.get_path('in_grasp_manipulation')+'/python'
 sys.path.insert(0,path_in_grasp)
@@ -27,6 +30,10 @@ path_allegro=rp.get_path('allegro_driver')+'/scripts'
 sys.path.insert(0,path_allegro)
 from allegro_ros_api import handAPI
 
+#path_grasp_gaits=rp.get_path('grasp_gaits')+'/scripts'
+#sys.path.insert(0,path_grasp_gaits)
+#from viz_markers import VizInHand
+
 class inGraspPipeline:
     def __init__(self,publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right', init_node=False, node_name='in_grasp_pipeline',weights=[0.001,10.0,1.0,0.1,100.0]):
         if(init_node):
@@ -36,14 +43,16 @@ class inGraspPipeline:
         self.in_grasp=inGraspClient()
         self.weights=weights
         self.tf_api=tf_api.tfAPI()
-    def read_objects(self, file_name="../data/trajectories/exp_2_goal_poses.csv"):
+        self.pub = rospy.Publisher("/in_grasp/obj_traj", PoseArray)
+
+    def read_objects(self, file_name=path_in_hand_data+"/trajectories/exp_2_goal_poses.csv"):
         obj_list=ObjectList(file_name,' ')
-        aruco_file_="../data/initial_data/object_grasps/object_centroids.csv"
+        aruco_file_=path_in_hand_data+"/initial_data/object_grasps/object_centroids.csv"
         obj_list.add_aruco_centroid_locations(aruco_file_)
 
         self.obj_list=obj_list
 
-    def generate_traj(self,idx,folder="../data/trajectories/journal/open_loop/"):
+    def generate_traj(self,idx,folder=path_in_hand_data+"/trajectories/journal/open_loop/",WRITE_TO_FILE=True):
         obj_=self.obj_list.arr[idx]
         j0=obj_.grasp
         obj_pose=obj_.initial_pose
@@ -55,18 +64,18 @@ class inGraspPipeline:
         f_j=j0.copy()-0.05
         f_j[8:12]=j0[8:12]
         start = time.time()
-        j_traj,n_pose=self.in_grasp.call_server_list(j0,obj_pose,des_obj_pose,weights,fingers,T=2,final_joints=f_j)
+        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose, des_obj_pose, weights, fingers, T=2, final_joints=f_j)
 
 
         weights[-1]=0.2# RR_orient, RR_pos, T, interp, vel limits
         f_j=j_traj.points[-1].positions
         start = time.time()
-        j_traj,n_pose=self.in_grasp.call_server_list(j0,obj_pose,des_obj_pose,weights,fingers,T=10,final_joints=f_j)
-        
-        # save trajectory
-        folder+obj_.f_name
-        pickle.dump( j_traj, open( folder+obj_.f_name+".p", "wb" ) )
-        
+        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0,obj_pose,des_obj_pose,weights,fingers,T=10,final_joints=f_j)
+        if(WRITE_TO_FILE):
+            # save trajectory
+            folder+obj_.f_name
+            pickle.dump( j_traj, open( folder+obj_.f_name+".p", "wb" ) )
+        return j_traj,obj_traj,n_pose
     def write(self, idx, file_name):
         print "TODO"
 
@@ -256,82 +265,38 @@ def get_trajectories():
         
     end = time.time()
     print(end-start)
+def vis_traj():
+    in_grasp_pip=inGraspPipeline(init_node=True)
+    in_grasp_pip.read_objects()
+    j_traj,obj_traj,obj_pose=in_grasp_pip.generate_traj(int(sys.argv[1]),WRITE_TO_FILE=False)
+    r = rospy.Rate(1.0)
+
+    while not rospy.is_shutdown():
+        in_grasp_pip.pub.publish(obj_traj)
+        r.sleep()
+    #print obj_traj
+#def run_mpc():
+    # Read initial trajectory:
+
+def run_mpc():
+    in_grasp_pip=inGraspPipeline(init_node=True)
+    in_grasp_pip.read_objects()
+    j_traj,obj_traj,obj_pose=in_grasp_pip.generate_traj(int(sys.argv[1]),WRITE_TO_FILE=False)
+    # call mpc service:
+    rospy.wait_for_service('/in_grasp_manipulation/one_step_mpc')
+    run_mpc=rospy.ServiceProxy('/in_grasp_manipulation/one_step_mpc',RunMPC)
+    result_=run_mpc(obj_traj,j_traj)
+        
+
+    #j_traj=get_in_grasp_plan(j0,obj_pose,des_obj_pose,weights,fingers,rig_finger,T,j_final,initial_j_traj)
+
     
 if __name__=='__main__':
+    #vis_traj()
+    run_mpc()
+    '''
     #in_grasp_pip=inGraspPipeline(init_node=True,publish_prefix='/allegroHand_0',listen_prefix='/allegroHand_0')
     in_grasp_pip=inGraspPipeline(init_node=True)
     in_grasp_pip.read_objects()
     in_grasp_pip.rhc_traj(int(sys.argv[1]),OBJ_TRACKING=True,FROM_FILE=True)
-        
-def demo():
-    file_="../data/trajectories/exp_2_goal_poses.csv"
-
-    obj_list=ObjectList(file_,' ')
-    obj_=obj_list.arr[int(sys.argv[1])]
-
-    j0=obj_.grasp
-    obj_pose=obj_.initial_pose
-    des_obj_pose=obj_.des
-    fingers=obj_.fing
-    print obj_.name
-
-    # Initialize allegro api:
-    #allegro_drv=handAPI(publish_prefix='/allegroHand_0',listen_prefix='/allegroHand_0',init_node=True)
-    allegro_drv=handAPI(init_node=True)
-    # Initialize in-grasp client:
-    in_grasp=inGraspClient()
-    #robot_kdl=allegroKinematics(fingers=[0,1,2,3])
-    #des_obj_pose=robot_kdl.end_effector_pose_array(np.array([0.5,0.5,0.5,0.5]),3)
-    #print des_obj_pose
-    weights=[0.01,10.0,1.0,0.1,100.0]# RR_orient, RR_pos, T, interp, vel limits
-
-
-    
-    # send initial grasp:
-    raw_input("Initial grasp?")
-    allegro_drv.publish_joints(j0)
-    #exit()
-    # Compute joint traj:
-    f_j=j0.copy()-0.05
-    f_j[8:12]=j0[8:12]
-    start = time.time()
-    j_traj,n_pose=in_grasp.call_server_list(j0,obj_pose,des_obj_pose,weights,fingers,T=2,final_joints=f_j)
-    end = time.time()
-    print(end - start)
-    weights[-1]=0.2# RR_orient, RR_pos, T, interp, vel limits
-    f_j=j_traj.points[-1].positions
-    start = time.time()
-    j_traj,n_pose=in_grasp.call_server_list(j0,obj_pose,des_obj_pose,weights,fingers,T=10,final_joints=f_j)
-    end = time.time()
-    print(end-start)
-    # interpolate joint traj:
-    
-    # send joint trajectory to robot:
-    raw_input("send traj?")
-    allegro_drv.publish_joint_traj(j_traj)
-
-    
-## Single pipeline:
-
-# Move to initial grasp
-
-# visualize object in initial pose
-
-# Place object
-
-# Track object
-
-# Get offsets
-
-# Get in_grasp plan
-
-# visualize plan
-
-# execute trajectory
-
-# Get final object pose
-
-
-## Replanning pipeline:
-
-# MPC:
+    '''

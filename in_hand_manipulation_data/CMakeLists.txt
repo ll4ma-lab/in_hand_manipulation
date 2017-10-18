@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(task_controllers)
+project(in_hand_manipulation_data)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -8,13 +8,8 @@ project(task_controllers)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  geometry_msgs
-  ll4ma_kdl
   roscpp
   rospy
-  sensor_msgs
-  tf
-  trajectory_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -74,7 +69,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   geometry_msgs#   sensor_msgs#   trajectory_msgs
+#   std_msgs  # Or other packages containing msgs
 # )
 
 ################################################
@@ -108,8 +103,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES task_controllers
-#  CATKIN_DEPENDS geometry_msgs ll4ma_kdl roscpp rospy sensor_msgs tf trajectory_msgs
+#  LIBRARIES in_hand_manipulation_data
+#  CATKIN_DEPENDS roscpp rospy
 #  DEPENDS system_lib
 )
 
@@ -126,7 +121,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/task_controllers.cpp
+#   src/${PROJECT_NAME}/in_hand_manipulation_data.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -137,7 +132,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/task_controllers_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/in_hand_manipulation_data_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -194,7 +189,7 @@ include_directories(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_task_controllers.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_in_hand_manipulation_data.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

@@ -20,7 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   sensor_msgs
   std_msgs
-  biotac_sensors
+  #biotac_sensors
   optimization_pkg
   allegro_driver
   message_generation

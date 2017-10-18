@@ -29,8 +29,6 @@ class VizInHand:
 
         self.traj_server.viz_joint_traj(j_t,'allegro_mount')
 
-
-        
     def viz_reachability(self,pose,meshes,arr=[0,1,2,3],t='R_fingers',a=0.1):
         f_pub=rospy.Publisher(t,MarkerArray,queue_size=1)
         m_arr=MarkerArray()
