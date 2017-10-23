@@ -74,12 +74,95 @@ class inGraspPipeline:
         if(WRITE_TO_FILE):
             # save trajectory
             folder+obj_.f_name
-            pickle.dump( j_traj, open( folder+obj_.f_name+".p", "wb" ) )
+            pickle.dump( [j_traj,obj_traj], open( folder+obj_.f_name+".p", "wb" ) )
         return j_traj,obj_traj,n_pose
     def write(self, idx, file_name):
         print "TODO"
 
-    def rhc_traj(self, idx, T=10, OBJ_TRACKING=False, FROM_FILE=True, folder="../data/trajectories/journal/open_loop/"):
+    def interpolate_jtraj(self,jtraj):
+        pos_array=np.zeros((len(jtraj.points),16))
+        for i in range(len(jtraj.points)):
+            pos_array[i,:]=jtraj.points[i].positions
+        t=len(pos_array)-1
+        T=t*10
+        dt=T/t
+        print dt
+        new_traj=np.zeros((T,16))
+        for k in range(len(pos_array[0,:])):
+            new_traj[0:dt,k]=np.linspace(pos_array[0,k],pos_array[1,k],dt)
+
+        for i in range(1,len(pos_array)-1):
+            for k in range(len(pos_array[i,:])):
+                new_traj[i*dt-1:i*dt+dt,k]=np.linspace(pos_array[i,k],pos_array[i+1,k],dt+1)
+        new_jtraj=JointTrajectory()
+        new_jtraj.header=jtraj.header
+        new_jtraj.joint_names=jtraj.joint_names
+        for i in range(len(new_traj)):
+            pt=JointTrajectoryPoint()
+            pt.positions=new_traj[i,:]
+            new_jtraj.points.append(pt)
+        return new_jtraj
+
+    def lerp(self,q0,q1,h):
+        q_interp=q0*(1-h)+q1*h
+
+        q_norm=q_interp/np.linalg.norm(q_interp)
+        return q_interp
+    def interpolate_obj_traj(self,obj_traj):
+        pos_arr=np.zeros((len(obj_traj.poses),3))
+        quat_arr=np.zeros((len(obj_traj.poses),4))
+        
+        for i in range(len(obj_traj.poses)):
+            pos_arr[i,:]=np.array([obj_traj.poses[i].position.x, obj_traj.poses[i].position.y, obj_traj.poses[i].position.z])
+            quat_arr[i,:]=np.array([obj_traj.poses[i].orientation.x, obj_traj.poses[i].orientation.y, obj_traj.poses[i].orientation.z,obj_traj.poses[i].orientation.w])
+
+        t=len(pos_arr)-1
+        T=t*10
+        dt=T/t
+        new_pos_traj=np.zeros((T,3))
+
+        new_quat_traj=np.zeros((T,4))
+        # position interpolation:
+        for k in range(len(pos_arr[0,:])):
+            new_pos_traj[0:dt,k]=np.linspace(pos_arr[0,k],pos_arr[1,k],dt)
+
+        for i in range(1,len(pos_arr)-1):
+            for k in range(len(pos_arr[i,:])):
+                new_pos_traj[i*dt-1:i*dt+dt,k]=np.linspace(pos_arr[i,k],pos_arr[i+1,k],dt+1)
+
+        # quaternion interpolation:
+
+        for j in range(t):
+            for k in range(10):
+                new_quat_traj[j*10+k,:]=self.lerp(quat_arr[j,:],quat_arr[j+1,:],k/dt)
+        
+                
+        new_obj_traj=PoseArray()
+        new_obj_traj.header=obj_traj.header
+        for i in range(len(new_pos_traj)):
+            npos=Pose()
+            npos.position.x=new_pos_traj[i,0]
+            npos.position.y=new_pos_traj[i,1]
+            npos.position.z=new_pos_traj[i,2]
+            
+            npos.orientation.x=new_quat_traj[i,0]
+            npos.orientation.y=new_quat_traj[i,1]
+            npos.orientation.z=new_quat_traj[i,2]
+            npos.orientation.w=new_quat_traj[i,3]
+            new_obj_traj.poses.append(npos)
+        return new_obj_traj
+    def get_traj_from_file(self,idx,folder=path_in_hand_data+"/trajectories/journal/open_loop/"):
+        obj_=self.obj_list.arr[idx]
+        j0=obj_.grasp
+        obj_pose=obj_.initial_pose
+        des_obj_pose=obj_.des
+        fingers=obj_.fing
+        
+        print 'Object: '+obj_.name
+        [j_traj,obj_traj]=pickle.load( open( folder+obj_.f_name+'.p', "rb" ) )
+        return j_traj, obj_traj
+        
+    def rhc_traj(self, idx, T=10, OBJ_TRACKING=False, FROM_FILE=True,folder=path_in_hand_data+"/trajectories/journal/open_loop/"):
         # Receding horizon control:
         obj_=self.obj_list.arr[idx]
         j0=obj_.grasp
@@ -110,8 +193,7 @@ class inGraspPipeline:
         else:
             j_traj=pickle.load( open( folder+obj_.f_name+'.p', "rb" ) )
             
-        print j_traj
-        exit()
+
         # Move to initial grasp
         raw_input('Move to initial grasp?')
         self.allegro_drv.publish_joints(j0)
@@ -181,7 +263,7 @@ class inGraspPipeline:
         #self.allegro_drv.engage_grav_comp()
 
         
-    def run_traj(self,idx, OBJ_TRACKING=False, RECORD_DATA=False):
+    def run_traj(self,idx, OBJ_TRACKING=False, RECORD_DATA=False,FROM_FILE=True):
         # Read idx from file
         obj_=self.obj_list.arr[idx]
         j0=obj_.grasp
@@ -192,22 +274,24 @@ class inGraspPipeline:
         print 'Object: '+obj_.name
         # Enable grav comp mode
         #self.allegro_drv.engage_grav_comp()
-
         
-        # Get plan from in_grasp client:
-        weights=self.weights
-        f_j=j0.copy()-0.05
-        f_j[8:12]=j0[8:12]
-        start = time.time()
-        j_traj,n_pose=self.in_grasp.call_server_list(j0,obj_pose,des_obj_pose,weights,fingers,T=2,final_joints=f_j)
-        end = time.time()
-        print(end - start)
-        weights[-1]=0.2# RR_orient, RR_pos, T, interp, vel limits
-        f_j=j_traj.points[-1].positions
-        start = time.time()
-        j_traj,n_pose=self.in_grasp.call_server_list(j0,obj_pose,des_obj_pose,weights,fingers,T=10,final_joints=f_j)
-        end = time.time()
-        print(end-start)
+        if(FROM_FILE):
+            j_traj,obj_traj=in_grasp_pip.get_traj_from_file(int(sys.argv[1]))
+        else:
+            # Get plan from in_grasp client:
+            weights=self.weights
+            f_j=j0.copy()-0.05
+            f_j[8:12]=j0[8:12]
+            start = time.time()
+            j_traj,n_pose=self.in_grasp.call_server_list(j0,obj_pose,des_obj_pose,weights,fingers,T=2,final_joints=f_j)
+            end = time.time()
+            print(end - start)
+            weights[-1]=0.2# RR_orient, RR_pos, T, interp, vel limits
+            f_j=j_traj.points[-1].positions
+            start = time.time()
+            j_traj,n_pose=self.in_grasp.call_server_list(j0,obj_pose,des_obj_pose,weights,fingers,T=10,final_joints=f_j)
+            end = time.time()
+            print(end-start)
         # Move to initial grasp
         raw_input('Move to initial grasp?')
         self.allegro_drv.publish_joints(j0)
@@ -227,33 +311,35 @@ class inGraspPipeline:
             time.sleep(0.5)
             
         # Run trajectory
+        j_traj=in_grasp_pip.interpolate_jtraj(j_traj)
         raw_input("Run trajectory?")
         self.allegro_drv.publish_joint_traj(j_traj)
-
-        # Collect data
-        suc=raw_input('Press Enter - store final pose \n Press F to store as failure ')
-    
-        if(suc==''):
-            # Get object pose from aruco marker
-            
-            # Get final joint angles
-            #joint_angles=allegroStates.joint_states.position
-            # Get final object pose
-            reached_pose=self.tf_api.tf_find_transform('obj')
-            obj_.reached=reached_pose
-            print reached_pose[0:3]
-        else:
-            # Store failure
-            obj_.reached='F'
-        #objects.write_reached_pose(folder+trial_name)
         
-        for i in P_:
-            i.send_signal(subprocess.signal.SIGINT)
+        # Collect data
+
+        if(RECORD_DATA):
+            suc=raw_input('Press Enter - store final pose \n Press F to store as failure ')
+            if(suc==''):
+                # Get object pose from aruco marker
+                
+                # Get final joint angles
+                #joint_angles=allegroStates.joint_states.position
+                # Get final object pose
+                reached_pose=self.tf_api.tf_find_transform('obj')
+                obj_.reached=reached_pose
+                print reached_pose[0:3]
+            else:
+                # Store failure
+                obj_.reached='F'
+            #objects.write_reached_pose(folder+trial_name)
+        if(OBJ_TRACKING):
+            for i in P_:
+                i.send_signal(subprocess.signal.SIGINT)
 
         # Enable grav comp mode
-        raw_input("grav comp?")
+        #raw_input("grav comp?")
 
-        self.allegro_drv.engage_grav_comp()
+        #self.allegro_drv.engage_grav_comp()
 
 def get_trajectories():
     in_grasp_pip=inGraspPipeline(init_node=True)
@@ -274,29 +360,47 @@ def vis_traj():
     while not rospy.is_shutdown():
         in_grasp_pip.pub.publish(obj_traj)
         r.sleep()
-    #print obj_traj
-#def run_mpc():
-    # Read initial trajectory:
 
-def run_mpc():
+def run_mpc(FROM_FILE=True):
+    idx=int(sys.argv[1])
     in_grasp_pip=inGraspPipeline(init_node=True)
     in_grasp_pip.read_objects()
-    j_traj,obj_traj,obj_pose=in_grasp_pip.generate_traj(int(sys.argv[1]),WRITE_TO_FILE=False)
+    obj_=in_grasp_pip.obj_list.arr[idx]
+    j0=obj_.grasp
+
+    if(FROM_FILE):
+        j_traj,obj_traj=in_grasp_pip.get_traj_from_file(int(sys.argv[1]))
+    else:
+        j_traj,obj_traj,obj_pose=in_grasp_pip.generate_traj(int(sys.argv[1]),WRITE_TO_FILE=False)
+
+    # interpolate trajectories:
+    j_traj=in_grasp_pip.interpolate_jtraj(j_traj)
+    obj_traj=in_grasp_pip.interpolate_obj_traj(obj_traj)
+
+    # move to initial pose:
+    raw_input('Move to initial grasp?')
+    in_grasp_pip.allegro_drv.publish_joints(j0)
+
+    raw_input('Run mpc?')
     # call mpc service:
-    rospy.wait_for_service('/in_grasp_manipulation/one_step_mpc')
-    run_mpc=rospy.ServiceProxy('/in_grasp_manipulation/one_step_mpc',RunMPC)
+    mpc_server_name = rospy.get_param("/mpc_server_name")
+
+    rospy.wait_for_service(mpc_server_name)
+    run_mpc=rospy.ServiceProxy(mpc_server_name,RunMPC)
     result_=run_mpc(obj_traj,j_traj)
         
 
-    #j_traj=get_in_grasp_plan(j0,obj_pose,des_obj_pose,weights,fingers,rig_finger,T,j_final,initial_j_traj)
 
-    
-if __name__=='__main__':
-    #vis_traj()
-    run_mpc()
-    '''
-    #in_grasp_pip=inGraspPipeline(init_node=True,publish_prefix='/allegroHand_0',listen_prefix='/allegroHand_0')
+def run_open_loop():
     in_grasp_pip=inGraspPipeline(init_node=True)
     in_grasp_pip.read_objects()
-    in_grasp_pip.rhc_traj(int(sys.argv[1]),OBJ_TRACKING=True,FROM_FILE=True)
-    '''
+    in_grasp_pip.run_traj(int(sys.argv[1]),OBJ_TRACKING=False,FROM_FILE=True)
+    
+    
+if __name__=='__main__':
+    #get_trajectories()
+    #vis_traj()
+    run_mpc()
+    
+    #in_grasp_pip=inGraspPipeline(init_node=True,publish_prefix='/allegroHand_0',listen_prefix='/allegroHand_0')
+    

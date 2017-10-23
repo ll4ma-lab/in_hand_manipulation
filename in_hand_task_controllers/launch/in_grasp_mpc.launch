@@ -1,0 +1,14 @@
+<launch>
+
+<arg name="urdf_pkg" value="$(find urlg_robots_description)"/>
+<arg name="hand_urdf" value="/robots/depreciated/urdf/allegro_kdl.urdf"/>
+
+<rosparam param="/hand_urdf" subst_value="True">
+$(arg urdf_pkg)$(arg hand_urdf)
+</rosparam>
+<rosparam param="/mpc/log_file" subst_value="True">
+"$(find in_hand_manipulation_data)/data/mpc/mpc_data.csv"
+</rosparam>
+<rosparam file="$(find in_hand_task_controllers)/config/in_grasp_mpc.yaml" command="load" subst_value="true"/>
+<node name="in_grasp_mpc_control" pkg="in_hand_task_controllers" type="in_grasp_mpc_server"/>
+</launch>

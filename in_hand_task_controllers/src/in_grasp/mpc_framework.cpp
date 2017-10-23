@@ -8,16 +8,44 @@ void mpcController::init_controller()
   tf::TransformListener listen;
   tf_listen=&listen;
   got_obj_state=false;
+  // get values from ros parameter server:
+  // mpc service name:
+  string _mpc_server_name;
+  if (!n_->getParam("/mpc_server_name", _mpc_server_name))
+  {
+    ROS_ERROR("Failed to read mpc_server_name!!!");
+    ros::shutdown();
+  }
+
+  // urdf file name
+  string _urdf_file;
+  if (!n_->getParam("/hand_urdf", _urdf_file))
+  {
+    ROS_ERROR("Failed to read hand_urdf!!!");
+    ros::shutdown();
+  }
+
+  if (!n_->getParam("/gains/js_tracking",js_gain))
+  {
+    ROS_ERROR("Failed to read mpc_server_name!!!");
+    ros::shutdown();
+  }
+  if (!n_->getParam("/gains/obj_tracking",obj_gain))
+  {
+    ROS_ERROR("Failed to read mpc_server_name!!!");
+    ros::shutdown();
+  }
+
   // build kdl tree
-  string _urdf_file = ros::package::getPath("urlg_robots_description");
-  _urdf_file.append("/robots/depreciated/urdf/allegro_kdl.urdf");
+  //string _urdf_file = ros::package::getPath("urlg_robots_description");
+  //_urdf_file.append("/robots/depreciated/urdf/allegro_kdl.urdf");
   vector<string> _ee_names={"index_tip","middle_tip","ring_tip","thumb_tip"};
   vector<string> _base_names={"palm_link","palm_link","palm_link","palm_link"};
   vector<double> _g_vec={0.0,0.0,0.0};
   
   // build kdl tree and chains:
   hand_kdl=new manipulator_kdl::robotKDL(_urdf_file,_base_names,_ee_names,_g_vec);
-  ss = n_->advertiseService("/in_grasp_manipulation/one_step_mpc", &hand_controller::mpcController::srv_call, this);
+  ss = n_->advertiseService(_mpc_server_name, &hand_controller::mpcController::srv_call, this);
   
 }
 
@@ -35,6 +63,19 @@ void mpcController::get_object_pose()
     ros::Duration(1.0).sleep();
   }
   tf::TransformTFToKDL(transform,curr_obj_pose);
+
+  try
+  {
+    tf_listen->lookupTransform("/thumb", "/obj",  
+                               ros::Time(0), transform);
+  }
+  catch (tf::TransformException ex)
+  {
+    ROS_ERROR("%s",ex.what());
+    ros::Duration(1.0).sleep();
+  }
+  tf::TransformTFToKDL(transform,curr_rigid_frame);
+
 }
   
 // service callback:
@@ -63,24 +104,6 @@ void mpcController::publish_joint_pos(Eigen::VectorXd j_pos)
   joint_cmd_.position=j_arr;
   joint_pub_.publish(joint_cmd_);
 }
-void mpcController::run_controller()
-{
-  //
-  ros::Rate loop_rate(50);
-  int T=100;
-  int t=1;
-  while (n_->ok() && t<T)
-  {
-    updateState();
-    get_object_pose();
-    // compute feedback gain:
-    
-    // publish trajectory:
-    
-    t++;
-    loop_rate.sleep();
-  }
-}
 
 bool mpcController::srv_call(in_hand_manipulation_msgs::RunMPC::Request& req,in_hand_manipulation_msgs::RunMPC::Response& res)
 {
@@ -90,7 +113,8 @@ bool mpcController::srv_call(in_hand_manipulation_msgs::RunMPC::Request& req,in_
   run_controller();
   // return reached object pose
   updateState();
-  get_object_pose();
+  
+  //get_object_pose();
   geometry_msgs::PoseStamped reached_pose;
   tf::PoseKDLToMsg(curr_obj_pose, reached_pose.pose);
   res.reached_obj_pose=reached_pose;

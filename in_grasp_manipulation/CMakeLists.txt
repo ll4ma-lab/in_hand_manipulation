@@ -27,6 +27,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   tf
   in_hand_manipulation_msgs
+  trajectory_msgs
 )
 
 #find_package(Eigen REQUIRED)

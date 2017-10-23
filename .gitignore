@@ -46,3 +46,5 @@
 
 # CMA data files- Uncomment if required
 #*.dat
+# data folder
+in_hand_manipulation_data/data/

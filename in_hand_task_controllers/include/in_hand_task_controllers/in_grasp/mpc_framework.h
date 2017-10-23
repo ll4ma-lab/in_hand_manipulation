@@ -26,7 +26,7 @@ public:
   manipulator_kdl::robotKDL* hand_kdl;
   vector<Eigen::VectorXd> j_des;
   vector<KDL::Frame> obj_pose_des;
-  KDL::Frame curr_obj_pose;
+  KDL::Frame curr_obj_pose,curr_rigid_frame;
   bool got_obj_state;
   
   ros::ServiceServer ss;
@@ -40,6 +40,6 @@ public:
   void publish_joint_pos(Eigen::VectorXd j_pos);
   void run_controller();
   bool srv_call(in_hand_manipulation_msgs::RunMPC::Request& req,in_hand_manipulation_msgs::RunMPC::Response& res);
-
+  double js_gain,obj_gain;
 };
 }

@@ -130,5 +130,9 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+
+add_executable(in_grasp_mpc_server_demo src/in_grasp/mpc_server_demo.cpp)
+target_link_libraries(in_grasp_mpc_server_demo mpc_framework ${catkin_LIBRARIES})
+
 add_executable(in_grasp_mpc_server src/in_grasp/mpc_server.cpp)
 target_link_libraries(in_grasp_mpc_server mpc_framework ${catkin_LIBRARIES})

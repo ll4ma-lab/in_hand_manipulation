@@ -1,0 +1,3 @@
+mpc_server_name: "/in_grasp_manipulation/one_step_mpc"
+gains/js_tracking: 0.5
+gains/obj_tracking: 0.1
