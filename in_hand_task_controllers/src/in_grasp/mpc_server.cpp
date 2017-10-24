@@ -17,7 +17,7 @@ void hand_controller::mpcController::run_controller()
     ROS_ERROR("Failed to read mpc_log file!!!");
     ros::shutdown();
   }
-
+  cerr<<"created log file"<<endl;
   data_file.open(filename);
   for(int i=0; i<16;++i)
   {
@@ -36,13 +36,23 @@ void hand_controller::mpcController::run_controller()
   {
     data_file<<"fb_j"<<i<<",";
   }
+  for(int i=0; i<16;++i)
+  {
+    data_file<<"js_cmd"<<i<<",";
+  }
+
+  for(int i=0; i<6;++i)
+  {
+    data_file<<"obj_pos"<<i<<",";
+  }
+  
   data_file<<endl;
   while (n_->ok() && t<T)
   {
     updateState();
-    //get_object_pose();
-
+    get_object_pose();
     // get rigid transformation between object pose and rigid finger
+    
     
     // Compute new command
     // Joint trajectory tracking:
@@ -50,10 +60,10 @@ void hand_controller::mpcController::run_controller()
     
     Eigen::VectorXd js_ff=j_des[t+1]-j_des[t];
     
-    Eigen::VectorXd js_fb=2.0*(j_des[t+1]-curr_js-js_ff);
+    Eigen::VectorXd js_fb=js_gain*2.0*(j_des[t+1]-curr_js-js_ff);
 
-    Eigen::VectorXd js_cmd=j_des[t]+js_ff+js_gain*js_fb;
-    
+
+
     // Object pose tracking:
     
     // convert rigid frame to T mat:
@@ -72,28 +82,47 @@ void hand_controller::mpcController::run_controller()
 
     vector<double> pose=hand_kdl->frame_to_pose_(obj_err_mat*rigid_T,true);
     Map<Eigen::VectorXd> obj_fb(&pose[0],pose.size());
+
+    // Computing error to final pose
+    
+    KDL::Twist obj_f_err=KDL::diff(obj_pose_des[obj_pose_des.size()-1],curr_obj_pose);
+
+    Eigen::Matrix<double,6,1> obj_err_final;
+    tf::twistKDLToEigen(obj_f_err,obj_err_final);
     
     
+
     
-    /*
     // Computing ff term:
     obj_err=KDL::diff(obj_pose_des[t+1],obj_pose_des[t]);
-    
+    Eigen::Matrix<double, 6, 1> err;
+    tf::twistKDLToEigen(obj_err,err);
+
     // Get object error:
     tf::twistKDLToEigen(obj_err,eigen_err);
+    
     obj_err_mat=hand_kdl->pose_to_frame(eigen_err);
-    pose=hand_kdl->frame_to_pose_(obj_err_mat*rigid_T,true);
-    Map<Eigen::VectorXd> obj_ff(&pose[0],pose.size());
 
+    pose=hand_kdl->frame_to_pose_(obj_err_mat*rigid_T,true);
+
+    Map<Eigen::VectorXd> obj_ff(&pose[0],pose.size());
+    
 
     // Converting to joint command:
-    vector<double> q(&curr_js[12],&curr_js[12+4]);
+    vector<double> q(&curr_js[12],&curr_js[12]+4);
+   
     Eigen::MatrixXd J=hand_kdl->getJacobian(3,q);
-
+   
     Eigen::VectorXd thumb_fb=J.transpose()*(obj_fb+obj_ff);
-    */
+   
     
+    for(int i=0;i<4;++i)
+    {
+      js_fb[4*3+i]=obj_gain*thumb_fb[i];
+    }
     // publish trajectory:
+    Eigen::VectorXd js_cmd=j_des[t]+js_ff+js_fb;
+   
     publish_joints(js_cmd);
     for(int i=0;i<16;++i)
     {
@@ -112,10 +141,19 @@ void hand_controller::mpcController::run_controller()
     {
       data_file<<js_fb[i]<<",";
     }
+    for(int i=0;i<16;++i)
+    {
+      data_file<<js_cmd[i]<<",";
+    }
 
+    for(int i=0;i<6;++i)
+    {
+      data_file<<obj_err_final(i)<<",";
+    }
     data_file<<endl;
     t++;
     loop_rate.sleep();
+   
   }
   data_file.close();
   cerr<<"Controller done!"<<endl;
@@ -128,7 +166,8 @@ int main(int argc, char** argv)
   ros::Rate loop_rate(50);
   hand_controller::mpcController robot_node;
   robot_node.init(n,"/allegro_hand_right");
-  robot_node.init_controller();
+  tf::TransformListener listen;
+  robot_node.init_controller(listen);
 
 
   while(n.ok())

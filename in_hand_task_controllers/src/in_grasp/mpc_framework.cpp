@@ -3,9 +3,8 @@ using namespace std;
 namespace hand_controller
 {
 
-void mpcController::init_controller()
+void mpcController::init_controller(tf::TransformListener &listen)
 {
-  tf::TransformListener listen;
   tf_listen=&listen;
   got_obj_state=false;
   // get values from ros parameter server:
@@ -52,27 +51,38 @@ void mpcController::init_controller()
 void mpcController::get_object_pose()
 {
   tf::StampedTransform transform;
-  try
+  bool get_obj_pose=false;
+  while(get_obj_pose==false && n_->ok())
   {
-    tf_listen->lookupTransform("/palm_link", "/obj",  
-                               ros::Time(0), transform);
-  }
-  catch (tf::TransformException ex)
-  {
-    ROS_ERROR("%s",ex.what());
-    ros::Duration(1.0).sleep();
+    try
+    {
+      tf_listen->lookupTransform("/palm_link", "/obj",  
+                                 ros::Time(0), transform);
+    }
+    catch (tf::TransformException ex)
+    {
+      ROS_ERROR("%s",ex.what());
+      ros::Duration(1.0).sleep();
+      continue;
+    }
+    get_obj_pose=true;
   }
   tf::TransformTFToKDL(transform,curr_obj_pose);
-
-  try
+  get_obj_pose=false;
+  while(get_obj_pose==false && n_->ok())
   {
-    tf_listen->lookupTransform("/thumb", "/obj",  
-                               ros::Time(0), transform);
-  }
-  catch (tf::TransformException ex)
-  {
-    ROS_ERROR("%s",ex.what());
-    ros::Duration(1.0).sleep();
+    try
+    {
+      tf_listen->lookupTransform("/thumb_tip", "/obj",  
+                                 ros::Time(0), transform);
+    }
+    catch (tf::TransformException ex)
+    {
+      ROS_ERROR("%s",ex.what());
+      ros::Duration(1.0).sleep();
+      continue;
+    }
+    get_obj_pose=true;
   }
   tf::TransformTFToKDL(transform,curr_rigid_frame);
 

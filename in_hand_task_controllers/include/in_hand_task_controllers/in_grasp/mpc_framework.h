@@ -31,7 +31,7 @@ public:
   
   ros::ServiceServer ss;
   
-  void init_controller();
+  void init_controller(tf::TransformListener&);
 
   void get_object_pose();
   // service callback:

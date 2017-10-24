@@ -290,8 +290,28 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   
   // compute object trajectory:
   geometry_msgs::PoseArray obj_pose_traj;
-  obj_pose_traj.poses.resize(j_best.size()/16);
+  obj_pose_traj.poses.resize((j_best.size()/16)+1);
   obj_pose_traj.header.frame_id="palm_link";
+  // adding initial object pose:
+  thumb_joints.clear();
+  for (int j=4*r_f;j<4*r_f+4;++j)
+  {
+    thumb_joints.push_back(joints_0[j]);
+
+  }
+
+  thumb_mat=allegro_kdl.getFKEigen(3,thumb_joints);
+  n_object_pose=thumb_mat*obj_offset;
+  n_pose=allegro_kdl.frame_to_pose_(n_object_pose,false);
+  
+  obj_pose_traj.poses[0].position.x=n_pose[0];
+  obj_pose_traj.poses[0].position.y=n_pose[1];
+  obj_pose_traj.poses[0].position.z=n_pose[2];
+  obj_pose_traj.poses[0].orientation.x=n_pose[3];
+  obj_pose_traj.poses[0].orientation.y=n_pose[4];
+  obj_pose_traj.poses[0].orientation.z=n_pose[5];
+  obj_pose_traj.poses[0].orientation.w=n_pose[6];
+  
   for (int i=0;i<j_best.size()/16;i++)
   {
     
@@ -303,15 +323,15 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
     }
 
     thumb_mat=allegro_kdl.getFKEigen(3,thumb_joints);
-    Eigen::MatrixXd  n_object_pose=thumb_mat*obj_offset;
-    vector<double> n_pose=allegro_kdl.frame_to_pose_(n_object_pose,false);
+    n_object_pose=thumb_mat*obj_offset;
+    n_pose=allegro_kdl.frame_to_pose_(n_object_pose,false);
   
-    obj_pose_traj.poses[i].position.x=n_pose[0];
-    obj_pose_traj.poses[i].position.y=n_pose[1];
-    obj_pose_traj.poses[i].position.z=n_pose[2];
-    obj_pose_traj.poses[i].orientation.x=n_pose[3];
-    obj_pose_traj.poses[i].orientation.y=n_pose[4];
-    obj_pose_traj.poses[i].orientation.z=n_pose[5];
+    obj_pose_traj.poses[i+1].position.x=n_pose[0];
+    obj_pose_traj.poses[i+1].position.y=n_pose[1];
+    obj_pose_traj.poses[i+1].position.z=n_pose[2];
+    obj_pose_traj.poses[i+1].orientation.x=n_pose[3];
+    obj_pose_traj.poses[i+1].orientation.y=n_pose[4];
+    obj_pose_traj.poses[i+1].orientation.z=n_pose[5];
     obj_pose_traj.poses[i].orientation.w=n_pose[6];
     
   }

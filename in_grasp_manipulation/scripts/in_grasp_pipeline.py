@@ -125,7 +125,7 @@ class inGraspPipeline:
         # position interpolation:
         for k in range(len(pos_arr[0,:])):
             new_pos_traj[0:dt,k]=np.linspace(pos_arr[0,k],pos_arr[1,k],dt)
-
+            
         for i in range(1,len(pos_arr)-1):
             for k in range(len(pos_arr[i,:])):
                 new_pos_traj[i*dt-1:i*dt+dt,k]=np.linspace(pos_arr[i,k],pos_arr[i+1,k],dt+1)
@@ -134,7 +134,7 @@ class inGraspPipeline:
 
         for j in range(t):
             for k in range(10):
-                new_quat_traj[j*10+k,:]=self.lerp(quat_arr[j,:],quat_arr[j+1,:],k/dt)
+                new_quat_traj[j*10+k,:]=self.lerp(quat_arr[j,:],quat_arr[j+1,:],float(k)/dt)
         
                 
         new_obj_traj=PoseArray()
@@ -345,7 +345,9 @@ def get_trajectories():
     in_grasp_pip=inGraspPipeline(init_node=True)
     in_grasp_pip.read_objects()
     start=time.time()
-    for i in range(len(in_grasp_pip.obj_list.arr)):
+    #i=10
+
+    for i in range(0,len(in_grasp_pip.obj_list.arr)):
         print i
         in_grasp_pip.generate_traj(i)
         
@@ -361,7 +363,7 @@ def vis_traj():
         in_grasp_pip.pub.publish(obj_traj)
         r.sleep()
 
-def run_mpc(FROM_FILE=True):
+def run_mpc(FROM_FILE=True,OBJ_TRACKING=True):
     idx=int(sys.argv[1])
     in_grasp_pip=inGraspPipeline(init_node=True)
     in_grasp_pip.read_objects()
@@ -374,12 +376,35 @@ def run_mpc(FROM_FILE=True):
         j_traj,obj_traj,obj_pose=in_grasp_pip.generate_traj(int(sys.argv[1]),WRITE_TO_FILE=False)
 
     # interpolate trajectories:
+    
     j_traj=in_grasp_pip.interpolate_jtraj(j_traj)
     obj_traj=in_grasp_pip.interpolate_obj_traj(obj_traj)
+    r=rospy.Rate(10)
+    for i in range(10):
+        in_grasp_pip.pub.publish(obj_traj)
+        r.sleep()
+    print len(j_traj.points)
+    print len(obj_traj.poses)
 
     # move to initial pose:
     raw_input('Move to initial grasp?')
     in_grasp_pip.allegro_drv.publish_joints(j0)
+    
+    if(OBJ_TRACKING):
+        P_=[] # list of subprocesses
+        raw_input('Placed Object?')
+        P_.append(in_grasp_pip.tf_api.tf_pose_pub_process(obj_.initial_pose,'i') )
+        P_.append(in_grasp_pip.tf_api.tf_pose_pub_process(obj_.offset,'rigid','thumb_tip'))
+        P_.append(in_grasp_pip.tf_api.tf_pose_pub_process(obj_.des,'G'))
+        
+        P_.append(in_grasp_pip.tf_api.tf_pose_pub_process(obj_.aruco,'obj_ar','ar') )
+        
+        raw_input('Placed Object and Aligned initial frames?')
+        initial_frame=in_grasp_pip.tf_api.tf_find_transform('/i','/obj_ar')
+        #palm_rotation=allegroStates.tf_find_transform('/palm_link','/obj_ar')
+        P_.append(in_grasp_pip.tf_api.tf_pose_pub_process(initial_frame,'/obj','/obj_ar'))
+        time.sleep(0.5)
+
 
     raw_input('Run mpc?')
     # call mpc service:
@@ -388,7 +413,11 @@ def run_mpc(FROM_FILE=True):
     rospy.wait_for_service(mpc_server_name)
     run_mpc=rospy.ServiceProxy(mpc_server_name,RunMPC)
     result_=run_mpc(obj_traj,j_traj)
-        
+
+    if(OBJ_TRACKING):
+        for i in P_:
+            i.send_signal(subprocess.signal.SIGINT)
+
 
 
 def run_open_loop():
@@ -400,7 +429,7 @@ def run_open_loop():
 if __name__=='__main__':
     #get_trajectories()
     #vis_traj()
-    run_mpc()
+    run_mpc(FROM_FILE=True)
     
     #in_grasp_pip=inGraspPipeline(init_node=True,publish_prefix='/allegroHand_0',listen_prefix='/allegroHand_0')
     
