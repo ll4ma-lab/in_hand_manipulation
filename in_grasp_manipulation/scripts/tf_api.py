@@ -4,6 +4,7 @@ from subprocess import Popen
 import subprocess
 import numpy as np
 import copy
+from geometry_msgs.msg import PoseStamped,Pose
 
 class tfAPI:
     def __init__(self):
@@ -30,3 +31,21 @@ class tfAPI:
         final_pose[3:6]=tf.transformations.euler_from_quaternion(rot_2)
         got_tf=True    
         return final_pose
+
+class poseAPI:
+    def __init__(self):
+        print "poseAPI initialized"
+    def pose_from_arr(self,u):
+        pose=Pose()
+        pose.position.x=u[0]
+        pose.position.y=u[1]
+        pose.position.z=u[2]
+        
+        quaternion = tf.transformations.quaternion_from_euler(u[3],u[4],u[5])
+        pose.orientation.x=quaternion[0]
+        pose.orientation.y=quaternion[1]
+        pose.orientation.z=quaternion[2]
+        pose.orientation.w=quaternion[3]
+        pose_st=PoseStamped()
+        pose_st.pose=pose
+        return pose_st

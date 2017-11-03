@@ -1,6 +1,6 @@
-
+//#define SPARSE_GRADIENT true
 // optimization:
-#include <optimization_pkg/wrapper/pagmo_wrapper.hpp>
+#include <ll4ma_planner/pagmo_opt/trajectory_optimization.hpp>
 // ROS:
 #include <ros/package.h>
 #include <ros/ros.h>
@@ -11,17 +11,17 @@
 #include <Eigen/Geometry> 
 
 // ROS service for finger gaiting
-#include "in_hand_manipulation/GetHandIK.h"
+#include <in_hand_manipulation_msgs/GetHandIK.h>
 
 using namespace pagmo;
 
-bool hand_ik_call(in_hand_manipulation::GetHandIK::Request &req,
-                  in_hand_manipulation::GetHandIK::Response &res)
+bool hand_ik_call(in_hand_manipulation_msgs::GetHandIK::Request &req,
+                  in_hand_manipulation_msgs::GetHandIK::Response &res)
 {
   // Get data from service request:
  // Build allegro kdl tree:
-  string urdf_file="/home/bala/catkin_ws/src/in_grasp_manipulation/urdf/allegro.urdf";
-
+  //  string urdf_file="/home/bala/catkin_ws/src/in_grasp_manipulation/urdf/allegro.urdf";
+  string urdf_file="/home/bala/catkin_ws/src/in_hand_manipulation/in_grasp_manipulation/urdf/allegro.urdf";
   // Load allegro kdl object:
   vector<string> ee_names={"index_tip","middle_tip","ring_tip","thumb_tip"};
   vector<string> base_names={"palm_link","palm_link","palm_link","palm_link"};
@@ -36,7 +36,7 @@ bool hand_ik_call(in_hand_manipulation::GetHandIK::Request &req,
   {
     joints_0[i]=req.init_joint_state.position[i];
   }
-
+  
   
   vector<vector<double>> data_arr;
 
@@ -55,7 +55,7 @@ bool hand_ik_call(in_hand_manipulation::GetHandIK::Request &req,
   f_index.resize(4,0);
   for(int j=0;j<req.f_index.size();++j)
   {
-    int loc=req.f_index[j].data;
+    int loc=req.f_index[j];
     f_index[loc]=1.0;
   }
   data_arr.push_back(f_index);
@@ -66,13 +66,16 @@ bool hand_ik_call(in_hand_manipulation::GetHandIK::Request &req,
   opt_problems::optProblem opt_problem(1,allegro_kdl,data_arr,vel_limits,joints_0);
 
   problem prob{trajectory_optimization{opt_problem}};
-  vector<double> tol(0,1e-4);
+  vector<double> tol(0,1e-1);
  
   prob.set_c_tol(tol);
   
   algorithm algo{snopt7(false,"/usr/local/lib/")};
   //algorithm algo{cmaes(500)};
-  population pop{prob,10u};
+  population pop{prob,1u};
+  vector<double> f_in=prob.fitness(joints_0);
+  pop.set_xf(0,joints_0,f_in); 
+
   //cerr<<"Solving"<<endl;  
   population pop_res = algo.evolve(pop);
   cerr<<"optimization completed!  Final cost: "<<pop_res.champion_f()[0]<<endl;
@@ -86,7 +89,7 @@ bool hand_ik_call(in_hand_manipulation::GetHandIK::Request &req,
   joints_0=req.init_joint_state.position;
   for(int j=0;j<req.f_index.size();++j)
   {
-    int f=req.f_index[j].data;
+    int f=req.f_index[j];
     for(int i=0;i<4;++i)
     {
       joints_0[f*4+i]=j_best[f*4+i];
@@ -95,6 +98,34 @@ bool hand_ik_call(in_hand_manipulation::GetHandIK::Request &req,
   goal_state.position=joints_0;
   
   res.joint_state=goal_state;
+  // return joint trajectory:
+  trajectory_msgs::JointTrajectory joint_traj;
+  std::vector<std::string> joint_names={"index_joint_0","index_joint_1","index_joint_2","index_joint_3",
+                                        "middle_joint_0","middle_joint_1","middle_joint_2","middle_joint_3",
+                                        "ring_joint_0","ring_joint_1","ring_joint_2","ring_joint_3",
+                                        "thumb_joint_0","thumb_joint_1","thumb_joint_2","thumb_joint_3"};
+  joint_traj.joint_names=joint_names;
+  
+  vector<double> j_arr;
+
+  j_arr.resize(16);
+  trajectory_msgs::JointTrajectoryPoint jt_pt;
+  jt_pt.positions=req.init_joint_state.position;
+  joint_traj.points.push_back(jt_pt);
+  
+  
+  for (int i=0;i<j_best.size()/16;i++)
+  { 
+    for(int j=0;j<16;j++)
+    {
+      j_arr[j]=j_best[i*16+j];
+    }  
+    jt_pt.positions=j_arr;
+    joint_traj.points.push_back(jt_pt);
+  }
+
+  res.joint_traj=joint_traj;
+
   return true;   
 }
 

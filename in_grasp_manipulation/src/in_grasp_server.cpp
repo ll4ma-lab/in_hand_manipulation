@@ -1,5 +1,8 @@
+#define SPARSE_GRADIENT true
 // optimization:
-#include <optimization_pkg/wrapper/pagmo_wrapper.hpp>
+#include <ll4ma_planner/pagmo_opt/trajectory_optimization.hpp>
+
+//#include <ll4ma_planner/wrapper/pagmo_wrapper.hpp>
 // ROS:
 #include <ros/package.h>
 #include <ros/ros.h>
@@ -64,8 +67,8 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   for(int i=0;i<3;++i)
   {
     obj_mat(i,0)=R[i][0];
-    obj_mat(i,1)=R[i].y();
-    obj_mat(i,2)=R[i].z();
+    obj_mat(i,1)=R[i][1];
+    obj_mat(i,2)=R[i][2];
   }
   obj_mat(0,3)=req.object_pose.position.x;
   obj_mat(1,3)=req.object_pose.position.y;
@@ -83,6 +86,7 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   
   tf::Pose des_pose_tf;
   tf::poseMsgToTF(req.desired_object_pose,des_pose_tf);
+  //cerr<<
   // convert desired object pose to thumb pose:
   R=des_pose_tf.getBasis();
   
@@ -90,13 +94,14 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   des_obj_mat.setIdentity();
   for(int i=0;i<3;++i)
   {
-    des_obj_mat(i,0)=R[i].x();
-    des_obj_mat(i,1)=R[i].y();
-    des_obj_mat(i,2)=R[i].z();
+    des_obj_mat(i,0)=R[i][0];
+    des_obj_mat(i,1)=R[i][1];
+    des_obj_mat(i,2)=R[i][2];
   }
   des_obj_mat(0,3)=req.desired_object_pose.position.x;
   des_obj_mat(1,3)=req.desired_object_pose.position.y;
   des_obj_mat(2,3)=req.desired_object_pose.position.z;
+  //cerr<<des_obj_mat(0,3)<<endl;
   Eigen::MatrixXd des_thumb_mat=des_obj_mat*obj_offset.inverse();
 
   // Get des pose from mat:
@@ -131,9 +136,8 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
 
   vector<double> thumb_pose_arr=allegro_kdl.getFK(r_f,thumb_joints,true);
   data_arr[4+fingers.size()]=thumb_pose_arr;
-  
-  Map<Eigen::VectorXd> thumb_pose(&thumb_pose_arr[0],thumb_pose_arr.size());;
 
+  Map<Eigen::VectorXd> thumb_pose(&thumb_pose_arr[0],thumb_pose_arr.size());;
   // compute offsets in thumb frame:
   // thumb matrix w_T_th=thumb_mat
   //compute inverse:
@@ -200,10 +204,10 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
 
   // seed using final joint angles IK:
   for(int i=0;i<t_steps_;++i)
-  {
+  {    
     for (int j=0;j<16;++j)
     {
-      x_in[i*16+j]=joints_0[j]+(final_joints[j]-joints_0[j])*(i+1)/(t_steps_-1);
+      x_in[i*16+j]=joints_0[j]+(final_joints[j]-joints_0[j])*(i+1)/(t_steps_);
     }
   }
 
@@ -332,7 +336,7 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
     obj_pose_traj.poses[i+1].orientation.x=n_pose[3];
     obj_pose_traj.poses[i+1].orientation.y=n_pose[4];
     obj_pose_traj.poses[i+1].orientation.z=n_pose[5];
-    obj_pose_traj.poses[i].orientation.w=n_pose[6];
+    obj_pose_traj.poses[i+1].orientation.w=n_pose[6];
     
   }
 

@@ -1,4 +1,5 @@
-#include "optimization_pkg/problems/opt_problem.hpp"
+#define SPARSE_GRADIENT true
+#include <ll4ma_planner/problems/opt_problem.hpp>
 
 using namespace opt_problems;
 
@@ -51,13 +52,9 @@ optProblem::optProblem(int time_steps, manipulator_kdl::robotKDL robot_kdl, vect
   data_mats_=data_mats;
   Map<Eigen::VectorXd> des_pose(&data_arr[0][0],data_arr[0].size());// desired object pose
   Map<Eigen::VectorXd> initial_pose(&data_arr[4+data_arr[3].size()][0],data_arr[4+data_arr[3].size()].size());// desired object pose
-  //des_poses[0]=initial_pose;
-  
-  //cerr<<"Initial pose: "<<endl;
-  //cerr<<des_poses[0].transpose()<<endl;
   for(int i=0;i<time_steps;++i)
   {
-    des_poses[i]=initial_pose+(des_pose-initial_pose)*(float(i+1)/float(time_steps-1));
+    des_poses[i]=initial_pose+(des_pose-initial_pose)*(float(i+1)/float(time_steps));
     //cerr<<des_poses[i].transpose()<<endl;
   }
   //cerr<<"final pose:"<<endl;
@@ -117,9 +114,9 @@ double optProblem::objFunction(const vector<double> x) const
     obj_pos_err=des_poses[i]-ee_pose;
     
     o_err=robot_kdl_.euler_diff(o_1,o_d);
-    obj_pos_err[3]=o_err[0];
-    obj_pos_err[4]=o_err[1];
-    obj_pos_err[5]=o_err[2];
+    obj_pos_err[3]=o_err[0]*0.1;
+    obj_pos_err[4]=o_err[1]*0.1;
+    obj_pos_err[5]=o_err[2]*0.1;
 
     // Relaxed-Rigidity costs:
     // get current thumb mat:
@@ -239,9 +236,9 @@ vector<double> optProblem::objGradient(vector<double> x) const
     obj_pose_err=des_poses[i]-ee_pose;
 
     
-    obj_pose_err[3]=o_err[0];
-    obj_pose_err[4]=o_err[1];
-    obj_pose_err[5]=o_err[2];
+    obj_pose_err[3]=o_err[0]*0.1;
+    obj_pose_err[4]=o_err[1]*0.1;
+    obj_pose_err[5]=o_err[2]*0.1;
 
     if(i==timesteps_-1)
     {
@@ -294,7 +291,7 @@ vector<double> optProblem::objGradient(vector<double> x) const
         pos_err[5]=0.0;
         
         pos_err[4]=wo*(o_err[1]);
-       
+        
         finger_gradient=-2.0*pos_err.transpose()*robot_kdl_.getJacobian(f,f_joints);
         for (int l=0;l<4;++l)
         {

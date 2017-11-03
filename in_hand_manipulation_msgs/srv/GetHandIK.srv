@@ -1,6 +1,7 @@
-std_msgs/Int64[] f_index
+int64[] f_index
 sensor_msgs/JointState init_joint_state
 geometry_msgs/Pose[] desired_poses
 bool optimize_full_pose
 ---
 sensor_msgs/JointState joint_state
+trajectory_msgs/JointTrajectory joint_traj

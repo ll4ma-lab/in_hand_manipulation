@@ -23,11 +23,12 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   std_msgs
   visualization_msgs
-  optimization_pkg
+  #optimization_pkg
   message_generation
   tf
   in_hand_manipulation_msgs
   trajectory_msgs
+  ll4ma_planner
 )
 
 #find_package(Eigen REQUIRED)
@@ -53,7 +54,7 @@ generate_messages(
  )
 
 catkin_package(
-  CATKIN_DEPENDS std_msgs roscpp sensor_msgs optimization_pkg message_generation
+  CATKIN_DEPENDS std_msgs roscpp sensor_msgs ll4ma_planner message_generation
 )
 include_directories(
   ${catkin_INCLUDE_DIRS}

@@ -47,6 +47,11 @@ void hand_controller::mpcController::run_controller()
   }
   
   data_file<<endl;
+
+  // get initial rigid frame:
+  get_object_pose();
+  Eigen::Affine3d initial_a;
+  //tf::transformKDLToEigen(curr_rigid_frame,a);
   while (n_->ok() && t<T)
   {
     updateState();
@@ -112,8 +117,13 @@ void hand_controller::mpcController::run_controller()
     vector<double> q(&curr_js[12],&curr_js[12]+4);
    
     Eigen::MatrixXd J=hand_kdl->getJacobian(3,q);
-   
-    Eigen::VectorXd thumb_fb=J.transpose()*(obj_fb+obj_ff);
+    obj_ff[3]=0.0;
+    obj_ff[4]=0.0;
+    obj_ff[5]=0.0;
+    obj_fb[3]=0.0;
+    obj_fb[4]=0.0;
+    obj_fb[5]=0.0;    
+    Eigen::VectorXd thumb_fb=-1.0*J.transpose()*(obj_ff+obj_fb);
    
     
     for(int i=0;i<4;++i)
@@ -179,18 +189,4 @@ int main(int argc, char** argv)
 
 
 }
-
-
-
-// Get desired joint trajectory, desired object pose trajectory
-
-// Compute feedforward delta_theta
-
-// while loop:(t<T) T=interpolated timesteps
-
-// Compute transformation matrix between thumb and object
-
-// Compute feedback delta_theta
-
-// command robot
 

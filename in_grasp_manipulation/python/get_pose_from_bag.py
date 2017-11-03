@@ -10,6 +10,11 @@ import PyKDL
 import rospy
 from rosgraph_msgs.msg import Clock
 from multiprocessing import Pool
+from rospkg import RosPack
+
+rp=RosPack()
+rp.list()
+path_in_hand_data=rp.get_path('in_hand_manipulation_data')+'/data/in_grasp_manipulation'
 
 class BagProcessing:
     def __init__(self,file_name):
@@ -24,13 +29,15 @@ class BagProcessing:
                     topics.append(topic)
             self.topics=topics
         else:
+            print file_name
+            print 'FILE not found!!'
             exit()
             
     def getTF(self):
         for subtopic, msg, t in self.bag.read_messages('/tf'):
             for i in range(0,len(msg.transforms)):
                 tf_data=msg.transforms[i]
-                if tf_data.child_frame_id=='/obj' and tf_data.header.frame_id=='/obj_ar':
+                if tf_data.child_frame_id=='/dbot/obj_pose':
                     t_pose=np.zeros(7)
                     t_pose[0]=tf_data.transform.translation.x
                     t_pose[1]=tf_data.transform.translation.y
@@ -114,7 +121,14 @@ def run_all():
             #rospy.signal_shutdown('test') 
             print t_no
         t_no+=1
-
+        
+def process_bag(bag_file,initial_pose):
+    bag_=BagProcessing(bag_file)
+    t_pose=bag_.getTF()
+    # Got t_pose
+    print t_pose
+    
+    return reached_pose
 def bag_multi(data):
     bag_name=data[0]
     initial=data[1]
@@ -129,6 +143,17 @@ def bag_multi(data):
     return [exp_pose,index]
 
 if __name__=='__main__':
+    # read object list:
+    file_name=path_in_hand_data+"/trajectories/exp_2_goal_poses.csv"
+    obj_list=ObjectList(file_name,' ')
+    idx=0
+    obj_=obj_list.arr[idx]
+    t_no=0
+    bag_folder='/media/bala/data_giskard/in_grasp_journal/feedback'+'/'
+    bag_name= bag_folder+obj_.name+'_'+str(idx)+'_'+str(t_no)+'.bag'
+    process_bag(bag_name,0)
+    
+def mulit_old():
     method='trinkle'
     trial_name=method+'.csv'
     folder='../data/trials/'

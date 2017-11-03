@@ -50,14 +50,12 @@ class inGraspClient:
         des_obj_pose.orientation.z=quaternion[2]
         des_obj_pose.orientation.w=quaternion[3]
         
-        
         rospy.wait_for_service('/in_hand/primitive/in_grasp_manipulation')
         get_in_grasp_plan=rospy.ServiceProxy('/in_hand/primitive/in_grasp_manipulation',InGraspManipulation)
         
-        
 
         j_traj=get_in_grasp_plan(j0,obj_pose,des_obj_pose,weights,fingers,rig_finger,T,j_final,initial_j_traj)
-        
+        #print j_traj.n_obj_pose
         return j_traj.joint_traj, j_traj.n_obj_pose,j_traj.obj_traj
 
 

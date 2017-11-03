@@ -1,4 +1,5 @@
-#include "optimization_pkg/problems/opt_problem.hpp"
+//#define SPARSE_GRADIENT true
+#include <ll4ma_planner/problems/opt_problem.hpp>
 
 using namespace opt_problems;
 
@@ -49,7 +50,7 @@ double optProblem::objFunction(const vector<double> x) const
       Map<Eigen::VectorXd> ee_pose(&ee_pose_arr[0],3);
       // Finger pose error:
       f_pos_err=des_poses[f]-ee_pose;
-      cost_val+=f_pos_err.lpNorm<1>();
+      cost_val+=f_pos_err.lpNorm<2>();
     }
   }    
   
@@ -109,7 +110,7 @@ vector<double> optProblem::objGradient(vector<double> x) const
       f_pose_err[4]=0.0;
       f_pose_err[5]=0.0;
     
-      finger_gradient=-1.0*f_pose_err.transpose()*robot_kdl_.getJacobian(f,f_q);
+      finger_gradient=-2.0*f_pose_err.transpose()*robot_kdl_.getJacobian(f,f_q);
       
       for (int k=0;k<4;++k)
       {
@@ -137,7 +138,6 @@ vector<double> optProblem::eqGradient(vector<double> x) const
   
   return retval;
 }
-
 vector<double> optProblem::gradient(const vector<double> x) const
 {
   vector<double> grad;
@@ -166,6 +166,7 @@ vector<double> optProblem::gradient(const vector<double> x) const
 
   return grad;
 }
+/*
 vector<double> optProblem::sparse_gradient(const vector<double> x) const
 {
   vector<double> grad;
@@ -220,6 +221,7 @@ std::vector<std::pair<vector<double>::size_type, vector<double>::size_type>> opt
   }
   return retval;
 }
+*/
 vector<vector<double>> optProblem::bounds() const
 {
   vector<vector<double>> bound;
