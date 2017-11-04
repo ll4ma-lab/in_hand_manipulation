@@ -225,7 +225,10 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   }
 
   vector<double> f_in=prob.fitness(x_in);
-  pop.set_xf(0,x_in,f_in); 
+  if(req.initialize_opt==true)
+  {
+    pop.set_xf(0,x_in,f_in);
+  }
 
   cerr<<"Solving"<<endl;  
   population pop_res = algo.evolve(pop);

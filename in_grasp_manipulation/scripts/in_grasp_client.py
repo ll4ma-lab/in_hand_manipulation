@@ -22,7 +22,7 @@ class inGraspClient:
         j_traj=get_in_grasp_plan(js,obj_pose,des_obj_pose,self.weights,fingers,rig_finger,1)
         return j_traj.n_js,j_traj.n_obj_pose
 
-    def call_server_list(self,j_arr,obj_pose_,des_obj_pose_,weights=[1.0,1.0,1.0,1.0],fingers=[0,1,2,3],rig_finger=3,T=10,final_joints=np.array([]),initial_j_traj=JointTrajectory()):
+    def call_server_list(self,j_arr,obj_pose_,des_obj_pose_,weights=[1.0,1.0,1.0,1.0],fingers=[0,1,2,3],rig_finger=3,T=10,final_joints=np.array([]),initial_j_traj=JointTrajectory(),initialize_opt=True,srv_topic='/in_hand/primitive/in_grasp_manipulation'):
         j0=JointState()
         j0.position=j_arr
         j_final=JointState()
@@ -50,11 +50,11 @@ class inGraspClient:
         des_obj_pose.orientation.z=quaternion[2]
         des_obj_pose.orientation.w=quaternion[3]
         
-        rospy.wait_for_service('/in_hand/primitive/in_grasp_manipulation')
-        get_in_grasp_plan=rospy.ServiceProxy('/in_hand/primitive/in_grasp_manipulation',InGraspManipulation)
+        rospy.wait_for_service(srv_topic)
+        get_in_grasp_plan=rospy.ServiceProxy(srv_topic,InGraspManipulation)
         
 
-        j_traj=get_in_grasp_plan(j0,obj_pose,des_obj_pose,weights,fingers,rig_finger,T,j_final,initial_j_traj)
+        j_traj=get_in_grasp_plan(j0,obj_pose,des_obj_pose,weights,fingers,rig_finger,T,initialize_opt,j_final,initial_j_traj)
         #print j_traj.n_obj_pose
         return j_traj.joint_traj, j_traj.n_obj_pose,j_traj.obj_traj
 

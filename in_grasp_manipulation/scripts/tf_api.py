@@ -5,7 +5,15 @@ import subprocess
 import numpy as np
 import copy
 from geometry_msgs.msg import PoseStamped,Pose
+import matplotlib.pyplot as plt
 
+params = {'legend.fontsize': 'x-large',
+          'figure.figsize': (15, 5),
+         'axes.labelsize': 'x-large',
+         'axes.titlesize':'x-large',
+         'xtick.labelsize':'x-large',
+         'ytick.labelsize':'x-large'}
+plt.rcParams.update(params)
 class tfAPI:
     def __init__(self):
         self.listener = tf.TransformListener()
@@ -49,3 +57,37 @@ class poseAPI:
         pose_st=PoseStamped()
         pose_st.pose=pose
         return pose_st
+    def plot_acc_profiles(self,pose_arr_list,labels):
+        style=['-','--']
+        for i in range(len(pose_arr_list)):
+            acc_,vel_=self.compute_acceleration(pose_arr_list[i])
+            plt.subplot(2, 1, 1)
+            plt.plot(vel_,style[i],label=labels[i],linewidth=3)
+            plt.xlabel('Timesteps(s)')
+            plt.ylabel('l-2 norm(velocity)')
+            plt.ylim(ymin=0.0)
+            plt.subplot(2, 1, 2)
+            plt.plot(acc_,style[i],label=labels[i],linewidth=3)
+            plt.ylim(ymin=0.0)
+            plt.xlabel('Timesteps(s)')
+            plt.ylabel('l-2 norm(acceleration)')
+        
+        plt.legend()
+        plt.show()
+    def compute_acceleration(self,pose_arr):
+        pos_arr=[]
+        for j in range(len(pose_arr.poses)):
+            pos=np.array([pose_arr.poses[j].position.x,pose_arr.poses[j].position.y, pose_arr.poses[j].position.z])
+            pos_arr.append(pos)
+
+        acc_prof=[]
+        vel_prof=[]
+        for t in range(1,len(pos_arr)-1):
+            acc=pos_arr[t-1]-2.0*pos_arr[t]+pos_arr[t+1]
+            acc_prof.append(np.linalg.norm(acc,1))
+            
+        for t in range(1,len(pos_arr)):
+            vel=-pos_arr[t-1]+pos_arr[t]
+            vel_prof.append(np.linalg.norm(vel,1))
+
+        return acc_prof,vel_prof

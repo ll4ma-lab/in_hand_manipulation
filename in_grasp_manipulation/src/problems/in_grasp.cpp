@@ -152,19 +152,19 @@ double optProblem::objFunction(const vector<double> x) const
         orient_err[1]=o_err[1];
         orient_err[0]=0.0;
         orient_err[2]=0.0;
-        position_cost+=pos_err.lpNorm<2>();
-        orientation_cost+=orient_err.lpNorm<2>();
+        position_cost+=pos_err.squaredNorm();
+        orientation_cost+=orient_err.squaredNorm();
       }
     }
    
     tot_pos_cost+=position_cost;
     if(i==timesteps_-1)
     {
-      cost_val+=wd*obj_pos_err.lpNorm<2>()+wr*position_cost+wo*orientation_cost;
+      cost_val+=wd*obj_pos_err.squaredNorm()+wr*position_cost+wo*orientation_cost;
     }
     else
     {
-      cost_val+=wi*obj_pos_err.lpNorm<2>()+wr*position_cost+wo*orientation_cost;
+      cost_val+=wi*obj_pos_err.squaredNorm()+wr*position_cost+wo*orientation_cost;
     }
   }
   //cerr<<tot_pos_cost<<endl;

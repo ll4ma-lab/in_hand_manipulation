@@ -60,7 +60,7 @@ class pdData:
         df_.to_csv(f_name,index=False)
         
 class inGraspPipeline:
-    def __init__(self,publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right', init_node=False, node_name='in_grasp_pipeline',weights=[0.01,100.0,1.0,0.1,0.2]):
+    def __init__(self,publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right', init_node=False, node_name='in_grasp_pipeline',weights=[0.01,100.0,1.0,0.1,0.4]):
         if(init_node):
             rospy.init_node(node_name)
         # weights=[RR_orient, RR_position, T_des, interpo]
@@ -71,6 +71,7 @@ class inGraspPipeline:
         self.tf_api=tf_api.tfAPI()
         self.bag_api=rosbagAPI()
         self.pub = rospy.Publisher("/in_grasp/obj_traj", PoseArray,queue_size=1)
+        self.pub_rr = rospy.Publisher("/in_grasp/obj_traj_rr", PoseArray,queue_size=1)
         self.des_pub=rospy.Publisher("/in_grasp/des_obj_pose",PoseStamped,queue_size=1)
         self.traj_server=trajectoryServer(10,init_node=False,topic_name='/in_grasp/jtraj',robot_name='allegro')
         self.pose_api=tf_api.poseAPI()
@@ -106,35 +107,49 @@ class inGraspPipeline:
                 des_pose_arr.append(self.pose_api.pose_from_arr(des_pose).pose)
             else:
                 des_pose_arr.append(Pose())
-        
-        
 
+        
+        
+        # IK
         j_init,j_traj=self.ik_server.call_server(js_j0,des_pose_arr,fingers)
         
-        # Get plan from in_grasp client:
-        weights=copy.deepcopy(self.weights)
-        weights[-1]=100.0
-        weights[0]=0.0
-        f_j=np.array(j_init.position)
-    
-        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose, des_obj_pose, weights, fingers, T=1, final_joints=f_j)
 
-
+        # RR IK
         weights=copy.deepcopy(self.weights)
         weights[-1]=100.0
         f_j=j_traj.points[-1].positions
-        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose, des_obj_pose, weights, fingers, T=1, final_joints=f_j)
+        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose, des_obj_pose, weights, fingers, T=1, final_joints=f_j,initialize_opt=True)
+        
+        '''
+        # RR 
+        weights=copy.deepcopy(self.weights)
+        weights[-2]=0.0
+        f_j=j_traj.points[-1].positions
+        j_traj,n_pose,obj_traj_1=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=f_j)
+
+        '''
+        # RR full
         
         weights=copy.deepcopy(self.weights)
-    
         f_j=j_traj.points[-1].positions
-        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=8, final_joints=f_j)
+        j_traj,n_pose,obj_traj_rr=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=f_j)
+
+        
+        # RR min acc
+        weights=copy.deepcopy(self.weights)
+        weights[-2]=0.1
+        #weights[-3]=0.0
+        #f_j=j_traj.points[-1].positions
+        print weights
+        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=f_j,srv_topic='/in_hand/primitive/in_grasp_min_acc')
+        
+        #obj_traj_rr=obj_traj
         print 'time:'+str(time.time()-start)
         if(WRITE_TO_FILE):
             # save trajectory
             folder+obj_.f_name
             pickle.dump( [j_traj,obj_traj], open( folder+obj_.f_name+".p", "wb" ) )
-        return j_traj,obj_traj,n_pose
+        return j_traj,obj_traj,n_pose,obj_traj_rr
     def write(self, idx, file_name):
         print "TODO"
 
@@ -437,9 +452,9 @@ def vis_traj(FROM_FILE=True):
     if(FROM_FILE):
         j_traj,obj_traj=in_grasp_pip.get_traj_from_file(int(sys.argv[1]))
     else:
-        j_traj,obj_traj,obj_pose=in_grasp_pip.generate_traj(int(sys.argv[1]),WRITE_TO_FILE=False)
+        j_traj,obj_traj,obj_pose,obj_traj_rr=in_grasp_pip.generate_traj(int(sys.argv[1]),WRITE_TO_FILE=False)
 
-    
+
     r = rospy.Rate(1.0)
     i=0
     #print in_grasp_pip.obj_list.arr[int(sys.argv[1])].des
@@ -449,11 +464,13 @@ def vis_traj(FROM_FILE=True):
         # Publish desired object pose:
         in_grasp_pip.des_pub.publish(des_pose)
         in_grasp_pip.pub.publish(obj_traj)
+        in_grasp_pip.pub_rr.publish(obj_traj_rr)
         in_grasp_pip.traj_server.viz_joint_traj(j_traj,base_link='allegro_mount')
         #in_grasp_pip.j_pub.publish(j_traj)
         r.sleep()
         i+=1
-
+    in_grasp_pip.pose_api.plot_acc_profiles([obj_traj,obj_traj_rr],['min_acc','obj_interpol'])
+    
 def run_mpc(FROM_FILE=True,OBJ_TRACKING=True):
     idx=int(sys.argv[1])
     in_grasp_pip=inGraspPipeline(init_node=True)

@@ -5,6 +5,7 @@ float64[] weights
 int16[] fingers
 int16 rigid_finger
 int16 T
+bool initialize_opt
 sensor_msgs/JointState final_joints
 trajectory_msgs/JointTrajectory initial_jtraj
 ---

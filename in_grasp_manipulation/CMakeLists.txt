@@ -66,8 +66,20 @@ set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRA
 add_library(in_grasp_planner STATIC src/problems/in_grasp.cpp)
 target_link_libraries(in_grasp_planner ${catkin_LIBRARIES} ccd)
 
+add_library(in_grasp_min_acc_obj STATIC src/problems/in_grasp_obj_smooth.cpp)
+target_link_libraries(in_grasp_min_acc_obj ${catkin_LIBRARIES} ccd)
+
+add_library(in_grasp_min_acc_joint STATIC src/problems/in_grasp_joint_smooth.cpp)
+target_link_libraries(in_grasp_min_acc_joint ${catkin_LIBRARIES} ccd)
+
 add_executable(in_grasp_server src/in_grasp_server.cpp)
 target_link_libraries(in_grasp_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_planner)
+
+add_executable(in_grasp_obj_server src/in_grasp_min_acc_server.cpp)
+target_link_libraries(in_grasp_obj_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_min_acc_obj)
+
+add_executable(in_grasp_joint_server src/in_grasp_min_acc_server.cpp)
+target_link_libraries(in_grasp_joint_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_min_acc_joint)
 
 #add_executable(one_step_mpc src/controllers/one_step_mpc.cpp)
 #target_link_libraries(one_step_mpc ${catkin_LIBRARIES})

@@ -50,7 +50,7 @@ double optProblem::objFunction(const vector<double> x) const
       Map<Eigen::VectorXd> ee_pose(&ee_pose_arr[0],3);
       // Finger pose error:
       f_pos_err=des_poses[f]-ee_pose;
-      cost_val+=f_pos_err.lpNorm<2>();
+      cost_val+=f_pos_err.squaredNorm();
     }
   }    
   
