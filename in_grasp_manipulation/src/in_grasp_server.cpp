@@ -344,6 +344,10 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   }
 
   res.obj_traj=obj_pose_traj;
+
+  // compute metrics:
+  // RR cost:
+  
   return true;
 }
 

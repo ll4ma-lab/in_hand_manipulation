@@ -13,3 +13,4 @@ sensor_msgs/JointState n_js
 geometry_msgs/PoseStamped n_obj_pose
 trajectory_msgs/JointTrajectory joint_traj
 geometry_msgs/PoseArray obj_traj
+float64[] metrics

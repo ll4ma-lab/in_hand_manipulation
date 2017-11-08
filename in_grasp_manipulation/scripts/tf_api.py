@@ -57,6 +57,9 @@ class poseAPI:
         pose_st=PoseStamped()
         pose_st.pose=pose
         return pose_st
+    def quat_from_rpy(self,u):
+        quaternion = tf.transformations.quaternion_from_euler(u[0],u[1],u[2])
+        return [quaternion[0],quaternion[1],quaternion[2],quaternion[3]]
     def plot_acc_profiles(self,pose_arr_list,labels):
         style=['-','--']
         for i in range(len(pose_arr_list)):

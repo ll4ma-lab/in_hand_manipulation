@@ -244,7 +244,7 @@ Visualization Manager:
       Axes Radius: 0.00100000005
       Class: rviz/Pose
       Color: 255; 25; 0
-      Enabled: false
+      Enabled: true
       Head Length: 0.300000012
       Head Radius: 0.100000001
       Name: Pose
@@ -253,7 +253,7 @@ Visualization Manager:
       Shape: Axes
       Topic: /in_grasp/des_obj_pose
       Unreliable: false
-      Value: false
+      Value: true
     - Alpha: 1
       Arrow Length: 0.300000012
       Axes Length: 0.00999999978
@@ -294,7 +294,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 0.140779033
+      Distance: 0.243866682
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -309,10 +309,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: -1.23979497
+      Pitch: -1.17979681
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.5790391
+      Yaw: 1.52403915
     Saved: ~
 Window Geometry:
   Displays:

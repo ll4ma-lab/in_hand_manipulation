@@ -75,6 +75,9 @@ target_link_libraries(in_grasp_min_acc_joint ${catkin_LIBRARIES} ccd)
 add_executable(in_grasp_server src/in_grasp_server.cpp)
 target_link_libraries(in_grasp_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_planner)
 
+add_executable(in_grasp_metrics_server src/in_grasp_metrics.cpp)
+target_link_libraries(in_grasp_metrics_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_planner)
+
 add_executable(in_grasp_obj_server src/in_grasp_min_acc_server.cpp)
 target_link_libraries(in_grasp_obj_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_min_acc_obj)
 

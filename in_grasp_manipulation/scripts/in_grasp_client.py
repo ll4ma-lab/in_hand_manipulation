@@ -56,7 +56,10 @@ class inGraspClient:
 
         j_traj=get_in_grasp_plan(j0,obj_pose,des_obj_pose,weights,fingers,rig_finger,T,initialize_opt,j_final,initial_j_traj)
         #print j_traj.n_obj_pose
-        return j_traj.joint_traj, j_traj.n_obj_pose,j_traj.obj_traj
+        if(len(j_traj.metrics)>0):
+            return j_traj.joint_traj, j_traj.n_obj_pose,j_traj.obj_traj,j_traj.metrics
+        else:
+            return j_traj.joint_traj, j_traj.n_obj_pose,j_traj.obj_traj
 
 
 
