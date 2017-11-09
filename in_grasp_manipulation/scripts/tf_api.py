@@ -18,7 +18,7 @@ class tfAPI:
     def __init__(self):
         self.listener = tf.TransformListener()
         print "Initialized tf_api"
-    def tf_pose_pub_process(self,pose,target_frame,base_frame='palm_link',rate=500):
+    def tf_pose_pub_process(self,pose,target_frame,base_frame='palm_link',rate=50):
         tf_pose=tf.TransformBroadcaster()
         pose=pose.tolist()
         if(len(pose)==3):
@@ -33,6 +33,8 @@ class tfAPI:
     def tf_find_transform(self,target_frame,base_frame='palm_link'):
         got_tf=False
         time=copy.deepcopy(rospy.Time(0))
+        self.listener.waitForTransform(base_frame,target_frame, rospy.Time(), rospy.Duration(4.0))
+
         (trans_2,rot_2)= self.listener.lookupTransform(base_frame, target_frame, rospy.Time(0))
         final_pose=np.zeros(6)
         final_pose[0:3]=trans_2

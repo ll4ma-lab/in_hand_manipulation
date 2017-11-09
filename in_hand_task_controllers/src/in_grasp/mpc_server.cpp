@@ -9,6 +9,7 @@ void hand_controller::mpcController::run_controller()
   ros::Rate loop_rate(100);
   int T=99;
   int t=0;
+  /*
   // open files:
   ofstream data_file;
   string filename;
@@ -47,7 +48,7 @@ void hand_controller::mpcController::run_controller()
   }
   
   data_file<<endl;
-
+  */
   // get initial rigid frame:
   get_object_pose();
   Eigen::Affine3d initial_a;

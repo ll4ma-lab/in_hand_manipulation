@@ -11,31 +11,45 @@ import numpy as np
 sns.set(font_scale=1.45)
 sns.set_style("whitegrid")
 
-def waypoint_plots():
+def waypoint_plots(f_name_):
     name='p_err.eps'
     cols=['ar_p_err','ar_o_err','db_p_err','db_o_err','ar_db_p','ar_db_o']
-    y=cols[5]
+    y=cols[0]
     plt.figure(figsize=(14,6))
     # read file:
     pd_api=pdAPI()
-    f_name='../data/in_grasp_manipulation/interpolation_err.csv'
+    f_name='../data/in_grasp_manipulation/'+f_name_+'_err.csv'
     df=pd_api.read_pd(f_name)
 
-    ax=sns.boxplot(x="Object", y=y, hue="method", data=df, palette=safeui3,whis=100)
+
+    # Preprocess dataframe:
+    columns=['method','Object','P','O']
+    df_new=pd_api.create_pd_frame(columns)
+    for i in range(len(df['Object'])):
+        dat=[]
+        dat.append([df['method'][i]+'',df['Object'][i],df['ar_p_err'][i]*100.0,df['ar_o_err'][i]])
+        #dat.append([df['method'][i]+'-DB',df['Object'][i],df['db_p_err'][i]*100.0,df['db_o_err'][i]])
+        df_new=pd_api.write_pd_data(df_new,dat)
+    #ax=sns.boxplot(x="Object", y="P", hue="method",hue_order=['ik_obj-AR','j-AR',
+    #                                                          'j-fb-AR'],data=df_new, palette=safeuiall,whis=100)
+    ax=sns.boxplot(x="Object", y="P", hue="method",data=df_new, palette=safeuiall,whis=100)
+
     handles, labels = ax.get_legend_handles_labels()
     
     ax.legend(handles, labels,title='',loc='upper center', bbox_to_anchor=(0.5, 1.11),ncol=5, fancybox=False, shadow=False)
     
-    #ax.set(ylabel='Planning Time(s)')
+    ax.set(ylabel='P err')
+    name='exp_p_err.eps'
+    #ax.set(ylabel='Orientation error')
     #ax.set(ylabel='RR cost')
     #plt.ylim(0,0.3)
     #ax.set(ylabel='Position Error(m)')
     #plt.savefig('/home/bala/plots/'+name, bbox_inches='tight')
     plt.show()
 
-def compute_errors():
+def compute_errors(f_name_):
     pd_api=pdAPI()
-    f_name='../data/in_grasp_manipulation/interpolation_exp.csv'
+    f_name='../data/in_grasp_manipulation/'+f_name_+'_exp.csv'
     df=pd_api.read_pd(f_name)
     err_api=errorAPI()
     dbot_ar_p=[]
@@ -67,32 +81,8 @@ def compute_errors():
                      db_o_err=des_db_o,
                      ar_db_p=dbot_ar_p,
                      ar_db_o=dbot_ar_o)
-    pd_api.write_pd_file('../data/in_grasp_manipulation/interpolation_err.csv',df_new)
-def reach_plots():
-    name='p_err.eps'
-    cols=['Planning Time','RR cost','P_err','O_err']
-    y=cols[0]
-    plt.figure(figsize=(14,6))
-    # read file:
-    pd_api=pdAPI()
-    f_name='../data/in_grasp_manipulation/interpolation_exp.csv'
-    df=pd_api.read_pd(f_name)
-
-    # Compute errors
-    err_api=errorAPI()
-    '''
-    ax=sns.boxplot(x="Object", y=y, hue="method", data=df, palette=safeui3,whis=100)
-    handles, labels = ax.get_legend_handles_labels()
-    
-    ax.legend(handles, labels,title='',loc='upper center', bbox_to_anchor=(0.5, 1.11),ncol=5, fancybox=False, shadow=False)
-    
-    #ax.set(ylabel='Planning Time(s)')
-    #ax.set(ylabel='RR cost')
-    #plt.ylim(0,0.3)
-    ax.set(ylabel='Position Error(m)')
-    #plt.savefig('/home/bala/plots/'+name, bbox_inches='tight')
-    plt.show()
-    '''
+    pd_api.write_pd_file('../data/in_grasp_manipulation/'+f_name_+'_err.csv',df_new)
 if __name__=='__main__':
-    compute_errors()
-    waypoint_plots()
+    file_name='waypoint'
+    compute_errors(file_name)
+    waypoint_plots(file_name)

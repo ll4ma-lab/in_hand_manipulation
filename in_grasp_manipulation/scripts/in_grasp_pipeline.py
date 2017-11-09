@@ -360,10 +360,9 @@ class inGraspPipeline:
         # Enable grav comp mode
         #raw_input("grav comp?")
         #self.allegro_drv.engage_grav_comp()
-
         
     def run_traj(self,idx, FROM_FILE=True, DBOT_TRACKING=True, OBJ_TRACKING=True,RECORD_DATA=False,RECORD_BAG_=False,trial_no=0,folder='',method='',df=[]):
-        bag_folder='/media/bala/data_giskard/in_grasp_journal/interpolation'+'/'+method+'/'
+        bag_folder='/media/bala/data_giskard/in_grasp_journal/interpolation_new'+'/'+method+'/'
         # Read idx from file
         obj_=self.obj_list.arr[idx]
         j0=obj_.grasp
@@ -446,6 +445,103 @@ class inGraspPipeline:
             bag_process.send_signal(subprocess.signal.SIGINT)
         return df
 
+    def run_mpc(self,idx,FROM_FILE=True, DBOT_TRACKING=True, OBJ_TRACKING=True, RECORD_DATA=True, RECORD_BAG_=True, trial_no=0, folder='', method='', df=[]):
+        finish=False
+        while(finish==False):
+            bag_folder='/media/bala/data_giskard/in_grasp_journal/feedback/joint/'+method+'/'
+            
+            #in_grasp_pip=inGraspPipeline(init_node=True)
+            #in_grasp_pip.read_objects()
+            obj_=self.obj_list.arr[idx]
+            j0=obj_.grasp
+            
+            if(FROM_FILE):
+                j_traj,obj_traj=self.get_traj_from_file(idx,folder)
+            else:
+                j_traj,obj_traj,obj_pose=self.generate_traj(idx,WRITE_TO_FILE=False)
+                
+            # interpolate trajectories:
+            j_traj=self.interpolate_jtraj(j_traj)
+            obj_traj=self.interpolate_obj_traj(obj_traj)
+            # move to initial pose:
+            raw_input('Move to initial grasp?')
+            self.allegro_drv.publish_joints(j0)
+
+
+            if(OBJ_TRACKING):
+                P_=[] # list of subprocesses
+                raw_input('Placed Object?')
+                P_.append(self.tf_api.tf_pose_pub_process(obj_.initial_pose,'i') )
+                P_.append(self.tf_api.tf_pose_pub_process(obj_.offset,'rigid','thumb_tip'))
+                P_.append(self.tf_api.tf_pose_pub_process(obj_.des,'G'))
+        
+                P_.append(self.tf_api.tf_pose_pub_process(obj_.aruco,'ar/obj','ar/marker') )
+                
+                raw_input('Placed Object and Aligned initial frames?')
+                ar_initial_frame=self.tf_api.tf_find_transform('/i','ar/marker')
+                P_.append(self.tf_api.tf_pose_pub_process(ar_initial_frame,'/ar/obj_pose','/ar/marker'))
+                time.sleep(0.1)
+        
+            if(DBOT_TRACKING):
+                initial_frame=self.tf_api.tf_find_transform('/i','dbot/obj')
+                P_.append(self.tf_api.tf_pose_pub_process(initial_frame,'/dbot/obj_pose','dbot/obj'))
+            
+            if(RECORD_BAG_):
+                bag_name=bag_folder+obj_.name+'_'+str(idx)+'_'+str(trial_no)
+                bag_process=self.bag_api.record_bag_process(bag_name)
+            
+            raw_input('Run mpc?')
+            # call mpc service:
+            mpc_server_name = rospy.get_param("/mpc_server_name")
+
+            rospy.wait_for_service(mpc_server_name)
+            run_mpc=rospy.ServiceProxy(mpc_server_name,RunMPC)
+            result_=run_mpc(obj_traj,j_traj)
+            # Collect data
+            if(RECORD_DATA):
+                suc=raw_input('Press Enter - store final pose \n Press F to store as failure ')
+                if(suc==''):
+                    # Get object pose from aruco marker
+                    ar_reached_pose=self.tf_api.tf_find_transform('ar/obj_pose')
+                    db_reached_pose=ar_reached_pose#self.tf_api.tf_find_transform('dbot/obj_pose')
+                    print obj_.des
+                    print ar_reached_pose
+                    print np.linalg.norm(obj_.des[0:3]-ar_reached_pose[0:3])
+                    run_again=raw_input('Press Enter - store final pose \n Press R to rerun ')
+                    if(run_again==''):
+                        # Write to panda data frame:
+                        df=self.pd_api.write_pd_data(df, [[method,obj_.name,idx,trial_no,obj_.des, ar_reached_pose, db_reached_pose]])
+                        finish=True
+                        #print db_reached_pose
+                else:
+                    # Store failure
+                    obj_.reached='F'
+                    #objects.write_reached_pose(folder+trial_name)
+    
+            if(OBJ_TRACKING):
+                for i in P_:
+                    i.send_signal(subprocess.signal.SIGINT)
+            if(RECORD_BAG_):
+                bag_process.send_signal(subprocess.signal.SIGINT)
+
+                
+        return df
+def mpc_exp(n_trials=2):
+    in_grasp_pip=inGraspPipeline(init_node=True)
+    in_grasp_pip.read_objects()
+    method='j'
+    folder=path_in_hand_data+'/interpolation/'+method+'/'
+    pd_file=path_in_hand_data+'/waypoint_exp.csv'
+    df=in_grasp_pip.pd_api.read_pd(pd_file)
+    #columns=['method','Object','Trajectory','Trial','Desired Pose','AR Reached Pose','DBOT Reached Pose']
+    #df=in_grasp_pip.pd_api.create_pd_frame(columns)
+
+    for i in range(n_trials):
+        df=in_grasp_pip.run_mpc(int(sys.argv[1]),OBJ_TRACKING=True,FROM_FILE=True,RECORD_DATA=True, DBOT_TRACKING=False,RECORD_BAG_=True,trial_no=i,folder=folder,method=method,df=df)
+    in_grasp_pip.pd_api.write_pd_file(pd_file,df)
+
+
+
 def get_trajectories(folder,pd_file_name,method):
     in_grasp_pip=inGraspPipeline(init_node=True)
     file_name=path_in_hand_data+"/trajectories/waypoint_extra_goal_poses.csv"
@@ -467,7 +563,7 @@ def waypoint_exp():
     methods=['obj','ik_obj','j','ik_j']
     i=1
     folder=path_in_hand_data+'/interpolation/'+methods[i]+'/'
-    pd_file=path_in_hand_data+'/interpolation.csv'
+    pd_file=path_in_hand_data+'/interpolation_new.csv'
     get_trajectories(folder,pd_file,methods[i])
     
 def vis_traj(FROM_FILE=True):
@@ -498,71 +594,16 @@ def vis_traj(FROM_FILE=True):
         i+=1
     #in_grasp_pip.pose_api.plot_acc_profiles([obj_traj,obj_traj_rr],['min_acc','obj_interpol'])
     
-def run_mpc(FROM_FILE=True,OBJ_TRACKING=True):
-    idx=int(sys.argv[1])
-    in_grasp_pip=inGraspPipeline(init_node=True)
-    in_grasp_pip.read_objects()
-    obj_=in_grasp_pip.obj_list.arr[idx]
-    j0=obj_.grasp
-
-    if(FROM_FILE):
-        j_traj,obj_traj=in_grasp_pip.get_traj_from_file(int(sys.argv[1]))
-    else:
-        j_traj,obj_traj,obj_pose=in_grasp_pip.generate_traj(int(sys.argv[1]),WRITE_TO_FILE=False)
-
-    # interpolate trajectories:
-    
-    j_traj=in_grasp_pip.interpolate_jtraj(j_traj)
-    obj_traj=in_grasp_pip.interpolate_obj_traj(obj_traj)
-    r=rospy.Rate(10)
-    for i in range(10):
-        in_grasp_pip.pub.publish(obj_traj)
-        r.sleep()
-    print len(j_traj.points)
-    print len(obj_traj.poses)
-
-    # move to initial pose:
-    raw_input('Move to initial grasp?')
-    in_grasp_pip.allegro_drv.publish_joints(j0)
-    
-    if(OBJ_TRACKING):
-        P_=[] # list of subprocesses
-        raw_input('Placed Object?')
-        P_.append(in_grasp_pip.tf_api.tf_pose_pub_process(obj_.initial_pose,'i') )
-        P_.append(in_grasp_pip.tf_api.tf_pose_pub_process(obj_.offset,'rigid','thumb_tip'))
-        P_.append(in_grasp_pip.tf_api.tf_pose_pub_process(obj_.des,'G'))
-        
-        P_.append(in_grasp_pip.tf_api.tf_pose_pub_process(obj_.aruco,'obj_ar','ar') )
-        
-        raw_input('Placed Object and Aligned initial frames?')
-        initial_frame=in_grasp_pip.tf_api.tf_find_transform('/i','/obj_ar')
-        #palm_rotation=allegroStates.tf_find_transform('/palm_link','/obj_ar')
-        P_.append(in_grasp_pip.tf_api.tf_pose_pub_process(initial_frame,'/obj','/obj_ar'))
-        time.sleep(0.5)
 
 
-    raw_input('Run mpc?')
-    # call mpc service:
-    mpc_server_name = rospy.get_param("/mpc_server_name")
-
-    rospy.wait_for_service(mpc_server_name)
-    run_mpc=rospy.ServiceProxy(mpc_server_name,RunMPC)
-    result_=run_mpc(obj_traj,j_traj)
-
-    if(OBJ_TRACKING):
-        for i in P_:
-            i.send_signal(subprocess.signal.SIGINT)
-
-
-
-def run_waypoint(n_trials=5):
+def run_waypoint(n_trials=3):
     in_grasp_pip=inGraspPipeline(init_node=True)
     in_grasp_pip.read_objects()
 
     methods=['obj','ik_obj','j','ik_j']
     k=2
     folder=path_in_hand_data+'/interpolation/'+methods[k]+'/'
-    pd_file=path_in_hand_data+'/interpolation_exp.csv'
+    pd_file=path_in_hand_data+'/interpolation_new_exp.csv'
     df=in_grasp_pip.pd_api.read_pd(pd_file)
     #columns=['method','Object','Trajectory','Trial','Desired Pose','AR Reached Pose','DBOT Reached Pose']
     #df=in_grasp_pip.pd_api.create_pd_frame(columns)
@@ -612,5 +653,6 @@ if __name__=='__main__':
     #in_grasp_pip=inGraspPipeline(init_node=True,publish_prefix='/allegroHand_0',listen_prefix='/allegroHand_0')
     #waypoint_exp()
     #vis_traj()
-    run_waypoint()
+    #run_waypoint()
     #run_waypoint_test()
+    mpc_exp()

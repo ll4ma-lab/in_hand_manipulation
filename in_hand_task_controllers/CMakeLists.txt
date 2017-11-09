@@ -134,5 +134,5 @@ include_directories(
 #add_executable(in_grasp_mpc_server_demo src/in_grasp/mpc_server_demo.cpp)
 #target_link_libraries(in_grasp_mpc_server_demo mpc_framework ${catkin_LIBRARIES})
 
-add_executable(in_grasp_mpc_server src/in_grasp/mpc_server.cpp)
+add_executable(in_grasp_mpc_server src/in_grasp/mpc_server_joint.cpp)
 target_link_libraries(in_grasp_mpc_server mpc_framework ${catkin_LIBRARIES})
