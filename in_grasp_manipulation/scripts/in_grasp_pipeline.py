@@ -16,6 +16,7 @@ from sensor_msgs.msg import JointState
 # Find package with allegro model
 from rospkg import RosPack
 import subprocess
+import tf
 # import required allegro model files
 rp=RosPack()
 rp.list()
@@ -445,10 +446,10 @@ class inGraspPipeline:
             bag_process.send_signal(subprocess.signal.SIGINT)
         return df
 
-    def run_mpc(self,idx,FROM_FILE=True, DBOT_TRACKING=True, OBJ_TRACKING=True, RECORD_DATA=True, RECORD_BAG_=True, trial_no=0, folder='', method='', df=[]):
+    def run_mpc(self,idx,FROM_FILE=True, OBJ_TRACKING=True,AR_TRACKING=True, DBOT_TRACKING=True, RECORD_DATA=True, RECORD_BAG_=True, trial_no=0, folder='', method='', df=[],SIM_TRACKING=False):
         finish=False
         while(finish==False):
-            bag_folder='/media/bala/data_giskard/in_grasp_journal/feedback/joint/'+method+'/'
+            bag_folder='/media/bala/data_giskard/in_grasp_journal/feedback/obj/'
             
             #in_grasp_pip=inGraspPipeline(init_node=True)
             #in_grasp_pip.read_objects()
@@ -465,23 +466,42 @@ class inGraspPipeline:
             obj_traj=self.interpolate_obj_traj(obj_traj)
             # move to initial pose:
             raw_input('Move to initial grasp?')
+            for k in range(4):
+                self.pub.publish(obj_traj)
             self.allegro_drv.publish_joints(j0)
-
-
+            P_=[] # list of subprocesses
+            if(SIM_TRACKING):
+                # setup initial offsets:
+                js_j0=JointState()
+                js_j0.position=j0
+                obj_pose=Pose()
+                obj_pose.position.x=obj_.initial_pose[0]
+                obj_pose.position.y=obj_.initial_pose[1]
+                obj_pose.position.z=obj_.initial_pose[2]
+                quaternion = tf.transformations.quaternion_from_euler(obj_.initial_pose[3], obj_.initial_pose[4],obj_.initial_pose[5])
+                obj_pose.orientation.x=quaternion[0]
+                obj_pose.orientation.y=quaternion[1]
+                obj_pose.orientation.z=quaternion[2]
+                obj_pose.orientation.w=quaternion[3]
+                                
+                self.in_grasp.setup_sim(js_j0,obj_pose,obj_.fing,3,10)
+                #P_.append(self.tf_api.tf_pose_pub_process(obj_.offset,'/dbot/obj_pose','thumb_tip'))
+            
             if(OBJ_TRACKING):
-                P_=[] # list of subprocesses
+                
                 raw_input('Placed Object?')
                 P_.append(self.tf_api.tf_pose_pub_process(obj_.initial_pose,'i') )
                 P_.append(self.tf_api.tf_pose_pub_process(obj_.offset,'rigid','thumb_tip'))
                 P_.append(self.tf_api.tf_pose_pub_process(obj_.des,'G'))
         
-                P_.append(self.tf_api.tf_pose_pub_process(obj_.aruco,'ar/obj','ar/marker') )
                 
+            if(AR_TRACKING):
+                P_.append(self.tf_api.tf_pose_pub_process(obj_.aruco,'ar/obj','ar/marker') )
                 raw_input('Placed Object and Aligned initial frames?')
                 ar_initial_frame=self.tf_api.tf_find_transform('/i','ar/marker')
                 P_.append(self.tf_api.tf_pose_pub_process(ar_initial_frame,'/ar/obj_pose','/ar/marker'))
                 time.sleep(0.1)
-        
+
             if(DBOT_TRACKING):
                 initial_frame=self.tf_api.tf_find_transform('/i','dbot/obj')
                 P_.append(self.tf_api.tf_pose_pub_process(initial_frame,'/dbot/obj_pose','dbot/obj'))
@@ -510,7 +530,7 @@ class inGraspPipeline:
                     run_again=raw_input('Press Enter - store final pose \n Press R to rerun ')
                     if(run_again==''):
                         # Write to panda data frame:
-                        df=self.pd_api.write_pd_data(df, [[method,obj_.name,idx,trial_no,obj_.des, ar_reached_pose, db_reached_pose]])
+                        df=self.pd_api.write_pd_data(df, [[method+'-fb',obj_.name,idx,trial_no,obj_.des, ar_reached_pose, db_reached_pose]])
                         finish=True
                         #print db_reached_pose
                 else:
@@ -518,7 +538,7 @@ class inGraspPipeline:
                     obj_.reached='F'
                     #objects.write_reached_pose(folder+trial_name)
     
-            if(OBJ_TRACKING):
+            if(len(P_)!=0):
                 for i in P_:
                     i.send_signal(subprocess.signal.SIGINT)
             if(RECORD_BAG_):
@@ -526,10 +546,10 @@ class inGraspPipeline:
 
                 
         return df
-def mpc_exp(n_trials=2):
+def mpc_exp(n_trials=3):
     in_grasp_pip=inGraspPipeline(init_node=True)
     in_grasp_pip.read_objects()
-    method='j'
+    method='ik_obj'
     folder=path_in_hand_data+'/interpolation/'+method+'/'
     pd_file=path_in_hand_data+'/waypoint_exp.csv'
     df=in_grasp_pip.pd_api.read_pd(pd_file)
@@ -537,7 +557,7 @@ def mpc_exp(n_trials=2):
     #df=in_grasp_pip.pd_api.create_pd_frame(columns)
 
     for i in range(n_trials):
-        df=in_grasp_pip.run_mpc(int(sys.argv[1]),OBJ_TRACKING=True,FROM_FILE=True,RECORD_DATA=True, DBOT_TRACKING=False,RECORD_BAG_=True,trial_no=i,folder=folder,method=method,df=df)
+        df=in_grasp_pip.run_mpc(int(sys.argv[1]),OBJ_TRACKING=False,SIM_TRACKING=True,FROM_FILE=True,RECORD_DATA=False, DBOT_TRACKING=False,AR_TRACKING=False,RECORD_BAG_=False,trial_no=i,folder=folder,method=method,df=df)
     in_grasp_pip.pd_api.write_pd_file(pd_file,df)
 
 
@@ -571,9 +591,11 @@ def vis_traj(FROM_FILE=True):
     in_grasp_pip.read_objects()
     i=2
     methods=['obj','ik_obj','j','ik_j']
-    folder=path_in_hand_data+'/interpolation/'+methods[i]+'/'
+    folder=path_in_hand_data+'/interpolation/'+methods[1]+'/'
+    folder_rr=path_in_hand_data+'/interpolation/'+methods[2]+'/'
     if(FROM_FILE):
         j_traj,obj_traj=in_grasp_pip.get_traj_from_file(int(sys.argv[1]),folder=folder)
+        _,obj_traj_rr=in_grasp_pip.get_traj_from_file(int(sys.argv[1]),folder=folder_rr)
     else:
         j_traj,obj_traj,obj_pose=in_grasp_pip.generate_traj(int(sys.argv[1]),WRITE_TO_FILE=False)
         
@@ -587,12 +609,12 @@ def vis_traj(FROM_FILE=True):
         # Publish desired object pose:
         in_grasp_pip.des_pub.publish(des_pose)
         in_grasp_pip.pub.publish(obj_traj)
-        #in_grasp_pip.pub_rr.publish(obj_traj_rr)
-        in_grasp_pip.traj_server.viz_joint_traj(j_traj,base_link='allegro_mount')
+        in_grasp_pip.pub_rr.publish(obj_traj_rr)
+        #in_grasp_pip.traj_server.viz_joint_traj(j_traj,base_link='allegro_mount')
         #in_grasp_pip.j_pub.publish(j_traj)
         r.sleep()
         i+=1
-    #in_grasp_pip.pose_api.plot_acc_profiles([obj_traj,obj_traj_rr],['min_acc','obj_interpol'])
+    #in_grasp_pip.pose_api.plot_acc_profiles([obj_traj_rr,obj_traj],['min_acc','obj_interpol'])
     
 
 

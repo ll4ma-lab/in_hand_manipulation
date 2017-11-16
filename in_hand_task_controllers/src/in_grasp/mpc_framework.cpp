@@ -56,7 +56,7 @@ void mpcController::get_object_pose()
   {
     try
     {
-      tf_listen->lookupTransform("/palm_link", "/obj",  
+      tf_listen->lookupTransform("/palm_link", "/dbot/obj_pose",  
                                  ros::Time(0), transform);
     }
     catch (tf::TransformException ex)
@@ -73,7 +73,7 @@ void mpcController::get_object_pose()
   {
     try
     {
-      tf_listen->lookupTransform("/thumb_tip", "/obj",  
+      tf_listen->lookupTransform("/thumb_tip", "/dbot/obj_pose",  
                                  ros::Time(0), transform);
     }
     catch (tf::TransformException ex)

@@ -6,58 +6,23 @@
 void hand_controller::mpcController::run_controller()
 {
   //
-  ros::Rate loop_rate(100);
+  ros::Rate loop_rate(30);
   int T=99;
   int t=0;
-  /*
-  // open files:
-  ofstream data_file;
-  string filename;
-  if (!n_->getParam("/mpc/log_file",filename))
-  {
-    ROS_ERROR("Failed to read mpc_log file!!!");
-    ros::shutdown();
-  }
-  cerr<<"created log file"<<endl;
-  data_file.open(filename);
-  for(int i=0; i<16;++i)
-  {
-    data_file<<"des_j"<<i<<",";
-  }
-  
-  for(int i=0; i<16;++i)
-  {
-    data_file<<"obs_j"<<i<<",";
-  }
-  for(int i=0; i<16;++i)
-  {
-    data_file<<"ff_j"<<i<<",";
-  }
-  for(int i=0; i<16;++i)
-  {
-    data_file<<"fb_j"<<i<<",";
-  }
-  for(int i=0; i<16;++i)
-  {
-    data_file<<"js_cmd"<<i<<",";
-  }
-
-  for(int i=0; i<6;++i)
-  {
-    data_file<<"obj_pos"<<i<<",";
-  }
-  
-  data_file<<endl;
-  */
   // get initial rigid frame:
   get_object_pose();
-  Eigen::Affine3d initial_a;
-  //tf::transformKDLToEigen(curr_rigid_frame,a);
+  js_gain=1.0;
+  obj_gain=10.0;
+
   while (n_->ok() && t<T)
   {
     updateState();
     get_object_pose();
     // get rigid transformation between object pose and rigid finger
+    Eigen::Matrix<double,4,4> thumb_T_obj;
+    Eigen::Affine3d a;
+    tf::transformKDLToEigen(curr_rigid_frame,a);
+    thumb_T_obj=a.matrix();
     
     
     // Compute new command
@@ -66,107 +31,101 @@ void hand_controller::mpcController::run_controller()
     
     Eigen::VectorXd js_ff=j_des[t+1]-j_des[t];
     
-    Eigen::VectorXd js_fb=js_gain*2.0*(j_des[t+1]-curr_js-js_ff);
-
-
+    Eigen::VectorXd js_fb=1.0*(j_des[t]-curr_js);
+    
+    //cerr<<"JOINT ERROR: "<<js_fb.lpNorm<1>()<<endl;
+    js_fb*=js_gain;
 
     // Object pose tracking:
-    
-    // convert rigid frame to T mat:
-    Eigen::Matrix<double,4,4> rigid_T;
-    Eigen::Affine3d a;
-    tf::transformKDLToEigen(curr_rigid_frame,a);
-    rigid_T=a.matrix();
 
-   
-    //Computing fb err:
-    KDL::Twist obj_err=KDL::diff(obj_pose_des[t],curr_obj_pose);
 
-    Eigen::Matrix<double,6,1> eigen_err;
-    tf::twistKDLToEigen(obj_err,eigen_err);
-    Eigen::MatrixXd obj_err_mat=hand_kdl->pose_to_frame(eigen_err);
-
-    vector<double> pose=hand_kdl->frame_to_pose_(obj_err_mat*rigid_T,true);
-    Map<Eigen::VectorXd> obj_fb(&pose[0],pose.size());
-
-    // Computing error to final pose
-    
-    KDL::Twist obj_f_err=KDL::diff(obj_pose_des[obj_pose_des.size()-1],curr_obj_pose);
-
-    Eigen::Matrix<double,6,1> obj_err_final;
-    tf::twistKDLToEigen(obj_f_err,obj_err_final);
-    
-    
-
-    
-    // Computing ff term:
-    obj_err=KDL::diff(obj_pose_des[t+1],obj_pose_des[t]);
-    Eigen::Matrix<double, 6, 1> err;
-    tf::twistKDLToEigen(obj_err,err);
-
-    // Get object error:
-    tf::twistKDLToEigen(obj_err,eigen_err);
-    
-    obj_err_mat=hand_kdl->pose_to_frame(eigen_err);
-
-    pose=hand_kdl->frame_to_pose_(obj_err_mat*rigid_T,true);
-
-    Map<Eigen::VectorXd> obj_ff(&pose[0],pose.size());
-    
-
-    // Converting to joint command:
+    // jacobian of thumb:
     vector<double> q(&curr_js[12],&curr_js[12]+4);
-   
     Eigen::MatrixXd J=hand_kdl->getJacobian(3,q);
-    obj_ff[3]=0.0;
-    obj_ff[4]=0.0;
-    obj_ff[5]=0.0;
-    obj_fb[3]=0.0;
-    obj_fb[4]=0.0;
-    obj_fb[5]=0.0;    
-    Eigen::VectorXd thumb_fb=-1.0*J.transpose()*(obj_ff+obj_fb);
-   
+
+    // observed rigid transform thumb_T_obj:
+
+    // Desired object pose:
+
+    // Get KDL frame of current object pose:
+     
+    // Current pose from planner:
+    vector<double> q_des(&curr_js[12],&curr_js[12]+4);
     
+    //Add next trajectory to q_des
     for(int i=0;i<4;++i)
     {
-      js_fb[4*3+i]=obj_gain*thumb_fb[i];
+      q_des[i]+=j_des[t+1][3*4+i]-j_des[t][3*4+i];
     }
+    
+    Eigen::MatrixXd f_mat=hand_kdl->getFKEigen(3,q_des);
+    
+    Eigen::MatrixXd cur_obj_pose=f_mat;
+    
+    //
+    vector<double> pose=hand_kdl->frame_to_pose_(cur_obj_pose,true);
+    KDL::Rotation r_obj=KDL::Rotation::RPY(pose[3],pose[4],pose[5]);
+    KDL::Vector t_obj(pose[0],pose[1],pose[2]);
+    KDL::Frame cur_obj(r_obj,t_obj);
+
+    // desired f_tip pose:
+    Eigen::Affine3d a_;
+    tf::transformKDLToEigen(obj_pose_des[t+1],a_);
+
+    //cerr<<obj_er_v.transpose()<<endl;
+    Eigen::MatrixXd obj_mat=a_.matrix();
+
+    Eigen::MatrixXd des_f_mat=obj_mat*thumb_T_obj.inverse();
+    
+    vector<double> f_des_pose=hand_kdl->frame_to_pose_(des_f_mat,true);
+    KDL::Rotation r_obj_des=KDL::Rotation::RPY(f_des_pose[3],f_des_pose[4],f_des_pose[5]);
+    KDL::Vector t_obj_des(f_des_pose[0],f_des_pose[1],f_des_pose[2]);
+    KDL::Frame cur_obj_des(r_obj_des,t_obj_des);
+
+    
+    
+    KDL::Twist obj_err=KDL::diff(cur_obj_des,cur_obj);
+    
+    Eigen::Matrix<double,6,1> obj_err_eigen;
+    
+    tf::twistKDLToEigen(obj_err,obj_err_eigen);
+    Eigen::VectorXd obj_er_v=obj_err_eigen.col(0);
+    //cerr<<obj_er_v.transpose()<<endl;
+
+
+    
+    vector<double> err_obj(&obj_er_v[0],&obj_er_v[0]+6);
+    Eigen::MatrixXd err_mat=hand_kdl->pose_to_frame(err_obj);
+    
+    
+    
+    
+    // error:
+    //Eigen::MatrixXd f_err_=err_mat*thumb_T_obj.inverse();
+    Eigen::MatrixXd f_err_=err_mat;
+    //cerr<<f_err_<<endl;
+    vector<double> f_err=hand_kdl->frame_to_pose_(f_err_,true);
+    //
+    f_err[3]*=0.001;
+    f_err[4]*=0.001;
+    f_err[5]*=0.001;
+    Map<Eigen::VectorXd> f_err_v(&f_err[0],f_err.size());
+    
+    Eigen::VectorXd obj_fb=-1.0*J.transpose()*(f_err_v);
+    for(int i=0;i<4;++i)
+    {
+      js_fb[4*3+i]+=obj_gain*obj_fb[i];
+    }
+    
     // publish trajectory:
-    Eigen::VectorXd js_cmd=j_des[t]+js_ff+js_fb;
-   
+    Eigen::VectorXd js_cmd=curr_js+js_ff+js_fb;
+    
+    cerr<<"OBJ ERROR: "<<f_err_v.lpNorm<1>()<<endl;   
     publish_joints(js_cmd);
-    for(int i=0;i<16;++i)
-    {
-      data_file<<j_des[t][i]<<",";
-    }
-    for(int i=0;i<16;++i)
-    {
-      data_file<<curr_js[i]<<",";
-    }
-    for(int i=0;i<16;++i)
-    {
-      data_file<<js_ff[i]<<",";
-    }
-
-    for(int i=0;i<16;++i)
-    {
-      data_file<<js_fb[i]<<",";
-    }
-    for(int i=0;i<16;++i)
-    {
-      data_file<<js_cmd[i]<<",";
-    }
-
-    for(int i=0;i<6;++i)
-    {
-      data_file<<obj_err_final(i)<<",";
-    }
-    data_file<<endl;
     t++;
     loop_rate.sleep();
    
   }
-  data_file.close();
   cerr<<"Controller done!"<<endl;
 }
 
@@ -179,7 +138,7 @@ int main(int argc, char** argv)
   robot_node.init(n,"/allegro_hand_right");
   tf::TransformListener listen;
   robot_node.init_controller(listen);
-
+  
 
   while(n.ok())
   {

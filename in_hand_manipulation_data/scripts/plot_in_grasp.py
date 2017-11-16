@@ -38,8 +38,8 @@ def waypoint_plots(f_name_):
     
     ax.legend(handles, labels,title='',loc='upper center', bbox_to_anchor=(0.5, 1.11),ncol=5, fancybox=False, shadow=False)
     
-    ax.set(ylabel='P err')
-    name='exp_p_err.eps'
+    ax.set(ylabel='Orientation error')
+    name='exp_o_err.eps'
     #ax.set(ylabel='Orientation error')
     #ax.set(ylabel='RR cost')
     #plt.ylim(0,0.3)

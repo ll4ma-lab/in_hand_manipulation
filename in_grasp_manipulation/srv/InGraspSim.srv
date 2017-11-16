@@ -1,0 +1,7 @@
+sensor_msgs/JointState init_joints
+geometry_msgs/Pose object_pose
+int16[] fingers
+int16 rigid_finger
+int16 T
+---
+bool init
