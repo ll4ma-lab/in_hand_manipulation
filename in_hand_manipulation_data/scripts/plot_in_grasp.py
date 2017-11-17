@@ -11,6 +11,42 @@ import numpy as np
 sns.set(font_scale=1.45)
 sns.set_style("whitegrid")
 
+def fb_plots(f_name):
+    pd_api=pdAPI()
+    df=pd_api.read_pd('../data/in_grasp_manipulation/'+f_name)
+    err_api=errorAPI()
+    err_p=[]
+    err_o=[]
+    for i in range(len(df['Object'])):
+        txt=df['Desired Pose'][i][1:-1]
+        des_pose=np.fromstring(txt,dtype=float,sep=' ')
+        txt=df['Reached Pose'][i][1:-1]
+        r_pose=np.fromstring(txt,dtype=float,sep=' ')
+        p_err,or_err=err_api.pose_err(des_pose,r_pose)
+        err_p.append(p_err)
+        err_o.append(or_err)
+
+    df_new=df.assign(p_err=err_p,o_err=err_o)
+    #order=['open-ctrl','fb-ctrl']
+    order=['open-ctrl-err','fb-ctrl-err']
+    ax=sns.boxplot(x="Object", y="p_err", hue="method",hue_order=order,data=df_new, palette=safeuiall,whis=100)
+
+    handles, labels = ax.get_legend_handles_labels()
+    
+    ax.legend(handles, labels,title='',loc='upper center', bbox_to_anchor=(0.5, 1.11),ncol=5, fancybox=False, shadow=False)
+    
+    ax.set(ylabel='Position error')
+    plt.show()
+    ax=sns.boxplot(x="Object", y="o_err", hue="method",hue_order=order,data=df_new, palette=safeuiall,whis=100)
+
+    handles, labels = ax.get_legend_handles_labels()
+    
+    ax.legend(handles, labels,title='',loc='upper center', bbox_to_anchor=(0.5, 1.11),ncol=5, fancybox=False, shadow=False)
+    
+    ax.set(ylabel='Orientation error')
+    plt.show()
+    pd_api.write_pd_file('../data/in_grasp_manipulation/'+'fb'+'_err.csv',df_new)
+    
 def waypoint_plots(f_name_):
     name='p_err.eps'
     cols=['ar_p_err','ar_o_err','db_p_err','db_o_err','ar_db_p','ar_db_o']
@@ -83,6 +119,9 @@ def compute_errors(f_name_):
                      ar_db_o=dbot_ar_o)
     pd_api.write_pd_file('../data/in_grasp_manipulation/'+f_name_+'_err.csv',df_new)
 if __name__=='__main__':
+    fb_plots('sim_fb_new.csv')
+    '''
     file_name='waypoint'
     compute_errors(file_name)
     waypoint_plots(file_name)
+    '''

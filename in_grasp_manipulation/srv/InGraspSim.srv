@@ -3,5 +3,6 @@ geometry_msgs/Pose object_pose
 int16[] fingers
 int16 rigid_finger
 int16 T
+float64 noise_variance
 ---
 bool init

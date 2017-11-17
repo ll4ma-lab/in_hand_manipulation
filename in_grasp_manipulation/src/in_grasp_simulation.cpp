@@ -24,7 +24,7 @@ int main(int argc, char** argv)
   
   while(n.ok())
   {
-    if(robot_sim.setup_obj_frame)
+    if(robot_sim.setup_obj_frame==true && robot_sim.init_jcmd==true)
     {
       robot_sim.update_in_grasp_state();
     }

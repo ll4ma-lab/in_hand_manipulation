@@ -15,12 +15,14 @@ void robotSim::update_robot_state(sensor_msgs::JointState j_cmd)
   curr_js_=j_cmd;
   curr_js_.header.stamp=ros::Time::now();
 }
+
 void robotSim::jntCallback(sensor_msgs::JointState j)
 
 {
   j_cmd_=j;
   update_robot_state(j_cmd_);
   new_jcmd=true;
+  init_jcmd=true;
 }
 
 void inGraspSim::update_in_grasp_state()
@@ -32,32 +34,32 @@ void inGraspSim::update_in_grasp_state()
     th_joints.emplace_back(curr_js_.position[r_f*4+i]);
   }
   Eigen::MatrixXd p_T_th=hand_kdl.getFKEigen(r_f,th_joints);
-   if(new_jcmd)
+  if(new_jcmd)
   {
-    for(int l=0;l<4;++l)
-    {
-      for(int k=0;k<3;++k)
-      {
-        noise_mat(k,l)=dist(generator);
-        if(l<3)
-        {
-          noise_mat(k,l)*=1.0;
-        }
-
-      }
-    }
+   
     new_jcmd=false;
-    //cerr<<noise_mat<<endl;
-    th_T_obj=initial_T_obj+noise_mat;
   }
-
-
-  
   // get object pose
   Eigen::MatrixXd mat=p_T_th*th_T_obj;
+  vector<double> obj_pose_rpy=hand_kdl.frame_to_pose_(mat,true);
+
   // Add noise:
- 
-  vector<double> obj_pose=hand_kdl.frame_to_pose_(mat);
+  for(int i=0;i<6;++i)
+  {  
+    obj_pose_rpy[i]+=noise_arr[i];
+  }
+
+  vector<double> obj_q=hand_kdl.get_q_RPY(obj_pose_rpy[3],obj_pose_rpy[4],obj_pose_rpy[5]);
+  vector<double> obj_pose;
+  obj_pose.resize(7);
+  obj_pose[0]=obj_pose_rpy[0];
+  obj_pose[1]=obj_pose_rpy[1];
+  obj_pose[2]=obj_pose_rpy[2];
+  obj_pose[3]=obj_q[0];
+  obj_pose[4]=obj_q[1];
+  obj_pose[5]=obj_q[2];
+  obj_pose[6]=obj_q[3];
+  
   // update object pose and publish:
   obj_pose_msg.pose.position.x=obj_pose[0];
   obj_pose_msg.pose.position.y=obj_pose[1];
@@ -71,7 +73,6 @@ void inGraspSim::update_in_grasp_state()
 }
 bool inGraspSim::setup_object(in_grasp_manipulation::InGraspSim::Request& req, in_grasp_manipulation::InGraspSim::Response& res)
 {
-  noise_mat.setZero();
   
   // Get thumb pose
   r_f=req.rigid_finger;
@@ -88,7 +89,7 @@ bool inGraspSim::setup_object(in_grasp_manipulation::InGraspSim::Request& req, i
   // init_pose->4x4
   tf::Quaternion q(req.object_pose.orientation.x,req.object_pose.orientation.y,req.object_pose.orientation.z,req.object_pose.orientation.w);
   tf::Matrix3x3 R(q);
-  
+
   Eigen::MatrixXd obj_mat(4,4);
   obj_mat.setIdentity();
   for(int i=0;i<3;++i)
@@ -105,14 +106,25 @@ bool inGraspSim::setup_object(in_grasp_manipulation::InGraspSim::Request& req, i
   th_T_obj=p_T_th.inverse()*obj_mat;
   initial_T_obj=th_T_obj;
   setup_obj_frame=true;
-  const double mean = 0.0;
-  const double stddev = 0.001;
+  stddev=std::sqrt(req.noise_variance);
   std::normal_distribution<double> dist_(mean, stddev);
   dist=dist_;
+  
+  for(int i=0;i<6;++i)
+  {
+    noise_arr[i]=dist(generator);
+  }
 
+  return true;
 }
 void inGraspSim::init_service(ros::NodeHandle& n)
 {
+  noise_arr.resize(6);
+  const double mean_=0.0;
+  const double std_d=0.0;
+  std::normal_distribution<double> dist_(mean_, std_d);
+  dist=dist_;
+
   in_grasp_init_service=n.advertiseService("/in_grasp_sim/init",&in_grasp_sim::inGraspSim::setup_object,this);
   // build hand kdl
     string urdf_file="/home/bala/catkin_ws/src/in_hand_manipulation/in_grasp_manipulation/urdf/allegro.urdf";
@@ -126,6 +138,7 @@ void inGraspSim::init_service(ros::NodeHandle& n)
   allegro_kdl.urdfParser();
   hand_kdl=allegro_kdl;
   obj_pub=n.advertise<geometry_msgs::PoseStamped>("/obj_pose",1);
+  
 }
 void inGraspSim::publish_state()
 {
@@ -137,10 +150,10 @@ void inGraspSim::publish_state()
     vector<double> rigid_frame= hand_kdl.frame_to_pose_(th_T_obj);
     static tf::TransformBroadcaster br;
     tf::Transform transform;
-    transform.setOrigin( tf::Vector3(rigid_frame[0],rigid_frame[1], rigid_frame[2]) );
-    tf::Quaternion q(rigid_frame[3],rigid_frame[4],rigid_frame[5],rigid_frame[6]);
+    transform.setOrigin( tf::Vector3(obj_pose_msg.pose.position.x,obj_pose_msg.pose.position.y, obj_pose_msg.pose.position.z) );
+    tf::Quaternion q(obj_pose_msg.pose.orientation.x,obj_pose_msg.pose.orientation.y,obj_pose_msg.pose.orientation.z,obj_pose_msg.pose.orientation.w);
     transform.setRotation(q);
-    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "thumb_tip","/dbot/obj_pose"));
+    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "palm_link","/dbot/obj_pose"));
   }
   
   curr_js_.header.stamp=ros::Time::now();

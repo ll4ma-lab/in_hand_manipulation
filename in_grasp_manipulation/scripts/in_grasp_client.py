@@ -20,10 +20,18 @@ class inGraspClient:
         j_traj=get_in_grasp_plan(js,obj_pose,des_obj_pose,self.weights,fingers,rig_finger,1)
         return j_traj.n_js,j_traj.n_obj_pose
 
-    def setup_sim(self,js,obj_pose,fingers,r_f,T):
+    def call_mpc_server(self,js,obj_pose,des_obj_pose,fingers=[0,1,2,3],rig_finger=3,jtraj=JointTrajectory(),srv_topic='/in_grasp_manipulation/mpc'):
+        rospy.wait_for_service(srv_topic)
+        fingers=[0,1,3]
+        get_in_grasp_plan=rospy.ServiceProxy(srv_topic,InGraspManipulation)
+        self.weights=[0.01,100.0,1.0,0.1,0.4]
+        j_traj=get_in_grasp_plan(js,obj_pose,des_obj_pose,self.weights,fingers,rig_finger,1,True,js,jtraj)
+        return j_traj.joint_traj
+
+    def setup_sim(self,js,obj_pose,fingers,r_f,T,var):
         rospy.wait_for_service('/in_grasp_sim/init')
         setup_in_grasp=rospy.ServiceProxy('/in_grasp_sim/init',InGraspSim)
-        setup_in_grasp(js,obj_pose,fingers,r_f,T)
+        setup_in_grasp(js,obj_pose,fingers,r_f,T,var)
         
         
     def call_server_list(self, j_arr, obj_pose_,des_obj_pose_, weights=[1.0,1.0,1.0,1.0],fingers=[0,1,2,3],rig_finger=3,T=10,final_joints=np.array([]),initial_j_traj=JointTrajectory(),initialize_opt=True,srv_topic='/in_hand/primitive/in_grasp_manipulation'):

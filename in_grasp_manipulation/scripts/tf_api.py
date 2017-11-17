@@ -59,6 +59,15 @@ class poseAPI:
         pose_st=PoseStamped()
         pose_st.pose=pose
         return pose_st
+    def pose_to_arr(self,u):
+        pose_arr=np.zeros(6)
+        pose_arr[0]=u.position.x
+        pose_arr[1]=u.position.y
+        pose_arr[2]=u.position.z
+        
+        pose_arr[3:6]=tf.transformations.euler_from_quaternion([u.orientation.x,u.orientation.y,u.orientation.z,u.orientation.w])
+        return pose_arr
+
     def quat_from_rpy(self,u):
         quaternion = tf.transformations.quaternion_from_euler(u[0],u[1],u[2])
         return [quaternion[0],quaternion[1],quaternion[2],quaternion[3]]

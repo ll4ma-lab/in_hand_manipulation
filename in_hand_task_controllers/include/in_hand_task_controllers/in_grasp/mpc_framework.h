@@ -41,5 +41,6 @@ public:
   void run_controller();
   bool srv_call(in_hand_manipulation_msgs::RunMPC::Request& req,in_hand_manipulation_msgs::RunMPC::Response& res);
   double js_gain,obj_gain;
+  vector<double> err_;
 };
 }

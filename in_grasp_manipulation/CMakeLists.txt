@@ -80,6 +80,9 @@ target_link_libraries(in_grasp_sim ${catkin_LIBRARIES})
 add_executable(in_grasp_server src/in_grasp_server.cpp)
 target_link_libraries(in_grasp_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_planner)
 
+add_executable(in_grasp_mpc_server src/in_grasp_mpc_server.cpp)
+target_link_libraries(in_grasp_mpc_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_planner)
+
 add_executable(in_grasp_metrics_server src/in_grasp_metrics.cpp)
 target_link_libraries(in_grasp_metrics_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_planner)
 

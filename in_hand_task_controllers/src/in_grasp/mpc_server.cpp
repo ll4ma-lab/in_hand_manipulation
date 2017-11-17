@@ -13,7 +13,8 @@ void hand_controller::mpcController::run_controller()
   get_object_pose();
   js_gain=1.0;
   obj_gain=10.0;
-
+  float obj_err_data,final_obj_err_data;
+  obj_err_data=0.0;
   while (n_->ok() && t<T)
   {
     updateState();
@@ -114,19 +115,24 @@ void hand_controller::mpcController::run_controller()
     Eigen::VectorXd obj_fb=-1.0*J.transpose()*(f_err_v);
     for(int i=0;i<4;++i)
     {
-      js_fb[4*3+i]+=obj_gain*obj_fb[i];
+      js_fb[4*3+i]=obj_gain*obj_fb[i];
     }
     
     // publish trajectory:
     Eigen::VectorXd js_cmd=curr_js+js_ff+js_fb;
-    
-    cerr<<"OBJ ERROR: "<<f_err_v.lpNorm<1>()<<endl;   
+    obj_err_data+=f_err_v.lpNorm<1>();
+    final_obj_err_data=f_err_v.lpNorm<1>();
+    //cerr<<"OBJ ERROR: "<<<<endl;   
     publish_joints(js_cmd);
     t++;
     loop_rate.sleep();
    
   }
   cerr<<"Controller done!"<<endl;
+  vector<double> err_arr;
+  err_arr.emplace_back(obj_err_data);
+  err_arr.emplace_back(final_obj_err_data);
+  //err_=err_arr;
 }
 
 int main(int argc, char** argv)

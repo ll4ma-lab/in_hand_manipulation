@@ -19,6 +19,7 @@ public:
   sensor_msgs::JointState curr_js_;
   ros::Publisher j_pub;
   bool new_jcmd=false;
+  bool init_jcmd=false;
 private:
   sensor_msgs::JointState j_cmd_;
   ros::Subscriber  cmd_sub;
@@ -33,7 +34,11 @@ public:
   void init_service(ros::NodeHandle&);
   void publish_state();
   bool setup_obj_frame=false;
+  const double mean = 0.0;
+  double stddev = 0.0;
+  
 private:
+  
   manipulator_kdl::robotKDL hand_kdl;
   int r_f;
   Eigen::MatrixXd th_T_obj,initial_T_obj;
@@ -43,7 +48,7 @@ private:
   std::default_random_engine generator;
   std::normal_distribution<double> dist;
   Eigen::Matrix4d noise_mat;
-
+  vector<double> noise_arr;
   
 };
 
