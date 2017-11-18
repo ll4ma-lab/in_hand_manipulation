@@ -7,7 +7,7 @@ void hand_controller::mpcController::run_controller()
 {
   //
   ros::Rate loop_rate(30);
-  int T=99;
+  int T=j_des.size()-1;
   int t=0;
   // get initial rigid frame:
   get_object_pose();
@@ -107,9 +107,9 @@ void hand_controller::mpcController::run_controller()
     //cerr<<f_err_<<endl;
     vector<double> f_err=hand_kdl->frame_to_pose_(f_err_,true);
     //
-    f_err[3]*=0.001;
-    f_err[4]*=0.001;
-    f_err[5]*=0.001;
+    f_err[3]*=0.01;
+    f_err[4]*=0.01;
+    f_err[5]*=0.01;
     Map<Eigen::VectorXd> f_err_v(&f_err[0],f_err.size());
     
     Eigen::VectorXd obj_fb=-1.0*J.transpose()*(f_err_v);

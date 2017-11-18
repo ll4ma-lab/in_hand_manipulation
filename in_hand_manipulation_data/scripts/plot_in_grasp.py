@@ -28,7 +28,7 @@ def fb_plots(f_name):
 
     df_new=df.assign(p_err=err_p,o_err=err_o)
     #order=['open-ctrl','fb-ctrl']
-    order=['open-ctrl-err','fb-ctrl-err']
+    order=['open-ctrl','mpc-ctrl','fb-ctrl-or']
     ax=sns.boxplot(x="Object", y="p_err", hue="method",hue_order=order,data=df_new, palette=safeuiall,whis=100)
 
     handles, labels = ax.get_legend_handles_labels()
@@ -36,7 +36,8 @@ def fb_plots(f_name):
     ax.legend(handles, labels,title='',loc='upper center', bbox_to_anchor=(0.5, 1.11),ncol=5, fancybox=False, shadow=False)
     
     ax.set(ylabel='Position error')
-    plt.show()
+    plt.savefig('/home/bala/plots/'+'pos_err.eps', bbox_inches='tight')
+    #plt.show()
     ax=sns.boxplot(x="Object", y="o_err", hue="method",hue_order=order,data=df_new, palette=safeuiall,whis=100)
 
     handles, labels = ax.get_legend_handles_labels()
@@ -44,8 +45,9 @@ def fb_plots(f_name):
     ax.legend(handles, labels,title='',loc='upper center', bbox_to_anchor=(0.5, 1.11),ncol=5, fancybox=False, shadow=False)
     
     ax.set(ylabel='Orientation error')
-    plt.show()
-    pd_api.write_pd_file('../data/in_grasp_manipulation/'+'fb'+'_err.csv',df_new)
+    plt.savefig('/home/bala/plots/'+'orient_err.eps', bbox_inches='tight')
+    #plt.show()
+    #pd_api.write_pd_file('../data/in_grasp_manipulation/'+'fb'+'_err.csv',df_new)
     
 def waypoint_plots(f_name_):
     name='p_err.eps'

@@ -24,7 +24,7 @@ class inGraspClient:
         rospy.wait_for_service(srv_topic)
         fingers=[0,1,3]
         get_in_grasp_plan=rospy.ServiceProxy(srv_topic,InGraspManipulation)
-        self.weights=[0.01,100.0,1.0,0.1,0.4]
+        self.weights=[0.01,100.0,1000.0,0.0,10.4]
         j_traj=get_in_grasp_plan(js,obj_pose,des_obj_pose,self.weights,fingers,rig_finger,1,True,js,jtraj)
         return j_traj.joint_traj
 
