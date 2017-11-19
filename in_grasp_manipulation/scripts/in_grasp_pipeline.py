@@ -449,7 +449,7 @@ class inGraspPipeline:
     def run_mpc(self,idx,FROM_FILE=True, OBJ_TRACKING=True,AR_TRACKING=True, DBOT_TRACKING=True, RECORD_DATA=True, RECORD_BAG_=True, trial_no=0, folder='', method='', df=[],SIM_TRACKING=False,var=0.0,MPC=False):
         finish=False
         while(finish==False):
-            bag_folder='/media/bala/data_giskard/in_grasp_journal/feedback/obj/'
+            bag_folder='/media/bala/data_giskard/in_grasp_journal/fb_exp/mpc/'
             
             #in_grasp_pip=inGraspPipeline(init_node=True)
             #in_grasp_pip.read_objects()
@@ -515,6 +515,7 @@ class inGraspPipeline:
                 result_=self.mpc(j_traj,obj_traj,obj_)
             else:
                 # interpolate trajectories:
+                print len(j_traj.points)
                 j_traj=self.interpolate_jtraj(j_traj)
                 obj_traj=self.interpolate_obj_traj(obj_traj)
                 # call mpc service:
@@ -529,7 +530,7 @@ class inGraspPipeline:
                 if(suc==''):
                     # Get object pose from aruco marker
                     ar_reached_pose=self.tf_api.tf_find_transform('ar/obj_pose')
-                    db_reached_pose=ar_reached_pose#self.tf_api.tf_find_transform('dbot/obj_pose')
+                    db_reached_pose=self.tf_api.tf_find_transform('dbot/obj_pose')
                     print obj_.des
                     print ar_reached_pose
                     print np.linalg.norm(obj_.des[0:3]-ar_reached_pose[0:3])
@@ -636,7 +637,7 @@ class inGraspPipeline:
             # interpolate traj
             j_cmd_traj=self.interpolate_jtraj(j_new_traj)
             # send only 10 timesteps:
-            
+            #raw_input("run on robot?")
             rospy.wait_for_service(mpc_server_name)
             mpc_srv=rospy.ServiceProxy(mpc_server_name,RunMPC)
             result_=mpc_srv(obj_traj,j_cmd_traj)
@@ -644,6 +645,11 @@ class inGraspPipeline:
             #r.sleep()
             # observed js, obj_pose
             obs_js=self.allegro_drv.joint_state
+            # tighten grasp:
+            obs_js.position=np.array(obs_js.position)
+            obs_js.position[1]+=0.1
+            obs_js.position[1+4]+=0.1
+            obs_js.position[1+13]+=0.1
             obs_obj=self.tf_api.tf_find_transform('dbot/obj_pose')
             # replan:
             next_traj=copy.deepcopy(j_traj)
@@ -651,7 +657,7 @@ class inGraspPipeline:
             curr_obj_pose=self.pose_api.pose_from_arr(obs_obj).pose
             #raw_input("call?")
             j_new_traj=self.in_grasp.call_mpc_server(obs_js, curr_obj_pose, obj_traj.poses[i],fingers=obj_.fing,jtraj=next_traj)
-            self.in_grasp.setup_sim(obs_js,curr_obj_pose,obj_.fing,3,10,0.0)
+            #self.in_grasp.setup_sim(obs_js,curr_obj_pose,obj_.fing,3,10,0.0)
         j_cmd_traj=self.interpolate_jtraj(j_new_traj)
         
         rospy.wait_for_service(mpc_server_name)
@@ -779,7 +785,26 @@ def run_open_loop_test():
     in_grasp_pip.read_objects()
     in_grasp_pip.run_traj(int(sys.argv[1]),OBJ_TRACKING=False,FROM_FILE=True,RECORD_DATA=False, DBOT_TRACKING=False,RECORD_BAG_=False)
 
-
+def fb_exp(n_trials=3):
+    in_grasp_pip=inGraspPipeline(init_node=True)
+    in_grasp_pip.read_objects()
+    method='ik_obj'
+    folder=path_in_hand_data+'/interpolation/'+method+'/'
+    pd_file=path_in_hand_data+'/exp_fb.csv'
+    method_name=['open-ctrl','fb-ctrl','mpc-ctrl']
+    method=method_name[2]
+    #columns=['method','Object','Trajectory','Trial','Desired Pose','AR Reached Pose','DB Reached Pose']
+    #df=in_grasp_pip.pd_api.create_pd_frame(columns)
+    i=int(sys.argv[1])
+    j=int(sys.argv[2])
+    df=in_grasp_pip.pd_api.read_pd(pd_file)
+    # loop and run each trajectory once:
+    #for i in range(len(in_grasp_pip.obj_list.arr)):
+    #for j in range(n_trials):
+    df=in_grasp_pip.run_mpc(i, OBJ_TRACKING=True,SIM_TRACKING=False,FROM_FILE=True,RECORD_DATA=True, DBOT_TRACKING=True,AR_TRACKING=True,RECORD_BAG_=False,trial_no=j,folder=folder,method=method,df=df,MPC=True)
+    # store error data in a panda file:
+    in_grasp_pip.pd_api.write_pd_file(pd_file,df)
+    
 def mpc_sim_exp(n_trials=5):
     # read object trajectories:
     in_grasp_pip=inGraspPipeline(init_node=True)
@@ -828,6 +853,6 @@ if __name__=='__main__':
     #run_waypoint()
     #run_waypoint_test()
     #mpc_exp()
-    mpc_sim_exp()
+    #mpc_sim_exp()
     #mpc_speed_test(int(sys.argv[1]))
-    
+    fb_exp()

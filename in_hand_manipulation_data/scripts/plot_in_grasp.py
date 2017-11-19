@@ -20,7 +20,7 @@ def fb_plots(f_name):
     for i in range(len(df['Object'])):
         txt=df['Desired Pose'][i][1:-1]
         des_pose=np.fromstring(txt,dtype=float,sep=' ')
-        txt=df['Reached Pose'][i][1:-1]
+        txt=df['AR Reached Pose'][i][1:-1]
         r_pose=np.fromstring(txt,dtype=float,sep=' ')
         p_err,or_err=err_api.pose_err(des_pose,r_pose)
         err_p.append(p_err)
@@ -28,7 +28,7 @@ def fb_plots(f_name):
 
     df_new=df.assign(p_err=err_p,o_err=err_o)
     #order=['open-ctrl','fb-ctrl']
-    order=['open-ctrl','mpc-ctrl','fb-ctrl-or']
+    order=['ik_obj','fb-ctrl']
     ax=sns.boxplot(x="Object", y="p_err", hue="method",hue_order=order,data=df_new, palette=safeuiall,whis=100)
 
     handles, labels = ax.get_legend_handles_labels()
@@ -47,7 +47,7 @@ def fb_plots(f_name):
     ax.set(ylabel='Orientation error')
     plt.savefig('/home/bala/plots/'+'orient_err.eps', bbox_inches='tight')
     #plt.show()
-    #pd_api.write_pd_file('../data/in_grasp_manipulation/'+'fb'+'_err.csv',df_new)
+    pd_api.write_pd_file('../data/in_grasp_manipulation/'+'exp_fb'+'_err.csv',df_new)
     
 def waypoint_plots(f_name_):
     name='p_err.eps'
@@ -121,7 +121,7 @@ def compute_errors(f_name_):
                      ar_db_o=dbot_ar_o)
     pd_api.write_pd_file('../data/in_grasp_manipulation/'+f_name_+'_err.csv',df_new)
 if __name__=='__main__':
-    fb_plots('sim_fb_new.csv')
+    fb_plots('exp_fb.csv')
     '''
     file_name='waypoint'
     compute_errors(file_name)

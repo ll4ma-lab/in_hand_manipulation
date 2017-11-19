@@ -6,12 +6,12 @@
 void hand_controller::mpcController::run_controller()
 {
   //
-  ros::Rate loop_rate(30);
+  ros::Rate loop_rate(60);
   int T=j_des.size()-1;
   int t=0;
   // get initial rigid frame:
   get_object_pose();
-  js_gain=1.0;
+  js_gain=0.0;
   obj_gain=10.0;
   float obj_err_data,final_obj_err_data;
   obj_err_data=0.0;
@@ -107,19 +107,19 @@ void hand_controller::mpcController::run_controller()
     //cerr<<f_err_<<endl;
     vector<double> f_err=hand_kdl->frame_to_pose_(f_err_,true);
     //
-    f_err[3]*=0.01;
-    f_err[4]*=0.01;
-    f_err[5]*=0.01;
+    f_err[3]*=0.001;
+    f_err[4]*=0.001;
+    f_err[5]*=0.001;
     Map<Eigen::VectorXd> f_err_v(&f_err[0],f_err.size());
     
     Eigen::VectorXd obj_fb=-1.0*J.transpose()*(f_err_v);
     for(int i=0;i<4;++i)
     {
-      js_fb[4*3+i]=obj_gain*obj_fb[i];
+      //js_fb[4*3+i]=obj_gain*obj_fb[i];
     }
     
     // publish trajectory:
-    Eigen::VectorXd js_cmd=curr_js+js_ff+js_fb;
+    Eigen::VectorXd js_cmd=j_des[t]+js_ff+js_fb;
     obj_err_data+=f_err_v.lpNorm<1>();
     final_obj_err_data=f_err_v.lpNorm<1>();
     //cerr<<"OBJ ERROR: "<<<<endl;   
