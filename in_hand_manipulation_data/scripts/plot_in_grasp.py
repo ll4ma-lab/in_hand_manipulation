@@ -29,6 +29,7 @@ def fb_plots(f_name):
     df_new=df.assign(p_err=err_p,o_err=err_o)
     #order=['open-ctrl','fb-ctrl']
     order=['ik_obj','fb-ctrl']
+    '''
     ax=sns.boxplot(x="Object", y="p_err", hue="method",hue_order=order,data=df_new, palette=safeuiall,whis=100)
 
     handles, labels = ax.get_legend_handles_labels()
@@ -38,6 +39,7 @@ def fb_plots(f_name):
     ax.set(ylabel='Position error')
     plt.savefig('/home/bala/plots/'+'pos_err.eps', bbox_inches='tight')
     #plt.show()
+    '''
     ax=sns.boxplot(x="Object", y="o_err", hue="method",hue_order=order,data=df_new, palette=safeuiall,whis=100)
 
     handles, labels = ax.get_legend_handles_labels()

@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <launch>
-<param name="robot_description" textfile="$(find in_grasp_manipulation)/urdf/allegro_marker.urdf"/>
+  <param name="/robot_description"
+        command="$(find xacro)/xacro.py '$(find urlg_robots_description)/robots/depreciated/allegro_right.urdf.xacro' --inorder"/>
 
 <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
 

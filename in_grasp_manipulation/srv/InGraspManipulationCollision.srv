@@ -1,0 +1,19 @@
+sensor_msgs/JointState init_joints
+geometry_msgs/Pose object_pose
+int16[] fingers
+int16 rigid_finger
+int16 T
+float64[] weights
+geometry_msgs/Pose desired_object_pose
+sensor_msgs/PointCloud2 env_cloud
+sensor_msgs/PointCloud obj_cloud
+int16[] hand_link_collision_idx
+bool initialize_opt
+sensor_msgs/JointState final_joints
+trajectory_msgs/JointTrajectory initial_jtraj
+---
+sensor_msgs/JointState n_js
+geometry_msgs/PoseStamped n_obj_pose
+trajectory_msgs/JointTrajectory joint_traj
+geometry_msgs/PoseArray obj_traj
+float64[] metrics

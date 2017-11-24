@@ -12,6 +12,7 @@ from subprocess import Popen
 import subprocess
 import os
 import signal
+
 from sensor_msgs.msg import JointState
 # Find package with allegro model
 from rospkg import RosPack
@@ -27,7 +28,7 @@ from error_api import errorAPI
 from data_api import pdAPI
 path_in_grasp=rp.get_path('in_grasp_manipulation')+'/python'
 sys.path.insert(0,path_in_grasp)
-
+import viz_markers
 from object_list import *
 path_=rp.get_path('optimization_pkg')+'/scripts'
 sys.path.insert(0,path_)
@@ -67,6 +68,7 @@ class inGraspPipeline:
     def __init__(self,publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right', init_node=False, node_name='in_grasp_pipeline',weights=[0.01,100.0,1.0,0.1,0.4]):
         if(init_node):
             rospy.init_node(node_name)
+        self.viz_obj=viz_markers.VizInHand(init_node=False)
         # weights=[RR_orient, RR_position, T_des, interpo]
         # weights=[0.05,100.0,
         self.allegro_drv=handAPI(init_node=False,publish_prefix=publish_prefix,listen_prefix=listen_prefix)
@@ -91,7 +93,7 @@ class inGraspPipeline:
 
         self.obj_list=obj_list
 
-    def generate_traj(self,idx,folder=path_in_hand_data+"/trajectories/journal/waypoint/",WRITE_TO_FILE=True):
+    def generate_traj(self,idx,folder=path_in_hand_data+"/trajectories/journal/collision/",WRITE_TO_FILE=True):
         start=time.time()
         obj_=self.obj_list.arr[idx]
         j0=obj_.grasp
@@ -114,7 +116,7 @@ class inGraspPipeline:
             else:
                 des_pose_arr.append(Pose())
 
-
+        
         
         # IK
         j_init,j_traj=self.ik_server.call_server(js_j0,des_pose_arr,fingers)
@@ -125,22 +127,43 @@ class inGraspPipeline:
         weights[-1]=100.0
         f_j=j_traj.points[-1].positions
         j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose, des_obj_pose, weights, fingers, T=1, final_joints=f_j,initialize_opt=True)
+        f_j_ik=copy.deepcopy(f_j)
 
         '''
         # RR obj interpol
         
         weights=copy.deepcopy(self.weights)
         f_j=j_traj.points[-1].positions
-        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=f_j)
+        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=f_j,srv_topic="/in_grasp_manipulation/collision_server")
 
         '''
+        # collision traj:
+        #j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=6, final_joints=f_j,srv_topic="/in_grasp_manipulation/collision_server")
+        
         # RR min acc
         weights=copy.deepcopy(self.weights)
+        f_j=j_traj.points[-1].positions
+        j_traj_rr,n_pose,obj_traj_rr=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=f_j)
         
-        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=f_j,srv_topic='/in_hand/primitive/in_grasp_min_acc')
+        # RR IK
+        weights=copy.deepcopy(self.weights)
+        weights[-1]=100.0
+        f_j=f_j_ik
+        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose, des_obj_pose, weights, fingers, T=1, final_joints=f_j,initialize_opt=True,srv_topic="/in_grasp_manipulation/collision_server")
 
-
+        f_j=j_traj.points[-1].positions
+        weights=[0.01,100.0,1.0,0.001,0.4]
+        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=f_j,srv_topic="/in_grasp_manipulation/collision_server")
         
+        if(WRITE_TO_FILE):
+            # save trajectory
+            pickle.dump( [j_traj,obj_traj], open( folder+obj_.f_name+"_c.p", "wb" ) )
+            pickle.dump( [j_traj_rr,obj_traj_rr], open( folder+obj_.f_name+".p", "wb" ) )
+            #return des_obj,reach_obj_pose,metrics
+
+        return j_traj,obj_traj,obj_traj_rr,j_traj_rr
+
+        exit()
         plan_time=time.time()-start
         print 'time:'+str(time.time()-start)
         weights=copy.deepcopy(self.weights)
@@ -446,7 +469,7 @@ class inGraspPipeline:
             bag_process.send_signal(subprocess.signal.SIGINT)
         return df
 
-    def run_mpc(self,idx,FROM_FILE=True, OBJ_TRACKING=True,AR_TRACKING=True, DBOT_TRACKING=True, RECORD_DATA=True, RECORD_BAG_=True, trial_no=0, folder='', method='', df=[],SIM_TRACKING=False,var=0.0,MPC=False):
+    def run_mpc(self,idx,FROM_FILE=True, OBJ_TRACKING=True,AR_TRACKING=True, DBOT_TRACKING=True, RECORD_DATA=True, RECORD_BAG_=True, trial_no=0, folder='', method='', df=[],SIM_TRACKING=False,var=0.0,MPC=False,obj_traj=[],j_traj=[],GOT_TRAJ=False):
         finish=False
         while(finish==False):
             bag_folder='/media/bala/data_giskard/in_grasp_journal/fb_exp/mpc/'
@@ -455,8 +478,9 @@ class inGraspPipeline:
             #in_grasp_pip.read_objects()
             obj_=self.obj_list.arr[idx]
             j0=obj_.grasp
-            
-            if(FROM_FILE):
+            if(GOT_TRAJ):
+                print "running custom traj"
+            elif(FROM_FILE):
                 j_traj,obj_traj=self.get_traj_from_file(idx,folder)
             else:
                 j_traj,obj_traj,obj_pose=self.generate_traj(idx,WRITE_TO_FILE=False)
@@ -556,7 +580,7 @@ class inGraspPipeline:
                     i.send_signal(subprocess.signal.SIGINT)
             if(RECORD_BAG_):
                 bag_process.send_signal(subprocess.signal.SIGINT)
-
+            finish=True
                 
         return df
     def run_tmpc(self,idx,H,folder=''):
@@ -785,14 +809,14 @@ def run_open_loop_test():
     in_grasp_pip.read_objects()
     in_grasp_pip.run_traj(int(sys.argv[1]),OBJ_TRACKING=False,FROM_FILE=True,RECORD_DATA=False, DBOT_TRACKING=False,RECORD_BAG_=False)
 
-def fb_exp(n_trials=3):
+def fb_exp(n_trials=1):
     in_grasp_pip=inGraspPipeline(init_node=True)
     in_grasp_pip.read_objects()
     method='ik_obj'
     folder=path_in_hand_data+'/interpolation/'+method+'/'
     pd_file=path_in_hand_data+'/exp_fb.csv'
     method_name=['open-ctrl','fb-ctrl','mpc-ctrl']
-    method=method_name[2]
+    method=method_name[1]
     #columns=['method','Object','Trajectory','Trial','Desired Pose','AR Reached Pose','DB Reached Pose']
     #df=in_grasp_pip.pd_api.create_pd_frame(columns)
     i=int(sys.argv[1])
@@ -801,9 +825,9 @@ def fb_exp(n_trials=3):
     # loop and run each trajectory once:
     #for i in range(len(in_grasp_pip.obj_list.arr)):
     #for j in range(n_trials):
-    df=in_grasp_pip.run_mpc(i, OBJ_TRACKING=True,SIM_TRACKING=False,FROM_FILE=True,RECORD_DATA=True, DBOT_TRACKING=True,AR_TRACKING=True,RECORD_BAG_=False,trial_no=j,folder=folder,method=method,df=df,MPC=True)
+    df=in_grasp_pip.run_mpc(i, OBJ_TRACKING=False,SIM_TRACKING=False,FROM_FILE=True,RECORD_DATA=False, DBOT_TRACKING=False,AR_TRACKING=False,RECORD_BAG_=False,trial_no=j,folder=folder,method=method,df=df,MPC=False)
     # store error data in a panda file:
-    in_grasp_pip.pd_api.write_pd_file(pd_file,df)
+    #in_grasp_pip.pd_api.write_pd_file(pd_file,df)
     
 def mpc_sim_exp(n_trials=5):
     # read object trajectories:
@@ -836,8 +860,46 @@ def mpc_speed_test(idx):
     folder=path_in_hand_data+'/interpolation/'+method+'/'
     
     in_grasp_pip.run_tmpc(idx,1,folder=folder)
-    
-    
+
+def collision_exp():
+    in_grasp_pip=inGraspPipeline(init_node=True)
+    in_grasp_pip.read_objects()
+    method='ik_obj'
+    folder=path_in_hand_data+'/interpolation/'+method+'/'
+
+    j_traj,obj_traj,o_rr,_=in_grasp_pip.generate_traj(int(sys.argv[1]),WRITE_TO_FILE=True)
+    print obj_traj
+    obj_mesh='package://ycb_benchmarks/meshes/banana_1k.dae'
+    in_grasp_pip.viz_obj.viz_obj_traj(o_rr,obj_mesh,t='rr_plan',rgb=[1.0,0.0,0.0],a=1.0)
+    in_grasp_pip.viz_obj.viz_obj_traj(obj_traj,obj_mesh,t='c_plan',rgb=[0.0,1.0,0.0],a=1.0)
+    in_grasp_pip.traj_server.viz_joint_traj(j_traj,base_link='allegro_mount')
+    #i=int(sys.argv[1])
+    #j=0
+    #df=[]
+    #df=in_grasp_pip.run_mpc(i, OBJ_TRACKING=False,SIM_TRACKING=False,FROM_FILE=True,RECORD_DATA=False, DBOT_TRACKING=False,AR_TRACKING=False,RECORD_BAG_=False,trial_no=j,folder=folder,method=method,df=df,MPC=False)
+
+def run_collision_exp():
+    in_grasp_pip=inGraspPipeline(init_node=True)
+    in_grasp_pip.read_objects()
+    method='ik_obj'
+    folder=path_in_hand_data+"/trajectories/journal/collision/"
+
+
+    idx=15
+    # read traj from file:
+    obj_=in_grasp_pip.obj_list.arr[idx]
+    [j_traj,obj_traj]=pickle.load( open( folder+obj_.f_name+'_c.p', "rb" ) )
+    [j_traj_rr,obj_traj_rr]=pickle.load( open( folder+obj_.f_name+'.p', "rb" ) )
+    i=15
+    obj_mesh='package://ycb_benchmarks/meshes/banana_1k.dae'
+    in_grasp_pip.viz_obj.viz_obj_traj(obj_traj,obj_mesh,t='c_plan',rgb=[0.0,1.0,0.0],a=1.0)
+    in_grasp_pip.viz_obj.viz_obj_traj(obj_traj_rr,obj_mesh,t='rr_plan',rgb=[1.0,0.0,0.0],a=1.0)
+    #i=int(sys.argv[1])
+    j=0
+    df=[]
+    df=in_grasp_pip.run_mpc(i, OBJ_TRACKING=False,SIM_TRACKING=False,ROM_FILE=True,RECORD_DATA=False, DBOT_TRACKING=False,AR_TRACKING=False,RECORD_BAG_=False,trial_no=j,folder=folder,method=method,df=df,MPC=False,obj_traj=obj_traj,j_traj=j_traj_rr,GOT_TRAJ=True)
+
+
 if __name__=='__main__':
     #idx=int(sys.argv[1])
     #in_grasp_pip=inGraspPipeline(init_node=True)
@@ -855,4 +917,6 @@ if __name__=='__main__':
     #mpc_exp()
     #mpc_sim_exp()
     #mpc_speed_test(int(sys.argv[1]))
-    fb_exp()
+    #fb_exp()
+    #collision_exp()
+    run_collision_exp()
