@@ -211,7 +211,7 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   
 
   problem prob{trajectory_optimization{opt_problem}};
-  vector<double> tol(16*(t_steps_),1e-3);
+  vector<double> tol(16*(t_steps_),1e-4);
  
   prob.set_c_tol(tol);
   

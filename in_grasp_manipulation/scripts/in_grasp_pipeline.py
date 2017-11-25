@@ -122,6 +122,7 @@ class inGraspPipeline:
         j_init,j_traj=self.ik_server.call_server(js_j0,des_pose_arr,fingers)
         f_j=j_traj.points[-1].positions
 
+        
         # RR IK
         weights=copy.deepcopy(self.weights)
         weights[-1]=100.0
@@ -144,7 +145,8 @@ class inGraspPipeline:
         weights=copy.deepcopy(self.weights)
         f_j=j_traj.points[-1].positions
         j_traj_rr,n_pose,obj_traj_rr=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=f_j)
-        
+
+
         # RR IK
         weights=copy.deepcopy(self.weights)
         weights[-1]=100.0
@@ -154,7 +156,9 @@ class inGraspPipeline:
         f_j=j_traj.points[-1].positions
         weights=[0.01,100.0,1.0,0.001,0.4]
         j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=f_j,srv_topic="/in_grasp_manipulation/collision_server")
-        
+
+        #j_traj=j_traj_rr
+        #obj_traj=obj_traj_rr
         if(WRITE_TO_FILE):
             # save trajectory
             pickle.dump( [j_traj,obj_traj], open( folder+obj_.f_name+"_c.p", "wb" ) )
@@ -870,8 +874,8 @@ def collision_exp():
     j_traj,obj_traj,o_rr,_=in_grasp_pip.generate_traj(int(sys.argv[1]),WRITE_TO_FILE=True)
     print obj_traj
     obj_mesh='package://ycb_benchmarks/meshes/banana_1k.dae'
-    in_grasp_pip.viz_obj.viz_obj_traj(o_rr,obj_mesh,t='rr_plan',rgb=[1.0,0.0,0.0],a=1.0)
-    in_grasp_pip.viz_obj.viz_obj_traj(obj_traj,obj_mesh,t='c_plan',rgb=[0.0,1.0,0.0],a=1.0)
+    in_grasp_pip.viz_obj.viz_obj_traj(o_rr,obj_mesh,t='rr_plan',rgb=[1.0,0.0,0.0],a=0.8)
+    in_grasp_pip.viz_obj.viz_obj_traj(obj_traj,obj_mesh,t='c_plan',rgb=[0.0,1.0,0.0],a=0.8)
     in_grasp_pip.traj_server.viz_joint_traj(j_traj,base_link='allegro_mount')
     #i=int(sys.argv[1])
     #j=0
@@ -885,19 +889,20 @@ def run_collision_exp():
     folder=path_in_hand_data+"/trajectories/journal/collision/"
 
 
-    idx=15
+    idx=int(sys.argv[1])
     # read traj from file:
     obj_=in_grasp_pip.obj_list.arr[idx]
     [j_traj,obj_traj]=pickle.load( open( folder+obj_.f_name+'_c.p', "rb" ) )
     [j_traj_rr,obj_traj_rr]=pickle.load( open( folder+obj_.f_name+'.p', "rb" ) )
-    i=15
+    i=idx
     obj_mesh='package://ycb_benchmarks/meshes/banana_1k.dae'
-    in_grasp_pip.viz_obj.viz_obj_traj(obj_traj,obj_mesh,t='c_plan',rgb=[0.0,1.0,0.0],a=1.0)
-    in_grasp_pip.viz_obj.viz_obj_traj(obj_traj_rr,obj_mesh,t='rr_plan',rgb=[1.0,0.0,0.0],a=1.0)
+    in_grasp_pip.viz_obj.viz_obj_traj(obj_traj,obj_mesh,t='c_plan',rgb=[0.0,1.0,0.0],a=0.8)
+    in_grasp_pip.viz_obj.viz_obj_traj(obj_traj_rr,obj_mesh,t='rr_plan',rgb=[1.0,0.0,0.0],a=0.5)
     #i=int(sys.argv[1])
+
     j=0
     df=[]
-    df=in_grasp_pip.run_mpc(i, OBJ_TRACKING=False,SIM_TRACKING=False,ROM_FILE=True,RECORD_DATA=False, DBOT_TRACKING=False,AR_TRACKING=False,RECORD_BAG_=False,trial_no=j,folder=folder,method=method,df=df,MPC=False,obj_traj=obj_traj,j_traj=j_traj_rr,GOT_TRAJ=True)
+    df=in_grasp_pip.run_mpc(i, OBJ_TRACKING=False,SIM_TRACKING=False,FROM_FILE=True,RECORD_DATA=False, DBOT_TRACKING=False,AR_TRACKING=False,RECORD_BAG_=False,trial_no=j,folder=folder,method=method,df=df,MPC=False,obj_traj=obj_traj,j_traj=j_traj_rr,GOT_TRAJ=True)
 
 
 if __name__=='__main__':
@@ -920,3 +925,4 @@ if __name__=='__main__':
     #fb_exp()
     #collision_exp()
     run_collision_exp()
+    

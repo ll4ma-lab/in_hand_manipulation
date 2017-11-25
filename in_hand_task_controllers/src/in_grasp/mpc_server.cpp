@@ -11,7 +11,7 @@ void hand_controller::mpcController::run_controller()
   int t=0;
   // get initial rigid frame:
 
-  js_gain=0.3;
+  js_gain=0.0;
   obj_gain=0.0;
   float obj_err_data,final_obj_err_data;
   obj_err_data=0.0;
