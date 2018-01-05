@@ -103,17 +103,21 @@ double optProblem::objFunction(const vector<double> x) const
 
   j_poses.push_back(j_0);
   j_poses.push_back(j_0);
-
   for(int i=0;i<timesteps_;++i)
   {
     for(int j=0; j<robot_kdl_.dof;++j)
     {
       q[j]=x[(i)*robot_kdl_.dof+j];
     }
-    
+      
     //vector<double> f_q(&q[rigid_f*4],&q[rigid_f*4+4]);
     //ee_pose_arr=robot_kdl_.getFK(rigid_f,f_q,true);
     Map<Eigen::VectorXd> j_pose(&q[0],q.size());
+    if(i==0)
+    {
+      //j_poses.push_back(j_pose);
+      //j_poses.push_back(j_pose);
+    }
     j_poses.push_back(j_pose);
   }
   // Following Marc's KOMO paper, adding -2,-1, T+1,T+2 poses
@@ -196,14 +200,31 @@ double optProblem::objFunction(const vector<double> x) const
     {
       acc_cost=(j_poses[i-2+2]-2.0*j_poses[i+2-1]+j_poses[i+2]);
       cost_val+=wi*acc_cost.squaredNorm();
-      acc_cost=(j_poses[i+2+2]-2.0*j_poses[i+2+1]+j_poses[i+2]);
-      cost_val+=wi*acc_cost.squaredNorm();
+      //acc_cost=(j_poses[i+2+2]-2.0*j_poses[i+2+1]+j_poses[i+2]);
+      //cost_val+=wi*acc_cost.squaredNorm();
       debug_cost+=wi*acc_cost.squaredNorm();
       //cerr<<cost_val<<endl;
     }
-    
+
+
     cost_val+=wr*position_cost+wo*orientation_cost;
+    if(i==timesteps_-1)
+    {
+      cost_val+=wd*obj_pos_err.squaredNorm();
+      //cerr<<acc_cost.squaredNorm()<<endl;
+    }
   }
+  // The last timestep is also affected by the extrapolated joint positions:
+  int i=timesteps_;
+  acc_cost=(j_poses[i-2+2]-2.0*j_poses[i+2-1]+j_poses[i+2]);
+  cost_val+=wi*acc_cost.squaredNorm();
+  
+  //i=timesteps_+1;
+  //acc_cost=(j_poses[i-2+2]-2.0*j_poses[i+2-1]+j_poses[i+2]);
+  //cerr<<acc_cost.squaredNorm()<<endl;
+  //cost_val+=wi*acc_cost.squaredNorm();
+  
+  
   //cerr<<tot_pos_cost<<endl;
   //cerr<<debug_cost<<endl;
   return cost_val;
@@ -254,7 +275,6 @@ vector<double> optProblem::objGradient(vector<double> x) const
   vector<Eigen::VectorXd> j_poses;
   j_poses.push_back(j_0);
   j_poses.push_back(j_0);
-
   // store finger pose and Jacobian for min acceleration cost:
   for(int i=0;i<timesteps_;++i)
   {
@@ -263,6 +283,12 @@ vector<double> optProblem::objGradient(vector<double> x) const
       q[j]=x[(i)*robot_kdl_.dof+j];
     }
     Map<Eigen::VectorXd> j_pose(&q[0],q.size());
+    if(i==0)
+    {
+      //j_poses.push_back(j_pose);
+      //j_poses.push_back(j_pose);
+    }
+
     j_poses.push_back(j_pose);
   }
   j_poses.push_back(j_poses[timesteps_+1]);
@@ -362,8 +388,8 @@ vector<double> optProblem::objGradient(vector<double> x) const
     {
       Eigen::VectorXd acc_cost(16);
       Eigen::VectorXd grad;
-      acc_cost=wi*(j_poses[i-2+2]-2.0*j_poses[i+2-1]+j_poses[i+2]);
-      if(i<timesteps_-1)
+      acc_cost=wi*(j_poses[i-2+2]-2.0*j_poses[i-1+2]+j_poses[i+2]);
+      if(i<timesteps_)
       {
 	grad=2.0*acc_cost;
 	for (int j=0;j<16;++j)
@@ -389,9 +415,38 @@ vector<double> optProblem::objGradient(vector<double> x) const
           retval[j+robot_kdl_.dof*(i-1)]+=grad[j];
         }
       }
+
+      if(i==timesteps_-1)
+      {
+        
+        acc_cost=wi*(j_poses[i-2+2+1]-2.0*j_poses[i+2-1+1]+j_poses[i+2+1]);
+
+        grad=2.0*acc_cost;
+        for (int j=0;j<16;++j)
+        {
+          retval[j+robot_kdl_.dof*(i-1)]+=grad[j];
+        }
+        
+        grad=-4.0*acc_cost;
+	for (int j=0;j<16;++j)
+	{
+	  retval[j+robot_kdl_.dof*(i)]+=grad[j];
+	}
+        /*
+        acc_cost=wi*(j_poses[i-2+2+2]-2.0*j_poses[i+2-1+2]+j_poses[i+2+2]);
+        grad=2.0*acc_cost;
+	for (int j=0;j<16;++j)
+	{
+	  //retval[j+robot_kdl_.dof*(i)]+=grad[j];
+	}
+        */
+
+      }
+
       // forward:
-      acc_cost=wi*(j_poses[i+2+2]-2.0*j_poses[i+2+1]+j_poses[i+2]);
-      if(i<timesteps_-1)
+      //acc_cost=wi*(j_poses[i+2+2]-2.0*j_poses[i+1+2]+j_poses[i+2]);
+      /*
+      if(i<timesteps_)
       {
 	grad=2.0*acc_cost;
 	for (int j=0;j<16;++j)
@@ -400,7 +455,8 @@ vector<double> optProblem::objGradient(vector<double> x) const
 	}
 
       }
-      if(i<timesteps_-3)//3?
+
+      if(i<timesteps_-2)//3?
       {
         grad=2.0*acc_cost;
         for (int j=0;j<16;++j)
@@ -409,7 +465,7 @@ vector<double> optProblem::objGradient(vector<double> x) const
 	}
 
       }
-      if(i<timesteps_-2)
+      if(i<timesteps_-1)
       {
         grad=-4.0*acc_cost;
         for (int j=0;j<16;++j)
@@ -417,6 +473,7 @@ vector<double> optProblem::objGradient(vector<double> x) const
           retval[j+robot_kdl_.dof*(i+1)]+=grad[j];
         }
       }
+      */
 
     }
     fill(gradient.begin(), gradient.end(), 0.0);

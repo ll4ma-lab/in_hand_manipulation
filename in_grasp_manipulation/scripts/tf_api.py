@@ -6,7 +6,7 @@ import numpy as np
 import copy
 from geometry_msgs.msg import PoseStamped,Pose
 import matplotlib.pyplot as plt
-
+twoui=['#fc8d59','#d7301f']
 params = {'legend.fontsize': 'x-large',
           'figure.figsize': (15, 5),
          'axes.labelsize': 'x-large',
@@ -75,18 +75,24 @@ class poseAPI:
         style=['-','--']
         for i in range(len(pose_arr_list)):
             acc_,vel_=self.compute_acceleration(pose_arr_list[i])
-            plt.subplot(2, 1, 1)
-            plt.plot(vel_,style[i],label=labels[i],linewidth=3)
-            plt.xlabel('Timesteps(s)')
-            plt.ylabel('l-2 norm(velocity)')
-            plt.ylim(ymin=0.0)
+            #plt.subplot(2, 1, 1)
+            plt.plot(vel_,style[i],label=labels[i],linewidth=4,color=twoui[i])
+            plt.xlabel('Timestep')
+            plt.ylabel('l-2 norm velocity ($cm s^{-1}$)')
+          
+            '''
             plt.subplot(2, 1, 2)
-            plt.plot(acc_,style[i],label=labels[i],linewidth=3)
+            plt.plot(acc_,style[i],label=labels[i],linewidth=4,color=twoui[i])
             plt.ylim(ymin=0.0)
             plt.xlabel('Timesteps(s)')
-            plt.ylabel('l-2 norm(acceleration)')
-        
-        plt.legend()
+            plt.ylabel('l-2 norm acceleration ($cm s^{-2}$)')
+            '''
+        plt.ylim(ymin=0.0)
+        #plt.subplot(2, 1, 1)
+        plt.grid()
+        plt.legend(loc='upper center',bbox_to_anchor=(0.5, 1.11),ncol=5, fancybox=False, shadow=False)
+        #plt.subplot(2, 1, 2)
+
         plt.show()
     def compute_acceleration(self,pose_arr):
         pos_arr=[]
@@ -98,10 +104,11 @@ class poseAPI:
         vel_prof=[]
         for t in range(1,len(pos_arr)-1):
             acc=pos_arr[t-1]-2.0*pos_arr[t]+pos_arr[t+1]
-            acc_prof.append(np.linalg.norm(acc,1))
+            acc_prof.append(np.linalg.norm(acc,2)*100.0)
             
         for t in range(1,len(pos_arr)):
             vel=-pos_arr[t-1]+pos_arr[t]
-            vel_prof.append(np.linalg.norm(vel,1))
+            vel_prof.append(np.linalg.norm(vel,2)*100.0)
 
         return acc_prof,vel_prof
+

@@ -116,7 +116,7 @@ void hand_controller::mpcController::run_controller()
     Eigen::VectorXd obj_fb=-1.0*J.transpose()*(f_err_v);
     for(int i=0;i<4;++i)
     {
-      js_fb[4*3+i]+=obj_gain*obj_fb[i];
+      js_fb[4*3+i]=obj_gain*obj_fb[i];
     }
     
     // publish trajectory:

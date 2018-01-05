@@ -22,6 +22,7 @@ add_service_files(
   FILES
   RunMPC.srv
   GetHandIK.srv
+  PrecisionGrasp.srv
   )
 
 generate_messages(

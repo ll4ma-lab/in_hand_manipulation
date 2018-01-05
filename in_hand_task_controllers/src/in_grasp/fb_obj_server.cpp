@@ -11,10 +11,11 @@ void hand_controller::mpcController::run_controller()
   int t=0;
   // get initial rigid frame:
   get_object_pose();
-  js_gain=0.8;
-  obj_gain=0.0;
+  js_gain=0.3;
+  obj_gain=50.0;
   float obj_err_data,final_obj_err_data;
   obj_err_data=0.0;
+  Eigen::MatrixXd J;
   while (n_->ok() && t<T)
   {
     updateState();
@@ -42,7 +43,8 @@ void hand_controller::mpcController::run_controller()
 
     // jacobian of thumb:
     vector<double> q(&curr_js[12],&curr_js[12]+4);
-    Eigen::MatrixXd J=hand_kdl->getJacobian(3,q);
+    
+    hand_kdl->getJacobian(3,q,J);
 
     // observed rigid transform thumb_T_obj:
 
@@ -59,7 +61,7 @@ void hand_controller::mpcController::run_controller()
       q_des[i]+=j_des[t+1][3*4+i]-j_des[t][3*4+i];
     }
     
-    Eigen::MatrixXd f_mat=hand_kdl->getFKEigen(3,q_des);
+    Eigen::MatrixXd f_mat=hand_kdl->getFKEigen(3,q_des,f_mat);
     
     Eigen::MatrixXd cur_obj_pose=f_mat;
     
@@ -115,7 +117,7 @@ void hand_controller::mpcController::run_controller()
     Eigen::VectorXd obj_fb=-1.0*J.transpose()*(f_err_v);
     for(int i=0;i<4;++i)
     {
-      //js_fb[4*3+i]=obj_gain*obj_fb[i];
+      js_fb[4*3+i]=obj_gain*obj_fb[i];
     }
     
     // publish trajectory:

@@ -324,9 +324,9 @@ vector<double> optProblem::objGradient(vector<double> x) const
     delta_mat(1,3)=delta_p[0];
     delta_mat(2,3)=delta_p[0];
     Eigen::MatrixXd grad_mat=delta_mat*data_mats_[data_mats_.size()-1];
-    obj_pose_err[0]+=100.0*grad_mat(0,3);
-    obj_pose_err[1]+=100.0*grad_mat(1,3);
-    obj_pose_err[2]+=100.0*grad_mat(2,3);
+    obj_pose_err[0]+=1000.0*grad_mat(0,3);
+    obj_pose_err[1]+=1000.0*grad_mat(1,3);
+    obj_pose_err[2]+=1000.0*grad_mat(2,3);
 
     
     if(i==timesteps_-1)

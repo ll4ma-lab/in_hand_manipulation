@@ -1,0 +1,7 @@
+float64 vel_thresh
+float64 pressure_thresh
+sensor_msgs/JointState des_joint_st
+bool BIOTAC
+---
+sensor_msgs/JointState reached_js
+float64[] reached_biotac_pressure
