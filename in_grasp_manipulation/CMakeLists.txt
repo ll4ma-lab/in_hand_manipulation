@@ -5,10 +5,7 @@ project(in_grasp_manipulation)
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
 ## System dependencies are found with CMake's conventions
-#find_package(Boost 1.61 REQUIRED COMPONENTS system filesystem)
-set(BOOST_ROOT /home/bala/local/)
 
-find_package(Boost 1.61 REQUIRED COMPONENTS system filesystem)
 find_package(Pagmo REQUIRED)
 #find_package(ccd REQUIRED)
 #set(CCD_INCLUDE_DIRS /home/bala/local/include)
@@ -29,7 +26,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   in_hand_manipulation_msgs
   trajectory_msgs
-  ll4ma_planner
+  in_hand_manipulation
   pcl_mesh_tools
 )
 
@@ -58,7 +55,7 @@ generate_messages(
  )
 
 catkin_package(
-  CATKIN_DEPENDS std_msgs roscpp sensor_msgs ll4ma_planner message_generation
+  CATKIN_DEPENDS std_msgs roscpp sensor_msgs in_hand_manipulation message_generation
 )
 include_directories(
   ${catkin_INCLUDE_DIRS}
@@ -71,40 +68,40 @@ set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRA
 add_library(in_grasp_planner STATIC src/problems/in_grasp.cpp)
 target_link_libraries(in_grasp_planner ${catkin_LIBRARIES})
 
-add_library(in_grasp_min_acc_obj STATIC src/problems/in_grasp_obj_smooth.cpp)
-target_link_libraries(in_grasp_min_acc_obj ${catkin_LIBRARIES})
+#add_library(in_grasp_min_acc_obj STATIC src/problems/in_grasp_obj_smooth.cpp)
+#target_link_libraries(in_grasp_min_acc_obj ${catkin_LIBRARIES})
 
-add_library(in_grasp_min_acc_joint STATIC src/problems/in_grasp_joint_smooth.cpp)
-target_link_libraries(in_grasp_min_acc_joint ${catkin_LIBRARIES})
+#add_library(in_grasp_min_acc_joint STATIC src/problems/in_grasp_joint_smooth.cpp)
+#target_link_libraries(in_grasp_min_acc_joint ${catkin_LIBRARIES})
 
 add_library(in_grasp_sim STATIC src/in_grasp_manipulation/in_grasp_sim.cc)
 target_link_libraries(in_grasp_sim ${catkin_LIBRARIES})
 
-add_library(in_grasp_collision STATIC src/problems/in_grasp_collision.cpp)
-target_link_libraries(in_grasp_collision ${catkin_LIBRARIES})
+#add_library(in_grasp_collision STATIC src/problems/in_grasp_collision.cpp)
+#target_link_libraries(in_grasp_collision ${catkin_LIBRARIES})
 
 add_executable(in_grasp_server src/in_grasp_server.cpp)
 target_link_libraries(in_grasp_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_planner)
 
-add_executable(in_grasp_mpc_server src/in_grasp_mpc_server.cpp)
-target_link_libraries(in_grasp_mpc_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_planner)
+#add_executable(in_grasp_mpc_server src/in_grasp_mpc_server.cpp)
+#target_link_libraries(in_grasp_mpc_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_planner)
 
-add_executable(in_grasp_metrics_server src/in_grasp_metrics.cpp)
-target_link_libraries(in_grasp_metrics_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_planner)
+#add_executable(in_grasp_metrics_server src/in_grasp_metrics.cpp)
+#target_link_libraries(in_grasp_metrics_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_planner)
 
-add_executable(in_grasp_obj_server src/in_grasp_min_acc_server.cpp)
-target_link_libraries(in_grasp_obj_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_min_acc_obj)
+#add_executable(in_grasp_obj_server src/in_grasp_min_acc_server.cpp)
+#target_link_libraries(in_grasp_obj_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_min_acc_obj)
 
-add_executable(in_grasp_joint_server src/in_grasp_min_acc_server.cpp)
-target_link_libraries(in_grasp_joint_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_min_acc_joint)
+#add_executable(in_grasp_joint_server src/in_grasp_min_acc_server.cpp)
+#target_link_libraries(in_grasp_joint_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_min_acc_joint)
 
 add_executable(simulation src/in_grasp_simulation.cpp)
 target_link_libraries(simulation ${catkin_LIBRARIES} in_grasp_sim)
 
 
 
-add_executable(collision_server src/in_grasp_collision_server.cpp)
-target_link_libraries(collision_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_collision)
+#add_executable(collision_server src/in_grasp_collision_server.cpp)
+#target_link_libraries(collision_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_collision)
 
 #add_executable(one_step_mpc src/controllers/one_step_mpc.cpp)
 #target_link_libraries(one_step_mpc ${catkin_LIBRARIES})

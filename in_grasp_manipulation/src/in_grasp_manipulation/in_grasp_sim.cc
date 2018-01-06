@@ -28,12 +28,15 @@ void robotSim::jntCallback(sensor_msgs::JointState j)
 void inGraspSim::update_in_grasp_state()
 {
   // get thumb pose
-  vector<double> th_joints;
+  Eigen::VectorXd th_joints;
+  th_joints.resize(4);
+  vector<double> obj_pose_rpy;
   for(int i=0;i<4;++i)
   {
-    th_joints.emplace_back(curr_js_.position[r_f*4+i]);
+    th_joints[i]=curr_js_.position[r_f*4+i];
   }
-  Eigen::MatrixXd p_T_th=hand_kdl.getFKEigen(r_f,th_joints);
+  Eigen::MatrixXd p_T_th;
+  hand_kdl.getFK(r_f,th_joints,p_T_th);
   if(new_jcmd)
   {
    
@@ -41,7 +44,7 @@ void inGraspSim::update_in_grasp_state()
   }
   // get object pose
   Eigen::MatrixXd mat=p_T_th*th_T_obj;
-  vector<double> obj_pose_rpy=hand_kdl.frame_to_pose_(mat,true);
+  hand_kdl.frame_to_pose_(mat,obj_pose_rpy,true);
 
   // Add noise:
   for(int i=0;i<6;++i)
@@ -76,12 +79,16 @@ bool inGraspSim::setup_object(in_grasp_manipulation::InGraspSim::Request& req, i
   
   // Get thumb pose
   r_f=req.rigid_finger;
-  vector<double> th_joints;
+  
+  Eigen::VectorXd th_joints;
+  th_joints.resize(4);
+
+  Eigen::MatrixXd p_T_th;
   for(int i=0;i<4;++i)
   {
-    th_joints.emplace_back(req.init_joints.position[r_f*4+i]);
+    th_joints[i]=req.init_joints.position[r_f*4+i];
   }
-  Eigen::MatrixXd p_T_th=hand_kdl.getFKEigen(r_f,th_joints);
+  hand_kdl.getFK(r_f,th_joints,p_T_th);
   
   // Get initial object to thumb frame:
   tf::Pose init_pose;
@@ -147,7 +154,8 @@ void inGraspSim::publish_state()
     obj_pose_msg.header.stamp=ros::Time::now();
     obj_pub.publish(obj_pose_msg);
     // publish tf:
-    vector<double> rigid_frame= hand_kdl.frame_to_pose_(th_T_obj);
+    vector<double> rigid_frame;
+    hand_kdl.frame_to_pose_(th_T_obj,rigid_frame);
     static tf::TransformBroadcaster br;
     tf::Transform transform;
     transform.setOrigin( tf::Vector3(obj_pose_msg.pose.position.x,obj_pose_msg.pose.position.y, obj_pose_msg.pose.position.z) );

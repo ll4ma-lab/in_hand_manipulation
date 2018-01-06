@@ -66,7 +66,7 @@ class pdData:
         df_.to_csv(f_name,index=False)
         
 class inGraspPipeline:
-    def __init__(self,publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right', init_node=False, node_name='in_grasp_pipeline',weights=[0.01,100.0,1.0,0.1,0.4]):
+    def __init__(self,publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right', init_node=False, node_name='in_grasp_pipeline',weights=[0.001,10.0,10.0,0.01,0.4]):
         if(init_node):
             rospy.init_node(node_name)
         self.viz_obj=viz_markers.VizInHand(init_node=False)
@@ -117,7 +117,7 @@ class inGraspPipeline:
             else:
                 des_pose_arr.append(Pose())
 
-        
+        '''
         
         # IK
         j_init,j_traj=self.ik_server.call_server(js_j0,des_pose_arr,fingers)
@@ -129,6 +129,7 @@ class inGraspPipeline:
         weights[-1]=100.0
         f_j=j_traj.points[-1].positions
         j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose, des_obj_pose, weights, fingers, T=1, final_joints=f_j,initialize_opt=True)
+        '''
         
         '''
 
@@ -139,13 +140,13 @@ class inGraspPipeline:
         '''
         print "Calling min acc"
 
-        f_j=j_traj.points[-1].positions
+        f_j=[]#j_traj.points[-1].positions
         weights=copy.deepcopy(self.weights)
         #weights[1]=0.0
         #weights[0]=0.0
-        weights[3]=0.01
-        weights[2]=10.0
-        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=f_j,srv_topic="/in_hand/primitive/in_grasp_min_acc")
+        #weights[3]=0.01
+        #weights[2]=10.0
+        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=f_j,srv_topic="/in_hand/primitive/in_grasp_manipulation")
         '''
         #j_traj_rr=j_traj
         #obj_traj_rr=obj_traj
@@ -159,11 +160,16 @@ class inGraspPipeline:
 
         exit()
         '''
+
         plan_time=time.time()-start
         print 'time:'+str(time.time()-start)
+        print j_traj
+        self.traj_server.viz_joint_traj(j_traj,base_link='allegro_mount')
+        #return j_traj,obj_traj,obj_traj_rr,j_tra
+        exit()
         weights=copy.deepcopy(self.weights)
         f_j=j_traj.points[-1].positions
-        init_traj=j_traj
+        init_traj=JointTrajectory()
         _,_,_,rr_metrics=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=f_j,srv_topic='/in_hand/primitive/in_grasp_manipulation/metrics',initial_j_traj=j_traj)
 
         
@@ -890,7 +896,8 @@ def vis_traj(FROM_FILE=True):
         # publish desired and initial object pose as tf?
         
         in_grasp_pip.traj_server.viz_joint_traj(j_traj,base_link='allegro_mount')
-        #in_grasp_pip.j_pub.publish(j_traj)
+        
+        in_grasp_pip.j_pub.publish(j_traj)
         r.sleep()
         i+=1
     #in_grasp_pip.pose_api.plot_acc_profiles([obj_traj_rr,obj_traj],['min_acc','obj_interpol'])
@@ -1041,14 +1048,14 @@ if __name__=='__main__':
     #in_grasp_pip=inGraspPipeline(init_node=True)
     #in_grasp_pip.read_objects()
     #get_trajectories()
-    #vis_traj(False)
+    vis_traj(False)
     #run_mpc(FROM_FILE=True)
     #run_open_loop()
     #run_open_loop_test()
     #in_grasp_pip=inGraspPipeline(init_node=True,publish_prefix='/allegroHand_0',listen_prefix='/allegroHand_0')
     #waypoint_exp()
     #vis_traj()
-    run_waypoint()
+    #run_waypoint()
     #run_waypoint_test()
     #mpc_exp()
     #mpc_sim_exp()

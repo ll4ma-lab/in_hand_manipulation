@@ -4,9 +4,7 @@ project(in_hand_manipulation)
 add_compile_options(-std=c++11)
 
 
-set(BOOST_ROOT /home/bala/local/)
 ## System dependencies are found with CMake's conventions
-find_package(Boost 1.61 REQUIRED COMPONENTS system filesystem)
 find_package(Pagmo REQUIRED)
 find_package(ccd REQUIRED)
 
@@ -19,9 +17,10 @@ find_package(catkin REQUIRED COMPONENTS
   roslib
   sensor_msgs
   std_msgs
-  ll4ma_planner
+  optimization_pkg
   in_hand_manipulation_msgs
-)
+  ll4ma_kdl
+  )
 find_package(Eigen3 REQUIRED)
 
 #add_service_files(
@@ -45,15 +44,16 @@ find_package(Eigen3 REQUIRED)
 #  )
 
 catkin_package(
-  # INCLUDE_DIRS include
+   INCLUDE_DIRS include
   # LIBRARIES in_hand_manipulation
-  CATKIN_DEPENDS std_msgs roscpp sensor_msgs
+  CATKIN_DEPENDS std_msgs roscpp sensor_msgs optimization_pkg ll4ma_kdl
   #DEPENDS system_lib
 )
 
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
   /home/bala/pkgs/pagmo_plugins_nonfree/include
   ${Boost_INCLUDE_DIRS}
   )

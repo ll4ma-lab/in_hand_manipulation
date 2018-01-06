@@ -1,6 +1,7 @@
 #define SPARSE_GRADIENT true
 // optimization:
-#include <ll4ma_planner/pagmo_opt/trajectory_optimization.hpp>
+#include <in_grasp_manipulation/problems/opt_problem.hpp>
+#include <in_hand_manipulation/pagmo_opt/trajectory_optimization.hpp>
 
 //#include <ll4ma_planner/wrapper/pagmo_wrapper.hpp>
 // ROS:
@@ -19,7 +20,7 @@ using namespace pagmo;
 bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_grasp_manipulation::InGraspManipulation::Response &res)
 {
   // Allegro URDF file:
-  // TODO: ros::package segfaults, fix!
+  
   string urdf_file="/home/bala/catkin_ws/src/in_hand_manipulation/in_grasp_manipulation/urdf/allegro.urdf";
 
   // Load allegro kdl object:
@@ -31,30 +32,21 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   allegro_kdl.urdfParser();
   // Getting parameters from service request:
 
-  vector<double> joints_0;
-  vector<double> final_joints;
-  vector<Eigen::MatrixXd> data_mat;
-  joints_0.resize(16);
-  final_joints.resize(16);
-  for(int i=0;i<req.init_joints.position.size();++i)
-  {
-    joints_0[i]=req.init_joints.position[i];
-  }
-  
+  Map<Eigen::VectorXd> joints_0(&req.init_joints.position[0],req.init_joints.position.size());
+  Eigen::VectorXd final_joints;
   if(req.final_joints.position.size()!=0)
   {
-    for(int i=0;i<req.init_joints.position.size();++i)
-    {
-      final_joints[i]=req.final_joints.position[i];
-    }
+    Map<Eigen::VectorXd> final_joints(&req.final_joints.position[0],req.final_joints.position.size());
   }
   else
   {
-    final_joints=joints_0;
+    Map<Eigen::VectorXd> final_joints(&req.init_joints.position[0],req.init_joints.position.size());
   }
-    
+
+  vector<Eigen::MatrixXd> data_mat;
   vector<vector<double>> data_arr;
 
+  
   // Get initial object to thumb frame:
   tf::Pose init_pose;
   tf::poseMsgToTF(req.object_pose,init_pose);
@@ -75,12 +67,9 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   obj_mat(2,3)=req.object_pose.position.z;
 
   
-  vector<double> thumb_joints;
-  thumb_joints.push_back(joints_0[12]);
-  thumb_joints.push_back(joints_0[13]);
-  thumb_joints.push_back(joints_0[14]);
-  thumb_joints.push_back(joints_0[15]);
-  Eigen::MatrixXd thumb_mat=allegro_kdl.getFKEigen(3,thumb_joints);
+
+  Eigen::MatrixXd thumb_mat;
+  allegro_kdl.getFK(3,joints_0.segment(12,4),thumb_mat);
   
   Eigen::MatrixXd obj_offset=thumb_mat.inverse()*obj_mat;
   
@@ -133,29 +122,32 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   data_arr[1]=weights;
   data_arr[2]=r_fin;
   data_arr[3]=fingers_d;
-
-  vector<double> thumb_pose_arr=allegro_kdl.getFK(r_f,thumb_joints,true);
+  
+  Eigen::VectorXd thumb_pose;
+  
+  allegro_kdl.getFK(r_f,joints_0.segment(12,4),thumb_pose,true);
+  vector<double> thumb_pose_arr(thumb_pose.data(),thumb_pose.data()+thumb_pose.size());
+  
   data_arr[4+fingers.size()]=thumb_pose_arr;
-
-  Map<Eigen::VectorXd> thumb_pose(&thumb_pose_arr[0],thumb_pose_arr.size());;
   // compute offsets in thumb frame:
   // thumb matrix w_T_th=thumb_mat
   //compute inverse:
   Eigen::MatrixXd thumb_inv=thumb_mat.inverse();
+  Eigen::VectorXd f_pose;
+  Eigen::MatrixXd f_mat;
+  vector<double> orient_offset;
   for(int i=0;i<fingers.size();++i)
   {
     int f=int(fingers_d[i]);
     // get joint angles for finger f:
-    vector<double> f_joints(&joints_0[f*4],&joints_0[f*4+4]);
-
     //get finger mat w_T_f
-    Eigen::MatrixXd f_mat=allegro_kdl.getFKEigen(f,f_joints);
+    allegro_kdl.getFK(f,joints_0.segment(f*4,4),f_mat);
 
     // Compute offset matrix:
     Eigen::MatrixXd offset_mat=thumb_inv*f_mat;
     data_mat.push_back(offset_mat);
-    vector<double> f_pose_arr=allegro_kdl.getFK(f,f_joints,true);
-    Map<Eigen::VectorXd> f_pose(&f_pose_arr[0],f_pose_arr.size());
+    allegro_kdl.getFK(f,joints_0.segment(f*4,4),f_pose,true);
+    
     Eigen::VectorXd pose_diff=thumb_pose-f_pose;
     vector<double> position_offset;
     position_offset.resize(pose_diff.size());
@@ -167,9 +159,10 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
     // Compute orientation offset:
 
     vector<double> thumb_orient(thumb_pose_arr.data()+3, thumb_pose_arr.data()+6);
-    vector<double> f_orient(f_pose_arr.data()+3, f_pose_arr.data()+6);
+    vector<double> f_orient(f_pose.data()+3, f_pose.data()+6);
     
-    vector<double> orient_offset=allegro_kdl.euler_diff(f_orient,thumb_orient);
+    allegro_kdl.euler_diff(f_orient,thumb_orient,orient_offset);
+    
     //orient_offset.resize(pose_diff.size());
     //VectorXd::Map(&orient_offset[0], pose_diff.size()) = pose_diff;
     pose_diff[3]=orient_offset[0];
@@ -189,28 +182,34 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   vel_limits.resize(16,req.weights[4]);
   int t_steps_=req.T;
   // Creating opt problem instance:
-  opt_problems::optProblem opt_problem(t_steps_,allegro_kdl,data_arr,data_mat,vel_limits,joints_0);
+  cerr<<"creating opt problem"<<endl;
+  vector<double> j0(joints_0.data(),joints_0.data()+joints_0.size());
+  opt_problems::optProblem opt_problem(t_steps_,allegro_kdl,data_arr,data_mat,vel_limits,j0);
 
   problem prob{trajectory_optimization{opt_problem}};
   vector<double> tol(16*(t_steps_),1e-3);
  
   prob.set_c_tol(tol);
-  
-  algorithm algo{snopt7(false,"/usr/local/lib/")};
+  pagmo::snopt7 sn_v(false,"/usr/local/lib/");
+  sn_v.set_numeric_option("Major optimality tolerance",1e-4); 
+
+  algorithm algo{sn_v};
+  algo.set_verbosity(100);
   //algorithm algo{cmaes(500)};
+  cerr<<"Creating pop"<<endl;
   population pop{prob,1u};
-
+  
   vector<double> x_in(16*t_steps_,0.0);
-
+  cerr<<"created pop"<<endl;
   // seed using final joint angles IK:
   for(int i=0;i<t_steps_;++i)
   {    
     for (int j=0;j<16;++j)
     {
-      x_in[i*16+j]=joints_0[j]+(final_joints[j]-joints_0[j])*(i+1)/(t_steps_);
+      x_in[i*16+j]=joints_0[j];//+(final_joints[j]-joints_0[j])*(i+1)/(t_steps_);
     }
   }
-
+  cerr<<"created pop"<<endl;
   // seed using previous joint trajectory:
   if(req.initial_jtraj.points.size()==t_steps_+1)
   {
@@ -223,8 +222,9 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
       }
     }
   }
-
+  cerr<<"checking initial cost"<<endl;
   vector<double> f_in=prob.fitness(x_in);
+  cerr<<"Initial fitness: "<<f_in[0]<<endl;
   if(req.initialize_opt==true)
   {
     pop.set_xf(0,x_in,f_in);
@@ -250,7 +250,7 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
 
   j_arr.resize(16);
   trajectory_msgs::JointTrajectoryPoint jt_pt;
-  jt_pt.positions=joints_0;
+  jt_pt.positions=j0;
   joint_traj.points.push_back(jt_pt);
   
   
@@ -267,14 +267,11 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   res.joint_traj=joint_traj;
 
   // new object pose:
-  thumb_joints.clear();
-  thumb_joints.push_back(j_arr[12]);
-  thumb_joints.push_back(j_arr[13]);
-  thumb_joints.push_back(j_arr[14]);
-  thumb_joints.push_back(j_arr[15]);
-  thumb_mat=allegro_kdl.getFKEigen(3,thumb_joints);
+  Map<Eigen::VectorXd> th_j(&j_arr[12],4);
+  allegro_kdl.getFK(3,th_j,thumb_mat);
   Eigen::MatrixXd  n_object_pose=thumb_mat*obj_offset;
-  vector<double> n_pose=allegro_kdl.frame_to_pose_(n_object_pose,false);
+  vector<double> n_pose;
+  allegro_kdl.frame_to_pose_(n_object_pose,n_pose,false);
   /*
   // convert object frame to pose:
   tf::Matrix3x3 R_(n_object_pose(0,0), n_object_pose(0,1), n_object_pose(0,2),
@@ -300,16 +297,10 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   obj_pose_traj.poses.resize((j_best.size()/16)+1);
   obj_pose_traj.header.frame_id="palm_link";
   // adding initial object pose:
-  thumb_joints.clear();
-  for (int j=4*r_f;j<4*r_f+4;++j)
-  {
-    thumb_joints.push_back(joints_0[j]);
 
-  }
-
-  thumb_mat=allegro_kdl.getFKEigen(3,thumb_joints);
+  allegro_kdl.getFK(3,joints_0.segment(12,4),thumb_mat);
   n_object_pose=thumb_mat*obj_offset;
-  n_pose=allegro_kdl.frame_to_pose_(n_object_pose,false);
+  allegro_kdl.frame_to_pose_(n_object_pose,n_pose,false);
   
   obj_pose_traj.poses[0].position.x=n_pose[0];
   obj_pose_traj.poses[0].position.y=n_pose[1];
@@ -318,20 +309,22 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   obj_pose_traj.poses[0].orientation.y=n_pose[4];
   obj_pose_traj.poses[0].orientation.z=n_pose[5];
   obj_pose_traj.poses[0].orientation.w=n_pose[6];
-  
+
+  Eigen::VectorXd thumb_joints;
+  thumb_joints.resize(4);
   for (int i=0;i<j_best.size()/16;i++)
   {
-    
-    thumb_joints.clear();
+   
+    thumb_joints.setZero();
     for (int j=4*r_f;j<4*r_f+4;++j)
     {
-      thumb_joints.push_back(j_best[i*16+j]);
+      thumb_joints[j-4*r_f]=j_best[i*16+j];
 
     }
 
-    thumb_mat=allegro_kdl.getFKEigen(3,thumb_joints);
+    allegro_kdl.getFK(3,thumb_joints,thumb_mat);
     n_object_pose=thumb_mat*obj_offset;
-    n_pose=allegro_kdl.frame_to_pose_(n_object_pose,false);
+    allegro_kdl.frame_to_pose_(n_object_pose,n_pose,false);
   
     obj_pose_traj.poses[i+1].position.x=n_pose[0];
     obj_pose_traj.poses[i+1].position.y=n_pose[1];
