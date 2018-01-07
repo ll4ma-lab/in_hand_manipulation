@@ -10,7 +10,7 @@ optProblem::optProblem(int dummy)
 }
 
 // Initializer
-optProblem::optProblem(int time_steps, manipulator_kdl::robotKDL &robot_kdl,vector<double> weights, vector<Eigen::VectorXd> &des_poses_, vector<double> vel_limits, vector<double> init_joint_angles, vector<int> fingers)
+optProblem::optProblem(int time_steps, manipulator_kdl::robotKDL &robot_kdl,vector<double> weights, vector<vector<Eigen::VectorXd>> &des_poses_, vector<double> vel_limits, vector<double> init_joint_angles, vector<int> fingers)
 {
   m_dim=robot_kdl.dof*time_steps;
   m_nec=0;//robot_kdl.dof;
@@ -21,7 +21,7 @@ optProblem::optProblem(int time_steps, manipulator_kdl::robotKDL &robot_kdl,vect
   vel_lim=vel_limits[0];
   wd=weights[0];
   wa=weights[1];
-  des_poses=des_poses_;
+  des_f_poses_=des_poses_;
   fingers_=fingers;
   // given initial object pose and desired object pose:
   
@@ -86,15 +86,15 @@ double optProblem::objFunction(const vector<double> x) const
       robot_kdl_->getFK(f,q.segment(f*4,4),ee_pose,true);
     
       vector<double> o_1(ee_pose.data()+3, ee_pose.data()+6);
-      vector<double> o_d(des_poses[i].data()+3, des_poses[i].data()+6);
+      vector<double> o_d(des_f_poses_[j][i].data()+3, des_f_poses_[j][i].data()+6);
       
       // object pose error:
       
-      obj_pos_err=des_poses[i]-ee_pose;
+      obj_pos_err=des_f_poses_[j][i]-ee_pose;
       robot_kdl_->euler_diff(o_1,o_d,o_err);
-      obj_pos_err[3]=o_err[0]*0.1;
-      obj_pos_err[4]=o_err[1]*0.1;
-      obj_pos_err[5]=o_err[2]*0.1;
+      obj_pos_err[3]=o_err[0]*0.0;
+      obj_pos_err[4]=o_err[1]*0.0;
+      obj_pos_err[5]=o_err[2]*0.0;
 
     }   
     // min_acceleration cost:
@@ -166,16 +166,16 @@ vector<double> optProblem::objGradient(vector<double> x) const
     
       // compute error using kdl:
       vector<double> o_1(ee_pose.data()+3, ee_pose.data()+6);
-      vector<double> o_d(des_poses[i].data()+3, des_poses[i].data()+6);
+      vector<double> o_d(des_f_poses_[j][i].data()+3, des_f_poses_[j][i].data()+6);
       
       robot_kdl_->euler_diff(o_1,o_d,o_err);
       
-      obj_pose_err=des_poses[i]-ee_pose;
+      obj_pose_err=des_f_poses_[j][i]-ee_pose;
 
       
-      obj_pose_err[3]=o_err[0]*0.1;
-      obj_pose_err[4]=o_err[1]*0.1;
-      obj_pose_err[5]=o_err[2]*0.1;
+      obj_pose_err[3]=o_err[0]*0.0;
+      obj_pose_err[4]=o_err[1]*0.0;
+      obj_pose_err[5]=o_err[2]*0.0;
       
       if(i==timesteps_-1)
       {

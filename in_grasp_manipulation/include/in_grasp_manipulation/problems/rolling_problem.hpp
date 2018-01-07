@@ -22,7 +22,7 @@ namespace opt_problems
   public:
     // constructor
     optProblem(int dummy);// dummy since pagmo requires default values for variables
-    optProblem(int time_steps, manipulator_kdl::robotKDL &robot_kdl, vector<double> weights, vector<Eigen::VectorXd> &des_pose, vector<double> vel_limits,vector<double> init_joint_angles,vector<int> fingers);
+    optProblem(int time_steps, manipulator_kdl::robotKDL &robot_kdl, vector<double> weights, vector<vector<Eigen::VectorXd>> &des_f_poses, vector<double> vel_limits,vector<double> init_joint_angles,vector<int> fingers);
     
     //optProblem(int time_steps,manipulator_kdl::robotKDL robot_kdl, vector<vector<double>> data_arr,vector<Eigen::MatrixXd> data_mats, vector<double> vel_limits,vector<double> init_joint_angles);
 
@@ -53,7 +53,7 @@ namespace opt_problems
     int timesteps_;
     double wa,wd;
     double vel_lim;
-    vector<Eigen::VectorXd> des_poses;
+    vector<vector<Eigen::VectorXd>> des_f_poses_;
     vector<int> fingers_;
     
   };
