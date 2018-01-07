@@ -35,7 +35,7 @@ double optProblem::objFunction(const vector<double> x) const
 {
   // Cost function is on reaching a desired cartesian pose 
   double cost_val=0.0;
-
+  
   Eigen::VectorXd q;
   vector<double> ee_pose_arr;
   Eigen::VectorXd obj_pos_err;

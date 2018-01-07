@@ -66,7 +66,7 @@ class pdData:
         df_.to_csv(f_name,index=False)
         
 class inGraspPipeline:
-    def __init__(self,publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right', init_node=False, node_name='in_grasp_pipeline',weights=[0.001,10.0,10.0,0.01,0.4]):
+    def __init__(self,publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right', init_node=False, node_name='in_grasp_pipeline',weights=[0.005,10.0,10.0,0.01,0.8]):
         if(init_node):
             rospy.init_node(node_name)
         self.viz_obj=viz_markers.VizInHand(init_node=False)

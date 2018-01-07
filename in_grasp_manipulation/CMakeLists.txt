@@ -68,11 +68,11 @@ set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRA
 add_library(in_grasp_planner STATIC src/problems/in_grasp.cpp)
 target_link_libraries(in_grasp_planner ${catkin_LIBRARIES})
 
-add_library(in_grasp_min_acc_obj STATIC src/problems/in_grasp_obj_smooth.cpp)
-target_link_libraries(in_grasp_min_acc_obj ${catkin_LIBRARIES})
+#add_library(in_grasp_min_acc_obj STATIC src/problems/in_grasp_obj_smooth.cpp)
+#target_link_libraries(in_grasp_min_acc_obj ${catkin_LIBRARIES})
 
-#add_library(in_grasp_min_acc_joint STATIC src/problems/in_grasp_joint_smooth.cpp)
-#target_link_libraries(in_grasp_min_acc_joint ${catkin_LIBRARIES})
+add_library(in_grasp_min_acc_joint STATIC src/problems/in_grasp_joint_smooth.cpp)
+target_link_libraries(in_grasp_min_acc_joint ${catkin_LIBRARIES})
 
 add_library(in_grasp_sim STATIC src/in_grasp_manipulation/in_grasp_sim.cc)
 target_link_libraries(in_grasp_sim ${catkin_LIBRARIES})
@@ -89,11 +89,11 @@ target_link_libraries(in_grasp_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp
 #add_executable(in_grasp_metrics_server src/in_grasp_metrics.cpp)
 #target_link_libraries(in_grasp_metrics_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_planner)
 
-add_executable(in_grasp_obj_server src/in_grasp_server.cpp)
-target_link_libraries(in_grasp_obj_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_min_acc_obj)
+#add_executable(in_grasp_obj_server src/in_grasp_server.cpp)
+#target_link_libraries(in_grasp_obj_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_min_acc_obj)
 
-#add_executable(in_grasp_joint_server src/in_grasp_min_acc_server.cpp)
-#target_link_libraries(in_grasp_joint_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_min_acc_joint)
+add_executable(in_grasp_joint_server src/in_grasp_server.cpp)
+target_link_libraries(in_grasp_joint_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_min_acc_joint)
 
 add_executable(simulation src/in_grasp_simulation.cpp)
 target_link_libraries(simulation ${catkin_LIBRARIES} in_grasp_sim)

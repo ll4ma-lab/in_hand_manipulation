@@ -191,7 +191,7 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
  
   prob.set_c_tol(tol);
   pagmo::snopt7 sn_v(false,"/usr/local/lib/");
-  sn_v.set_numeric_option("Major optimality tolerance",1e-4); 
+  sn_v.set_numeric_option("Major optimality tolerance",1e-3); 
 
   algorithm algo{sn_v};
   algo.set_verbosity(100);
@@ -202,6 +202,7 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   vector<double> x_in(16*t_steps_,0.0);
   cerr<<"created pop"<<endl;
   // seed using final joint angles IK:
+
   for(int i=0;i<t_steps_;++i)
   {    
     for (int j=0;j<16;++j)
