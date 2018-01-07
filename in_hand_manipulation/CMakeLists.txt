@@ -3,10 +3,13 @@ project(in_hand_manipulation)
 
 add_compile_options(-std=c++11)
 
+set(ccd_DIR $ENV{HOME}/local/lib/ccd/)
+find_package(ccd 2.0 EXACT REQUIRED)
+set(ccd_INCLUDE_DIRS $ENV{HOME}/local/include)
+set(ccd_LIBRARY_DIRS $ENV{HOME}/local/lib)
 
 ## System dependencies are found with CMake's conventions
 find_package(Pagmo REQUIRED)
-find_package(ccd REQUIRED)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)

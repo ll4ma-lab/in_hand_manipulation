@@ -1,6 +1,7 @@
 #define SPARSE_GRADIENT true
 // optimization:
-#include <ll4ma_planner/pagmo_opt/trajectory_optimization.hpp>
+#include <in_grasp_manipulation/problems/opt_problem.hpp>
+#include <in_hand_manipulation/pagmo_opt/trajectory_optimization.hpp>
 
 //#include <ll4ma_planner/wrapper/pagmo_wrapper.hpp>
 // ROS:
