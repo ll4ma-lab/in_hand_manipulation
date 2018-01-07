@@ -65,11 +65,8 @@ include_directories(
   )
 set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRARIES}  ${CMAKE_DL_LIBS})
 
-add_library(in_grasp_planner STATIC src/problems/in_grasp.cpp)
-target_link_libraries(in_grasp_planner ${catkin_LIBRARIES})
-
-#add_library(in_grasp_min_acc_obj STATIC src/problems/in_grasp_obj_smooth.cpp)
-#target_link_libraries(in_grasp_min_acc_obj ${catkin_LIBRARIES})
+add_library(rolling STATIC src/problems/in_grasp_rolling.cpp)
+target_link_libraries(rolling ${catkin_LIBRARIES})
 
 add_library(in_grasp_min_acc_joint STATIC src/problems/in_grasp_joint_smooth.cpp)
 target_link_libraries(in_grasp_min_acc_joint ${catkin_LIBRARIES})
@@ -81,45 +78,15 @@ target_link_libraries(in_grasp_sim ${catkin_LIBRARIES})
 #target_link_libraries(in_grasp_collision ${catkin_LIBRARIES})
 
 add_executable(in_grasp_server src/in_grasp_server.cpp)
-target_link_libraries(in_grasp_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_planner)
+target_link_libraries(in_grasp_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_min_acc_joint)
 
-#add_executable(in_grasp_mpc_server src/in_grasp_mpc_server.cpp)
-#target_link_libraries(in_grasp_mpc_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_planner)
-
-#add_executable(in_grasp_metrics_server src/in_grasp_metrics.cpp)
-#target_link_libraries(in_grasp_metrics_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_planner)
-
-#add_executable(in_grasp_obj_server src/in_grasp_server.cpp)
-#target_link_libraries(in_grasp_obj_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_min_acc_obj)
-
-add_executable(in_grasp_joint_server src/in_grasp_server.cpp)
-target_link_libraries(in_grasp_joint_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_min_acc_joint)
 
 add_executable(simulation src/in_grasp_simulation.cpp)
 target_link_libraries(simulation ${catkin_LIBRARIES} in_grasp_sim)
 
-
+add_executable(rolling_server src/rolling_server.cpp)
+target_link_libraries(rolling_server ${PAGMO_LIBS} ${catkin_LIBRARIES} rolling)
 
 #add_executable(collision_server src/in_grasp_collision_server.cpp)
 #target_link_libraries(collision_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_collision)
-
-#add_executable(one_step_mpc src/controllers/one_step_mpc.cpp)
-#target_link_libraries(one_step_mpc ${catkin_LIBRARIES})
-#add_library(in_grasp_sd_planner STATIC src/problems/in_grasp_gait.cpp)
-#target_link_libraries(in_grasp_sd_planner  ${PAGMO_LIBS} ${catkin_LIBRARIES})
-
-#add_library(in_grasp_rr_const STATIC src/problems/in_grasp_rr_const.cpp)
-#target_link_libraries(in_grasp_rr_const  ${PAGMO_LIBS} ${catkin_LIBRARIES} ccd)
-
-#add_library(in_grasp_gait_traj_planner STATIC src/problems/in_grasp_gait_traj.cpp)
-#target_link_libraries(in_grasp_gait_traj_planner  ${PAGMO_LIBS} ${catkin_LIBRARIES} ccd)
-
-#add_executable(in_grasp_sd_server src/in_grasp_sd_server.cpp)
-#target_link_libraries(in_grasp_sd_server ${PAGMO_LIBS}  ${catkin_LIBRARIES} in_grasp_sd_planner)
-
-#add_executable(in_grasp_reachable_server src/in_grasp_dpt_server.cpp)
-#target_link_libraries(in_grasp_reachable_server ${PAGMO_LIBS}  ${catkin_LIBRARIES} in_grasp_rr_const)
-
-#add_executable(in_grasp_gait_traj_server src/in_grasp_gait_traj_server.cpp)
-#target_link_libraries(in_grasp_gait_traj_server ${PAGMO_LIBS}  ${catkin_LIBRARIES} in_grasp_gait_traj_planner)
 
