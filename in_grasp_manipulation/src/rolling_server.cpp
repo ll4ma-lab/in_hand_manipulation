@@ -32,6 +32,7 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   allegro_kdl.urdfParser();
   // Getting parameters from service request:
 
+  cerr<<"Creating fingertip poses:"<<endl;
   Map<Eigen::VectorXd> joints_0(&req.init_joints.position[0],req.init_joints.position.size());
 
   Eigen::VectorXd initial_pose(6);
@@ -76,17 +77,21 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   des_obj_pose[2]=req.desired_object_pose.position.z;
   R_des.getRPY(des_obj_pose[3], des_obj_pose[4], des_obj_pose[5]);
   // linearly interpolate object poses:
+  cerr<<"linearly interpolating poses"<<endl;
   vector<Eigen::MatrixXd> lin_obj_pose;
   lin_obj_pose.resize(req.T);
   
   for(int i=0;i<req.T;++i)
   {
     //
-    Eigen::VectorXd c_pose=initial_pose+(des_obj_pose-initial_pose)*double(i)/double(req.T);
+    Eigen::VectorXd c_pose=initial_pose+(des_obj_pose-initial_pose)*double(i+1)/double(req.T);
+    //cerr<<c_pose<<endl;
     allegro_kdl.pose_to_frame(c_pose,lin_obj_pose[i]);
+    //cerr<<"stored frame"<<endl;
   }
   // Assuming the initial object pose is the centre of rotation of the object:
   // Build tf frames for fingertips to initial object pose
+  cerr<<"computing fingertip poses"<<endl;
   vector<vector<Eigen::VectorXd>> f_poses;
   f_poses.resize(req.fingers.size());
   for(int i=0;i<req.fingers.size();++i)
@@ -120,7 +125,7 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   vector<double> weights(begin(req.weights),end(req.weights));
  
   vector<double> vel_limits;
-  vel_limits.resize(16,req.weights[4]);
+  vel_limits.resize(16,req.weights[2]);
   int t_steps_=req.T;
   // Creating opt problem instance:
   cerr<<"creating opt problem"<<endl;
@@ -132,7 +137,7 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
  
   prob.set_c_tol(tol);
   pagmo::snopt7 sn_v(false,"/usr/local/lib/");
-  sn_v.set_numeric_option("Major optimality tolerance",1e-3); 
+  //sn_v.set_numeric_option("Major optimality tolerance",1e-3); 
 
   algorithm algo{sn_v};
   algo.set_verbosity(100);
@@ -183,11 +188,11 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   
   
   for (int i=0;i<j_best.size()/16;i++)
-  { 
-    for(int j=0;j<16;j++)
-    {
-      j_arr[j]=j_best[i*16+j];
-    }  
+  {
+      for(int j=0;j<16;j++)
+      {
+        j_arr[j]=j_best[i*16+j];
+      }
     jt_pt.positions=j_arr;
     joint_traj.points.push_back(jt_pt);
   }

@@ -23,11 +23,6 @@ optProblem::optProblem(int time_steps, manipulator_kdl::robotKDL &robot_kdl,vect
   wa=weights[1];
   des_f_poses_=des_poses_;
   fingers_=fingers;
-  // given initial object pose and desired object pose:
-  
-
-  // get initial contact points
-  // generate waypoints for fingers:
   
 }
 
@@ -40,7 +35,7 @@ double optProblem::objFunction(const vector<double> x) const
   Eigen::VectorXd pos_err,orient_err;
   pos_err.resize(3);
   orient_err.resize(3);
- 
+  
 
   q.resize(robot_kdl_->dof);
 
@@ -73,6 +68,7 @@ double optProblem::objFunction(const vector<double> x) const
   
 
   Eigen::MatrixXd f_mat,thumb_mat;
+ 
   for(int i=0; i<timesteps_;++i)
   {
     double position_cost=0.0;
@@ -82,9 +78,8 @@ double optProblem::objFunction(const vector<double> x) const
     q=j_poses[i+2];
     for(int j=0;j<fingers_.size();++j)
     {
-      int f=fingers_[f];
+      int f=fingers_[j];
       robot_kdl_->getFK(f,q.segment(f*4,4),ee_pose,true);
-    
       vector<double> o_1(ee_pose.data()+3, ee_pose.data()+6);
       vector<double> o_d(des_f_poses_[j][i].data()+3, des_f_poses_[j][i].data()+6);
       
@@ -95,16 +90,12 @@ double optProblem::objFunction(const vector<double> x) const
       obj_pos_err[3]=o_err[0]*0.0;
       obj_pos_err[4]=o_err[1]*0.0;
       obj_pos_err[5]=o_err[2]*0.0;
-
+      cost_val+=wd*obj_pos_err.squaredNorm();
     }   
     // min_acceleration cost:
     acc_cost=(j_poses[i-2+2]-2.0*j_poses[i+2-1]+j_poses[i+2]);
     cost_val+=wa*acc_cost.squaredNorm();
 
-    if(i==timesteps_-1)
-    {
-      cost_val+=wd*obj_pos_err.squaredNorm();
-    }
   }
   // The last timestep is also affected by the extrapolated joint positions:
   int i=timesteps_;
@@ -116,7 +107,7 @@ double optProblem::objFunction(const vector<double> x) const
 
 vector<double> optProblem::objGradient(vector<double> x) const
 {
-
+  
   
   vector<double> retval(m_dim,0.0);
   Eigen::VectorXd q(robot_kdl_->dof);
@@ -154,7 +145,6 @@ vector<double> optProblem::objGradient(vector<double> x) const
   Eigen::MatrixXd thumb_mat,f_mat,J;
   Eigen::VectorXd acc_cost(16);
   Eigen::VectorXd grad;
-
   for(int i=0;i<timesteps_;++i)
   {
     
@@ -177,16 +167,13 @@ vector<double> optProblem::objGradient(vector<double> x) const
       obj_pose_err[4]=o_err[1]*0.0;
       obj_pose_err[5]=o_err[2]*0.0;
       
-      if(i==timesteps_-1)
+      robot_kdl_->getJacobian(f,q.segment(f*4,4),J);
+      finger_gradient=-2.0*wd*obj_pose_err.transpose()*J;
+      for (int k=0;k<4;++k) 
       {
-        robot_kdl_->getJacobian(f,q.segment(f*4,4),J);
-        finger_gradient=-2.0*wd*obj_pose_err.transpose()*J;
-        for (int k=0;k<4;++k) 
-        {
-          gradient[f*4+k]+=finger_gradient[k];
-        }
+        gradient[f*4+k]+=finger_gradient[k];
       }
-      
+         
       
       for (int j=0;j<robot_kdl_->dof;++j)
       {

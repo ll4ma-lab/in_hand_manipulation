@@ -1,0 +1,8 @@
+<launch>
+
+<include file="$(find allegro_driver)/launch/switching_controller.launch"/>
+
+
+ <node name="op_force_controller" pkg="hand_task_controllers" type="cartesian_force_controller" output="screen" />
+
+</launch>

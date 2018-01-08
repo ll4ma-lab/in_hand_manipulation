@@ -119,6 +119,7 @@ catkin_package(
 #  DEPENDS system_lib
 )
 add_library(mpc_framework src/in_grasp/mpc_framework.cpp)
+add_library(fg src/finger_gait/fg.cpp)
 ###########
 ## Build ##
 ###########
@@ -130,10 +131,11 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-
+add_executable(fg_server src/finger_gait/fg_server.cpp)
+target_link_libraries(fg_server ${catkin_LIBRARIES} fg)
 #add_executable(in_grasp_mpc_server_demo src/in_grasp/mpc_server_demo.cpp)
 #target_link_libraries(in_grasp_mpc_server_demo mpc_framework ${catkin_LIBRARIES})
 
-add_executable(in_grasp_mpc_server src/in_grasp/fb_obj_server.cpp)
-target_link_libraries(in_grasp_mpc_server mpc_framework ${catkin_LIBRARIES})
+#add_executable(in_grasp_mpc_server src/in_grasp/fb_obj_server.cpp)
+#target_link_libraries(in_grasp_mpc_server mpc_framework ${catkin_LIBRARIES})
 

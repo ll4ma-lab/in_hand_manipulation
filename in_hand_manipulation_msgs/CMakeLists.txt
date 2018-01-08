@@ -23,6 +23,7 @@ add_service_files(
   RunMPC.srv
   GetHandIK.srv
   PrecisionGrasp.srv
+  FingerGaitServo.srv
   )
 
 generate_messages(

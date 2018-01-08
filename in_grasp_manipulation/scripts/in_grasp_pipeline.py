@@ -66,7 +66,7 @@ class pdData:
         df_.to_csv(f_name,index=False)
         
 class inGraspPipeline:
-    def __init__(self,publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right', init_node=False, node_name='in_grasp_pipeline',weights=[0.005,10.0,10.0,0.01,0.8]):
+    def __init__(self,publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right', init_node=False, node_name='in_grasp_pipeline',weights=[1.0,0.0,0.0,0.0,0.8]):
         if(init_node):
             rospy.init_node(node_name)
         self.viz_obj=viz_markers.VizInHand(init_node=False)
@@ -146,7 +146,7 @@ class inGraspPipeline:
         #weights[0]=0.0
         #weights[3]=0.01
         #weights[2]=10.0
-        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=f_j,srv_topic="/in_hand/primitive/in_grasp_manipulation")
+        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=f_j,srv_topic="/in_hand/primitive/in_grasp_rolling")
         '''
         #j_traj_rr=j_traj
         #obj_traj_rr=obj_traj
@@ -163,7 +163,7 @@ class inGraspPipeline:
 
         plan_time=time.time()-start
         print 'time:'+str(time.time()-start)
-        print j_traj
+        #print j_traj
         self.traj_server.viz_joint_traj(j_traj,base_link='allegro_mount')
         #return j_traj,obj_traj,obj_traj_rr,j_tra
         exit()
