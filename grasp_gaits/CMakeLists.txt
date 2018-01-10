@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(grasp_gaits)
+add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -11,45 +12,23 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   sensor_msgs
   visualization_msgs
-  #in_hand_manipulation
+  ll4ma_kdl
   std_msgs
   geometry_msgs
   message_generation
   trajectory_msgs
+  pcl_mesh_tools
+  optimization_pkg
+  in_hand_manipulation
 )
 
-## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(Pagmo REQUIRED)
 
+set(ccd_DIR $ENV{HOME}/local/lib/ccd/)
+find_package(ccd 2.0 EXACT REQUIRED)
+set(ccd_INCLUDE_DIRS $ENV{HOME}/local/include)
+set(ccd_LIBRARY_DIRS $ENV{HOME}/local/lib)
 
-## Uncomment this if the package has a setup.py. This macro ensures
-## modules and global scripts declared therein get installed
-## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
-
-################################################
-## Declare ROS messages, services and actions ##
-################################################
-
-## To declare and build messages, services or actions from within this
-## package, follow these steps:
-## * Let MSG_DEP_SET be the set of packages whose message types you use in
-##   your messages/services/actions (e.g. std_msgs, actionlib_msgs, ...).
-## * In the file package.xml:
-##   * add a build_depend tag for "message_generation"
-##   * add a build_depend and a run_depend tag for each package in MSG_DEP_SET
-##   * If MSG_DEP_SET isn't empty the following dependency has been pulled in
-##     but can be declared for certainty nonetheless:
-##     * add a run_depend tag for "message_runtime"
-## * In this file (CMakeLists.txt):
-##   * add "message_generation" and every package in MSG_DEP_SET to
-##     find_package(catkin REQUIRED COMPONENTS ...)
-##   * add "message_runtime" and every package in MSG_DEP_SET to
-##     catkin_package(CATKIN_DEPENDS ...)
-##   * uncomment the add_*_files sections below as needed
-##     and list every .msg/.srv/.action file to be processed
-##   * uncomment the generate_messages entry below
-##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
  add_message_files(
@@ -72,6 +51,7 @@ add_service_files(
   RelocateObjSd.srv
   ComputeGD.srv
   ComputeGDRaw.srv
+  UpdateObj.srv
 )
 
 
@@ -95,7 +75,7 @@ add_service_files(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+  INCLUDE_DIRS include
 #  LIBRARIES grasp_gaits
   CATKIN_DEPENDS message_runtime
 #  DEPENDS s
@@ -110,74 +90,18 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  $ENV{HOME}/pkgs/pagmo_plugins_nonfree/include
+  ${Boost_INCLUDE_DIRS}
 )
 
-## Declare a C++ library
-# add_library(grasp_gaits
-#   src/${PROJECT_NAME}/grasp_gaits.cpp
-# )
+set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRARIES}  ${CMAKE_DL_LIBS})
 
-## Add cmake target dependencies of the library
-## as an example, code may need to be generated before libraries
-## either from message generation or dynamic reconfigure
-# add_dependencies(grasp_gaits ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_library(finger_gait STATIC src/problem/finger_gait.cpp)
+target_link_libraries(finger_gait ${PAGMO_LIBS} ${catkin_LIBRARIES} ccd)
 
-## Declare a C++ executable
-# add_executable(grasp_gaits_node src/grasp_gaits_node.cpp)
+add_library(allegro_env STATIC src/scene/allegro_env.cpp)
+target_link_libraries(allegro_env ccd ${catkin_LIBRARIES})
 
-## Add cmake target dependencies of the executable
-## same as for the library above
-# add_dependencies(grasp_gaits_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-## Specify libraries to link a library or executable target against
-# target_link_libraries(grasp_gaits_node
-#   ${catkin_LIBRARIES}
-# )
-
-#############
-## Install ##
-#############
-
-# all install targets should use catkin DESTINATION variables
-# See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
-
-## Mark executable scripts (Python etc.) for installation
-## in contrast to setup.py, you can choose the destination
-# install(PROGRAMS
-#   scripts/my_python_script
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
-
-## Mark executables and/or libraries for installation
-# install(TARGETS grasp_gaits grasp_gaits_node
-#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
-
-## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
-# )
-
-## Mark other files for installation (e.g. launch and bag files, etc.)
-# install(FILES
-#   # myfile1
-#   # myfile2
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-# )
-
-#############
-## Testing ##
-#############
-
-## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_grasp_gaits.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
-
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)
+add_executable(fg_server src/fg_server.cpp)
+target_link_libraries(fg_server finger_gait allegro_env ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})

@@ -1,0 +1,169 @@
+#ifndef SPARSE_GRADIENT
+#define SPARSE_GRADIENT true
+#endif
+#include "grasp_gaits/problem/finger_gait.h"
+#include <in_hand_manipulation/pagmo_opt/trajectory_optimization.hpp>
+#include <grasp_gaits/RelocateFingerKin.h>
+#include <grasp_gaits/UpdateObj.h>
+
+#include <ros/ros.h>
+#include <ros/package.h>
+using namespace pagmo;
+
+class fgPlanner
+{
+public:
+  manipulator_kdl::robotKDL allegro_kdl;
+  allegroEnv c_check;
+  ros::NodeHandle* nh;
+  void init(ros::NodeHandle &n)
+  {
+    nh=&n;
+    // initialize collision checker
+    c_check=allegroEnv(0.01,0.01);
+    // setup optimization:
+    string urdf_file="/home/bala/catkin_ws/src/in_hand_manipulation/in_grasp_manipulation/urdf/allegro.urdf";
+    
+    // Load allegro kdl object:
+    vector<string> ee_names={"index_tip","middle_tip","ring_tip","thumb_tip"};
+    vector<string> base_names={"palm_link","palm_link","palm_link","palm_link"};
+    vector<string> link_names={"index_link_1","index_link_2","index_tip", "middle_link_1","middle_link_2","middle_tip", "ring_link_1","ring_link_2","ring_tip", "thumb_link_2","thumb_link_3","thumb_tip"};
+
+    vector<double> g_vec={0.0,0.0,0.0};// Gravity needed for dynamics
+
+    allegro_kdl=manipulator_kdl::robotKDL(urdf_file,base_names,ee_names,link_names,g_vec);
+    allegro_kdl.urdfParser();
+    
+    
+    // load robot collision checking env:
+    std::string hand_mesh_location=ros::package::getPath("urlg_robots_description");
+    hand_mesh_location.append("/meshes/allegro/convex_hull/vertices/");
+    vector<string> hand_link_names={"index_link_1","index_link_2","index_tip", "index_link_1","index_link_2","index_tip","index_link_1","index_link_2","index_tip", "thumb_link_2","thumb_link_3","thumb_tip"};
+
+    // load hand links:
+    for(int i=0;i<hand_link_names.size();++i)
+    {
+      hand_link_names[i].insert(0,hand_mesh_location);
+      hand_link_names[i].append(".ply");
+    }
+    c_check.load_hand_links(hand_link_names);
+    cerr<<"Created robot collision files"<<endl;
+    
+  }
+
+  bool update_obj(grasp_gaits::UpdateObj::Request &req, grasp_gaits::UpdateObj::Response &res)
+  {
+    string mesh=req.mesh_file;
+    vector<double> pose(7,0.0);
+    pose[0]=req.obj_pose.position.x;
+    pose[1]=req.obj_pose.position.y;
+    pose[2]=req.obj_pose.position.z;
+    pose[3]=req.obj_pose.orientation.x;
+    pose[4]=req.obj_pose.orientation.y;
+    pose[5]=req.obj_pose.orientation.z;
+    pose[6]=req.obj_pose.orientation.w;
+    
+    
+    // load obj mesh
+    c_check.load_obj(mesh);
+
+    // update object pose
+    c_check.update_grasp_obj_pose(pose);
+    return true;
+  }
+  bool fg_call(grasp_gaits::RelocateFingerKin::Request &req, grasp_gaits::RelocateFingerKin::Response &res)
+  { // Getting parameters from service request:
+    
+    vector<double> joints_0=req.js.position;
+    vector<double> vel_limits(16,0.2);
+    Eigen::VectorXd des_pt(3);
+    des_pt[0]=req.des_contact_pt.x;
+    des_pt[1]=req.des_contact_pt.y;
+    des_pt[2]=req.des_contact_pt.z;
+    int t_steps=req.T;
+    int f=req.f_idx;
+    
+    // setup collision checking
+    
+    opt_problems::optProblem opt_problem(t_steps,allegro_kdl,des_pt,vel_limits,joints_0,f,c_check);
+    
+    problem prob{trajectory_optimization{opt_problem}};
+    vector<double> tol(opt_problem.m_nic,1e-3);
+    
+    prob.set_c_tol(tol);
+    pagmo::snopt7 sn_v(false,"/usr/local/lib/");
+    //sn_v.set_numeric_option("Major optimality tolerance",1e-3); 
+
+    algorithm algo{sn_v};
+    algo.set_verbosity(10);
+    //algorithm algo{cmaes(500)};
+    population pop{prob,1u};
+    
+    vector<double> x_in(16*t_steps,0.0);
+    
+    for(int i=0;i<t_steps;++i)
+    {    
+      for (int j=0;j<16;++j)
+      {
+        x_in[i*16+j]=joints_0[j];//+(final_joints[j]-joints_0[j])*(i+1)/(t_steps_);
+      }
+    }
+    vector<double> f_in=prob.fitness(x_in);
+    cerr<<"Initial fitness: "<<f_in[0]<<endl;
+  
+    pop.set_xf(0,x_in,f_in);
+    
+    cerr<<"Solving"<<endl;  
+    population pop_res = algo.evolve(pop);
+    cerr<<"optimization completed!  Final cost: "<<pop_res.champion_f()[0]<<endl;
+    
+    
+    vector<double> j_best=pop_res.champion_x();
+    
+    
+    trajectory_msgs::JointTrajectory joint_traj;
+    std::vector<std::string> joint_names={"index_joint_0","index_joint_1","index_joint_2","index_joint_3",
+                                        "middle_joint_0","middle_joint_1","middle_joint_2","middle_joint_3",
+                                          "ring_joint_0","ring_joint_1","ring_joint_2","ring_joint_3",
+                                          "thumb_joint_0","thumb_joint_1","thumb_joint_2","thumb_joint_3"};
+    joint_traj.joint_names=joint_names;    
+  
+    vector<double> j_arr;
+    
+    j_arr.resize(16);
+    trajectory_msgs::JointTrajectoryPoint jt_pt;
+    jt_pt.positions=joints_0;
+    joint_traj.points.push_back(jt_pt);
+    
+  
+    for (int i=0;i<j_best.size()/16;i++)
+    { 
+      for(int j=0;j<16;j++)
+      {
+        j_arr[j]=j_best[i*16+j];
+      }  
+      jt_pt.positions=j_arr;
+      joint_traj.points.push_back(jt_pt);
+    }
+    
+    res.joint_traj=joint_traj;
+    
+    return true;
+  }
+  
+  
+};
+
+
+int main(int argc,char** argv)
+{
+  ros::init(argc,argv,"fg_server");
+  ros::NodeHandle n;
+  fgPlanner fg_planner;
+  fg_planner.init(n);
+
+  ros::ServiceServer service=n.advertiseService("/in_hand/finger_gait",&fgPlanner::fg_call,&fg_planner);
+  ros::ServiceServer obj_service=n.advertiseService("/in_hand/finger_gait/update_obj",&fgPlanner::update_obj,&fg_planner);
+  
+  ros::spin();// Loop rate?
+}
