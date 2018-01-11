@@ -293,7 +293,9 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
     vel_const[robot_kdl_->dof*timesteps_+t]=collision_err;
     // check link collsions:
     contact_data.clear();
-    c_check->check_link_collision(link_poses,contact_data,l_idx_,f_idx);
+    //c_check->check_link_collision(link_poses,contact_data,l_idx_,f_idx);
+    c_check->check_link_collision(contact_data,l_idx_);
+
     collision_err=0.0;
     for(int j=0; j<l_idx_.size();++j)
     {
@@ -365,17 +367,17 @@ vector<double> optProblem::inEqGradient(vector<double> x) const
 vector<double> optProblem::collisionGradient(vector<double> x) const
 {
   vector<int> f_idx;
-    for(int i=0;i<4;++i)
+  for(int i=0;i<4;++i)
+  {
+    if(i!=finger_)
     {
-      if(i!=finger_)
+      for(int j=0;j<3;++j)
       {
-        for(int j=0;j<3;++j)
-        {
-          f_idx.push_back(i*3+j);
-        }
+        f_idx.push_back(i*3+j);
       }
     }
-
+  }
+  
   vector<double> retval(robot_kdl_->dof*(timesteps_+1+timesteps_),0.0);
   //return retval;
   Eigen::VectorXd hand_q(16),obj_pose_err;
@@ -486,7 +488,8 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
     gradient.setZero();
     // link collision gradient:
     contact_data.clear();
-    c_check->check_link_collision(link_poses,contact_data,l_idx_,f_idx);
+    //c_check->check_link_collision(link_poses,contact_data,l_idx_,f_idx);
+    c_check->check_link_collision(contact_data,l_idx_);
     for(int i=0;i<3;++i)
     {
       Map<Eigen::VectorXd> link_pose(&link_poses[j*3+i][0],3);

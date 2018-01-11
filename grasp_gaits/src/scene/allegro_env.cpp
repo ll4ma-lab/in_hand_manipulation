@@ -95,17 +95,18 @@ void allegroEnv::check_ftip_contact(vector<double> pose, vector<collision_data> 
 void allegroEnv::update_collision_links(const vector<int> &l_idx)
 {
   // we load links against which collisions have to be checked in a seperate vector for easy collision checking:
+  // thanks to pointers, we only store references, and when the link poses are updated, this list will also be updated. 
   collision_link_objs_.resize(l_idx.size());
   for(int i=0;i<l_idx.size();++i)
   {
-    collision_link_objs_[i]=hand_link_objs_[l_idx[i]];
-  } 
-}
-void allegroEnv::check_link_collision(vector<vector<double>> &l_poses, vector<vector<collision_data>> &c_data, vector<int> l_idx, vector<int> cl_idx)
-{
-  update_hand_state(l_poses);
+    collision_link_objs_[i]=&hand_link_objs_[l_idx[i]];
+  }
+  //cerr<<collision_link_objs_[0]->vertices.size()<<endl;
   
-  update_collision_links(cl_idx);
+}
+void allegroEnv::check_link_collision(vector<vector<collision_data>> &c_data, vector<int> l_idx)
+{
+  //update_hand_state(l_poses);
 
   c_data.resize(n_hand_links_);
   
@@ -131,6 +132,24 @@ vector<collision_data> allegroEnv::contact_fn(const obj_t &link_obj, const vecto
   return c_data;
 }
 
+vector<collision_data> allegroEnv::contact_fn_ptr(const obj_t &link_obj, vector<obj_t*> narrow_env_objs, const ccd_t &ccd) const
+{
+  vector<collision_data> c_data;
+  c_data.resize(narrow_env_objs.size());
+  //obj_t env_obj;
+  // cerr<<"computing size:"<<narrow_env_objs.size()<<endl;
+  for(int i=0;i<narrow_env_objs.size();++i)
+  {
+    //cerr<<i<<endl;
+    //cerr<<"size: "<<narrow_env_objs[i]->vertices.size()<<endl;
+    //env_obj=
+    signed_distance(link_obj,*narrow_env_objs[i],ccd,c_data[i]);
+  }
+  return c_data;
+}
+
+
+
 
 void allegroEnv::single_contact(const vector<obj_t> &link_objs, const vector<obj_t> &env_objs, vector<int> l_idx, const ccd_t &ccd,vector<vector<collision_data>> &c_data) const
 {
@@ -147,6 +166,22 @@ void allegroEnv::multi_threaded_contact(const vector<obj_t> &link_objs, const ve
   for( int i=0;i<l_idx.size();++i)
   {
     futures.push_back(std::async(launch::async, &allegroEnv::contact_fn, this, link_objs[l_idx[i]], env_objs,ccd));
+  }
+
+  for (int i=0;i<futures.size();++i)
+  {
+    c_data[l_idx[i]]=futures[i].get();
+  }
+  
+}
+
+void allegroEnv::multi_threaded_contact(const vector<obj_t> &link_objs, const vector<obj_t*> env_objs, vector<int> l_idx, const ccd_t &ccd,vector<vector<collision_data>> &c_data) const
+{
+  vector<std::future<vector<collision_data>>> futures;
+
+  for( int i=0;i<l_idx.size();++i)
+  {
+    futures.push_back(std::async(launch::async, &allegroEnv::contact_fn_ptr, this, link_objs[l_idx[i]], env_objs,ccd));
   }
 
   for (int i=0;i<futures.size();++i)

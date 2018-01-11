@@ -125,8 +125,19 @@ public:
     // get contact data:
     c_check.update_hand_state(link_poses);
     // update link collision index:
-    
-    //c_check.update_collision_links(f_idx);
+    vector<int> f_idx;
+    for(int i=0;i<4;++i)
+    {
+      if(i!=f)
+      {
+        for(int j=0;j<3;++j)
+        {
+          f_idx.push_back(i*3+j);
+        }
+      }
+    }
+  
+    c_check.update_collision_links(f_idx);
     opt_problems::optProblem opt_problem(t_steps,allegro_kdl,des_pt,vel_limits,joints_0,f,c_check);
     
     problem prob{trajectory_optimization{opt_problem}};

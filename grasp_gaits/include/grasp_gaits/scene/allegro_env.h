@@ -43,9 +43,10 @@ public:
 
   ccd_t ccd;
   void update_collision_links(const vector<int> &l_idx);
-  void check_link_collision(vector<vector<double>> &l_poses, vector<vector<collision_data>> &c_data, vector<int> l_idx, vector<int> cl_idx);
-  
-  
+  void check_link_collision(vector<vector<collision_data>> &c_data, vector<int> l_idx);
+  void multi_threaded_contact(const vector<obj_t> &link_objs, const vector<obj_t*> env_objs, vector<int> l_idx, const ccd_t &ccd,vector<vector<collision_data>> &c_data) const;
+  vector<collision_data> contact_fn_ptr(const obj_t &link_obj, vector<obj_t*> narrow_env_objs, const ccd_t &ccd) const;
+
 private:
   int n_links_;
   int n_hand_links_;
@@ -59,7 +60,7 @@ private:
   vector<obj_t> hand_link_objs_;
   vector<obj_t> narrow_env_objs_;
   vector<obj_t> broad_env_objs_;
-  vector<obj_t> collision_link_objs_;
+  vector<obj_t*> collision_link_objs_;
   float broad_vsize_;
   float narrow_vsize_;
   float voxel_size_;
