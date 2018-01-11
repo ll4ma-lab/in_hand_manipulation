@@ -151,7 +151,7 @@ public:
     algorithm algo{sn_v};
     algo.set_verbosity(1);
     //algorithm algo{cmaes(500)};
-    population pop{prob,1u};
+    population pop{prob,10u};
     
     vector<double> x_in(16*t_steps,0.0);
     
@@ -190,14 +190,27 @@ public:
     trajectory_msgs::JointTrajectoryPoint jt_pt;
     jt_pt.positions=joints_0;
     joint_traj.points.push_back(jt_pt);
+    vector<int> j_idx;
     
-  
     for (int i=0;i<j_best.size()/16;i++)
-    { 
-      for(int j=0;j<16;j++)
+    {
+      for(int k=0;k<4;++k)
       {
-        j_arr[j]=j_best[i*16+j];
-      }  
+        if(k==f)
+        {
+          for(int j=0;j<4;j++)
+          {
+            j_arr[k*4+j]=j_best[i*16+k*4+j];
+          }
+        }
+        else
+        {
+          for(int j=0;j<4;j++)
+          {
+            j_arr[k*4+j]=joints_0[k*4+j];
+          }
+        }
+      }
       jt_pt.positions=j_arr;
       joint_traj.points.push_back(jt_pt);
     }

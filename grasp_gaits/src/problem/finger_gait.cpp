@@ -83,8 +83,6 @@ double optProblem::objFunction(const vector<double> x) const
 
       vector<collision_data> c_data;
       c_data=contact_data[finger_*3+2];
-      //cerr<<finger_*3+2<<endl;
-      //c_check->check_ftip_contact(ftip_pose,c_data,finger_*3+2);
       
       Eigen::VectorXd sd_contact(c_data.size()); 
       sd_contact.setZero();
@@ -93,10 +91,7 @@ double optProblem::objFunction(const vector<double> x) const
       {
         sd_contact[k]=std::abs(c_data[k].distance);
       }
-      // if(sd_contact.minCoeff()>0.005)
-      {
-        cost_val+=1.0*(sd_contact.minCoeff());
-      }
+      cost_val+=1.0*(sd_contact.minCoeff());
       
     }
     else
@@ -168,9 +163,7 @@ vector<double> optProblem::objGradient(vector<double> x) const
       Map<Eigen::VectorXd> point(&c_data[min_idx].point[0],3);
       Map<Eigen::VectorXd> dir(&c_data[min_idx].dir[0],3);
       double p_d=c_data[min_idx].distance;//-std::copysign(c_data[min_idx].distance,0.005);
-      //cerr<<p_d<<endl;
       Eigen::VectorXd delta_p=ee_pose.head(3)-(p_d*dir);
-      //ee_pose.head(3)=delta_p;
       finger_gradient+=delta_p.transpose()*J.block(0,0,3,J.cols());
 
     }
@@ -271,9 +264,9 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
           sd_contact[k]=std::abs(contact_data[l_idx_[j]][k].distance);
         }
         //
-        if(sd_contact.minCoeff()>0.005)
+        //if(sd_contact.minCoeff()>0.005)
         {
-          //vel_const[robot_kdl_->dof*timesteps_+timesteps_]=sd_contact.minCoeff()-0.005;
+          //vel_const[robot_kdl_->dof*timesteps_+timesteps_]=sd_contact.minCoeff();
         }
         //break;
       }
@@ -434,7 +427,7 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
         int n_js=hand_J[j*3+i].cols();
         Eigen::VectorXd sd_contact(contact_data[l_idx_[j]].size());
         sd_contact.setZero();
-
+        
         for(int k=0;k<contact_data[j*3+i].size();++k)
         {
           sd_contact[k]=std::abs(contact_data[j*3+i][k].distance);
@@ -444,7 +437,7 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
         
         Map<Eigen::VectorXd> point(&contact_data[j*3+i][min_idx].point[0],3);
         Map<Eigen::VectorXd> dir(&contact_data[j*3+i][min_idx].dir[0],3);
-        double p_d=contact_data[j*3+i][min_idx].distance-std::copysign(contact_data[j*3+i][min_idx].distance,0.005);
+        double p_d=contact_data[j*3+i][min_idx].distance;
         Eigen::VectorXd delta_p=1.0*(link_pose-(p_d*dir));
         contact_gradient=1.0*delta_p.transpose()*hand_J[j*3+i].block(0,0,3,n_js);
        
