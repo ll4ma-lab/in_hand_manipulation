@@ -19,11 +19,12 @@ public:
 
   void load_obj(const string &mesh_location);
   void update_grasp_obj_pose(vector<double> &pose);
+  void get_obj_pointcloud(pcl::PointCloud<PointXYZRGB>::Ptr);
   // collision checking functions:
   //checking collision between all robot links and the environment
 
   void check_contacts(vector<vector<double>> &l_poses, vector<vector<collision_data>> &c_data, vector<int> l_idx);
-
+  void check_ftip_contact(vector<double> pose, vector<collision_data> &c_data, int ftip_idx);
 
   
   vector<collision_data> contact_fn(const obj_t &link_obj, const vector<obj_t> &narrow_env_objs, const ccd_t &ccd) const;
@@ -41,6 +42,9 @@ public:
   void single_contact(const vector<obj_t> &link_objs, const vector<obj_t> &env_objs, vector<int> l_idx, const ccd_t &ccd,vector<vector<collision_data>> &c_data) const;
 
   ccd_t ccd;
+  void update_collision_links(const vector<int> &l_idx);
+  void check_link_collision(vector<vector<double>> &l_poses, vector<vector<collision_data>> &c_data, vector<int> l_idx, vector<int> cl_idx);
+  
   
 private:
   int n_links_;
@@ -55,7 +59,7 @@ private:
   vector<obj_t> hand_link_objs_;
   vector<obj_t> narrow_env_objs_;
   vector<obj_t> broad_env_objs_;
-
+  vector<obj_t> collision_link_objs_;
   float broad_vsize_;
   float narrow_vsize_;
   float voxel_size_;

@@ -9,7 +9,7 @@
 #include <ros/ros.h>
 #include <ros/package.h>
 using namespace pagmo;
-
+ros::Publisher pub;
 class fgPlanner
 {
 public:
@@ -69,22 +69,64 @@ public:
 
     // update object pose
     c_check.update_grasp_obj_pose(pose);
+
+    // visualize object pointcloud:
+    pcl::PointCloud<PointXYZRGB>::Ptr cloud_obj1(new PointCloud<PointXYZRGB>);
+    c_check.get_obj_pointcloud(cloud_obj1);
+    pub.publish(cloud_obj1);
     return true;
   }
   bool fg_call(grasp_gaits::RelocateFingerKin::Request &req, grasp_gaits::RelocateFingerKin::Response &res)
   { // Getting parameters from service request:
     
     vector<double> joints_0=req.js.position;
-    vector<double> vel_limits(16,0.2);
     Eigen::VectorXd des_pt(3);
     des_pt[0]=req.des_contact_pt.x;
     des_pt[1]=req.des_contact_pt.y;
     des_pt[2]=req.des_contact_pt.z;
     int t_steps=req.T;
+    vector<double> vel_limits(16,0.2);
+
+    if(t_steps<3)
+    {
+      vector<double> vel_limits(16,100.2);
+
+    }
+   
     int f=req.f_idx;
     
     // setup collision checking
+    Eigen::VectorXd hand_q(16);
+    // initialize object meshes to initial joint state:
+    for(int j=0; j<allegro_kdl.dof;++j)
+    {
+      hand_q[j]=joints_0[j];
+    }
+
+    vector<vector<double>> link_poses;
+    link_poses.resize(3*4);
+  
+    // get link pose for every link:
+    Eigen::VectorXd finger_q;
+    finger_q.resize(4);
+    Eigen::VectorXd l_pose_;
+        
+    for (int j=0;j<4;j++)
+    {
+      //finger joints:
+      finger_q.tail(4)=hand_q.segment(4*j,4);
+      for(int i=0;i<3;++i)
+      {
+        allegro_kdl.getLinkPose(j*3+i,finger_q,l_pose_);
+        allegro_kdl.getSTDVector(l_pose_,link_poses[j*3+i]);
+      }
+    }
     
+    // get contact data:
+    c_check.update_hand_state(link_poses);
+    // update link collision index:
+    
+    //c_check.update_collision_links(f_idx);
     opt_problems::optProblem opt_problem(t_steps,allegro_kdl,des_pt,vel_limits,joints_0,f,c_check);
     
     problem prob{trajectory_optimization{opt_problem}};
@@ -92,10 +134,11 @@ public:
     
     prob.set_c_tol(tol);
     pagmo::snopt7 sn_v(false,"/usr/local/lib/");
-    //sn_v.set_numeric_option("Major optimality tolerance",1e-3); 
+    sn_v.set_integer_option("Iteration limit",500);
+    sn_v.set_numeric_option("Major optimality tolerance",1e-3); 
 
     algorithm algo{sn_v};
-    algo.set_verbosity(10);
+    algo.set_verbosity(1);
     //algorithm algo{cmaes(500)};
     population pop{prob,1u};
     
@@ -109,9 +152,11 @@ public:
       }
     }
     vector<double> f_in=prob.fitness(x_in);
+    
+    //vector<double> f_in_1=prob.fitness(x_in);
     cerr<<"Initial fitness: "<<f_in[0]<<endl;
   
-    pop.set_xf(0,x_in,f_in);
+    //pop.set_xf(0,x_in,f_in);
     
     cerr<<"Solving"<<endl;  
     population pop_res = algo.evolve(pop);
@@ -164,6 +209,7 @@ int main(int argc,char** argv)
 
   ros::ServiceServer service=n.advertiseService("/in_hand/finger_gait",&fgPlanner::fg_call,&fg_planner);
   ros::ServiceServer obj_service=n.advertiseService("/in_hand/finger_gait/update_obj",&fgPlanner::update_obj,&fg_planner);
-  
+  pub=n.advertise<pcl::PointCloud<PointXYZRGB>>("/collision_checker/object",1);
+
   ros::spin();// Loop rate?
 }

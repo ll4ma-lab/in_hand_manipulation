@@ -98,7 +98,7 @@ include_directories(
 set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRARIES}  ${CMAKE_DL_LIBS})
 
 add_library(finger_gait STATIC src/problem/finger_gait.cpp)
-target_link_libraries(finger_gait ${PAGMO_LIBS} ${catkin_LIBRARIES} ccd)
+target_link_libraries(finger_gait ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
 
 add_library(allegro_env STATIC src/scene/allegro_env.cpp)
 target_link_libraries(allegro_env ccd ${catkin_LIBRARIES})

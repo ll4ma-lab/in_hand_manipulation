@@ -45,15 +45,20 @@ namespace opt_problems
     //#endif
     int m_dim,m_nec,m_nic;
     vector<double> joints_0;
+    int f_tip_;
+    vector<int> l_idx_;
+    double dist_thresh_,stability_thresh_;
   private:
     manipulator_kdl::robotKDL* robot_kdl_;
     // Collision checking: TODO
     //mutable collisionChecker c_checker;
     int timesteps_;
-    Eigen::VectorXd des_pose_;
+    Eigen::VectorXd des_pose_,initial_pose_;
     
     double vel_lim;
     int finger_;
     allegroEnv *c_check;
+
+
   };
 }
