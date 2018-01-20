@@ -6,19 +6,22 @@ from trajectory_msgs.msg import JointTrajectory,JointTrajectoryPoint
 import numpy as np
 import tf
 class inGraspClient:
-    def __init__(self):
+    def __init__(self,weights=[1.0,1.0,1.0,1.0]):
         # Initialize variables:
-        self.weights=[1.0,1.0,1.0,1.0]
+        self.weights=weights
+
         
-    def call_server(self,js,obj_pose,des_obj_pose,fingers=[0,1,2,3],rig_finger=3):
+    def call_server(self,js,obj_pose,des_obj_pose,T=1,fingers=[0,1,2,3],rig_finger=3):
         #j0=JointState()
         #j0.position=j_arr
 
         rospy.wait_for_service('/in_hand/primitive/in_grasp_manipulation')
         get_in_grasp_plan=rospy.ServiceProxy('/in_hand/primitive/in_grasp_manipulation',InGraspManipulation)
         
-        j_traj=get_in_grasp_plan(js,obj_pose,des_obj_pose,self.weights,fingers,rig_finger,1)
-        return j_traj.n_js,j_traj.n_obj_pose
+        resp=get_in_grasp_plan(js,obj_pose,des_obj_pose,self.weights,fingers,rig_finger,T,False, JointState(),JointTrajectory())
+        #return j_traj.n_js,j_traj.n_obj_pose
+        return resp.joint_traj, resp.n_obj_pose,resp.n_js
+
 
     def call_mpc_server(self,js,obj_pose,des_obj_pose,fingers=[0,1,2,3],rig_finger=3,jtraj=JointTrajectory(),srv_topic='/in_grasp_manipulation/mpc'):
         rospy.wait_for_service(srv_topic)

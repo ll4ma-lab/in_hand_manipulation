@@ -22,7 +22,8 @@ class VizInHand:
             rospy.init_node('marker_viz')
         # initialize publisher
         self.obj_pub=rospy.Publisher('obj_marker',Marker,queue_size=1)
-        self.traj_server=trajectoryServer(100,robot_name='allegro',topic_name=t_name,init_node=False)
+        if(t_name!=''):
+            self.traj_server=trajectoryServer(100,robot_name='allegro',topic_name=t_name,init_node=False)
     def viz_js(self,js,t_name='regrasp_planner/in_grasp_traj'):
         js.name=['index_joint_0', 'index_joint_1', 'index_joint_2', 'index_joint_3', 'middle_joint_0', 'middle_joint_1', 'middle_joint_2', 'middle_joint_3', 'ring_joint_0', 'ring_joint_1', 'ring_joint_2', 'ring_joint_3', 'thumb_joint_0', 'thumb_joint_1', 'thumb_joint_2', 'thumb_joint_3']
         j_t=self.traj_server.get_jtraj(js)

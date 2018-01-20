@@ -4,6 +4,7 @@ sensor_msgs/JointState js
 int64 T
 geometry_msgs/Pose obj_pose
 geometry_msgs/Point contact_pt
+trajectory_msgs/JointTrajectory init_jtraj
 ---
 geometry_msgs/PointStamped next_contact_pt
 sensor_msgs/JointState n_js

@@ -1,4 +1,7 @@
 #include "in_hand_task_controllers/in_grasp/mpc_framework.h"
+// subscribe to tactile data
+// create a new service call
+
 
 // This is the main control loop, declared in the mpc_framework.h file and defined here for flexibility
 void hand_controller::mpcController::run_controller()
@@ -7,8 +10,8 @@ void hand_controller::mpcController::run_controller()
   ros::Rate loop_rate(60);
   int T=j_des.size()-1;
   int t=0;
+  
   // get initial rigid frame:
-
   js_gain=0.1;
   obj_gain=0.0;
   float obj_err_data,final_obj_err_data;

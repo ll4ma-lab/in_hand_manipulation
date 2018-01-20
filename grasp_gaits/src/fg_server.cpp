@@ -5,7 +5,7 @@
 #include <in_hand_manipulation/pagmo_opt/trajectory_optimization.hpp>
 #include <grasp_gaits/RelocateFingerKin.h>
 #include <grasp_gaits/UpdateObj.h>
-
+#include <geometry_msgs/PointStamped.h>
 #include <ros/ros.h>
 #include <ros/package.h>
 using namespace pagmo;
@@ -146,20 +146,23 @@ public:
     prob.set_c_tol(tol);
     pagmo::snopt7 sn_v(false,"/usr/local/lib/");
     sn_v.set_integer_option("Iteration limit",500);
-    sn_v.set_numeric_option("Major optimality tolerance",1e-3); 
+    sn_v.set_numeric_option("Major optimality tolerance",1e-2); 
 
     algorithm algo{sn_v};
-    algo.set_verbosity(1);
+    algo.set_verbosity(100);
     //algorithm algo{cmaes(500)};
     population pop{prob,10u};
     
     vector<double> x_in(16*t_steps,0.0);
-    
+    vector<double> joint_init=joints_0;
+    joint_init[f*4+2]=0.1;
+    joint_init[f*4+3]=0.1;
+        
     for(int i=0;i<t_steps;++i)
     {    
       for (int j=0;j<16;++j)
       {
-        x_in[i*16+j]=joints_0[j];//+(final_joints[j]-joints_0[j])*(i+1)/(t_steps_);
+        x_in[i*16+j]=joint_init[j];//+(final_joints[j]-joints_0[j])*(i+1)/(t_steps_);
       }
     }
     vector<double> f_in=prob.fitness(x_in);
@@ -167,7 +170,7 @@ public:
     //vector<double> f_in_1=prob.fitness(x_in);
     cerr<<"Initial fitness: "<<f_in[0]<<endl;
   
-    //pop.set_xf(0,x_in,f_in);
+    pop.set_xf(0,x_in,f_in);
     
     cerr<<"Solving"<<endl;  
     population pop_res = algo.evolve(pop);
@@ -216,6 +219,16 @@ public:
     }
     
     res.joint_traj=joint_traj;
+
+    // compute next contact point from fk:
+    geometry_msgs::PointStamped cpt;
+    Map<Eigen::VectorXd> final_joints(&joint_traj.points[joint_traj.points.size()-1].positions[f*4],4);
+    Eigen::VectorXd f_p;
+    allegro_kdl.getFK(f,final_joints,f_p);
+    cpt.point.x=f_p[0];
+    cpt.point.y=f_p[1];
+    cpt.point.z=f_p[2];
+    res.next_contact_pt=cpt;
     
     return true;
   }

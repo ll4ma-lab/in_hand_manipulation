@@ -194,7 +194,7 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   sn_v.set_numeric_option("Major optimality tolerance",1e-3); 
 
   algorithm algo{sn_v};
-  algo.set_verbosity(100);
+  algo.set_verbosity(1000);
   //algorithm algo{cmaes(500)};
   cerr<<"Creating pop"<<endl;
   population pop{prob,1u};
