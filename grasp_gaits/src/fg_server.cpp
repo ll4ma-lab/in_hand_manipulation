@@ -142,6 +142,7 @@ public:
     }
 
     c_check.update_collision_links(f_idx);
+    allegro_kdl.f_dof=4;
     opt_problems::optProblem opt_problem(t_steps,allegro_kdl,des_pt,vel_limits,joints_0,f,c_check);
     
     problem prob{trajectory_optimization{opt_problem}};
