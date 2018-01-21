@@ -172,14 +172,14 @@ if __name__=='__main__':
     
 
     # load object mesh and pose:
-    mesh_f='/home/bala/object_models/pringles/google_16k/vertices.ply'
-    mesh_stl='file:///home/bala/object_models/pringles/google_16k/nontextured.stl'
+    mesh_f='/home/bala/object_models/pringles/vertices.ply'
+    mesh_stl='file:///home/bala/object_models/pringles/nontextured.stl'
 
     #mesh_f="/home/bala/catkin_ws/src/urlg_robots_description/meshes/allegro/convex_hull/vertices/index_link_1.ply"
     pose=obj_pose.pose
     gg=graspGait(mesh_stl,weights=[0.001,10.0,10.0,0.0,100.0])
 
-    gg.viz.viz_obj_mesh(obj_pose,a=0.9)
+    gg.viz.viz_obj_mesh(obj_pose,a=1.0)
     gg.viz.viz_cpts(cpt)
     
     # transform desired points to initial obj pose:
@@ -204,7 +204,6 @@ if __name__=='__main__':
     
         for i in range(4):
             des_contact_pt=d_pts[i].point
-        
             jtraj,cpt[i]=gg.fg_finger(i,js,des_contact_pt)
             gg.viz.viz_cpts(cpt)
             
@@ -212,9 +211,9 @@ if __name__=='__main__':
             jtraj.points[0]=jtraj.points[-1]
             gg.traj_server.viz_joint_traj(jtraj,base_link='allegro_mount')
             js.position=jtraj.points[-1].positions
+            raw_input('Next finger?')
 
-
-    
+        exit()
         # get rigid transform to minimize distance:
         d_obj_pose=gait_help.rigid_translate(cpt,d_pts,obj_pose)
 

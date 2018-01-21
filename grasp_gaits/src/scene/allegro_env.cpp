@@ -12,7 +12,7 @@ allegroEnv::allegroEnv(float narrow_vsize, float broad_vsize)
   
   ccd.support1       = support_convex; // support function for first object
   ccd.support2       = support_convex; // support function for second object
-  ccd.max_iterations = 100;     // maximal number of iterations
+  ccd.max_iterations = 1000;     // maximal number of iterations
   ccd.epa_tolerance  = 0.001;  // maximal tolerance for EPA part
 
 }
@@ -43,8 +43,10 @@ void allegroEnv::load_obj(const string &mesh_file_location)
 }
 void allegroEnv::update_grasp_obj_pose(vector<double> &pose)
 {
-  update_poses(obj_,pose);
-
+  for(int i=0;i<obj_.size();++i)
+  {
+    update_obj_pose(obj_[i],pose);
+  }
 }
 
 void allegroEnv::get_obj_pointcloud(pcl::PointCloud<PointXYZRGB>::Ptr cloud_obj1)
@@ -109,7 +111,7 @@ void allegroEnv::check_link_collision(vector<vector<collision_data>> &c_data, ve
   //update_hand_state(l_poses);
 
   c_data.resize(n_hand_links_);
-  
+
   multi_threaded_contact(hand_link_objs_,collision_link_objs_,l_idx,ccd,c_data);
 }
 void allegroEnv::check_contacts(vector<vector<double>> &l_poses, vector<vector<collision_data>> &c_data,vector<int> l_idx)
