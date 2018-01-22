@@ -1,7 +1,6 @@
 //#include "ll4ma_planner/debug.h"
 #include <iostream>
 
-
 #include <ll4ma_kdl/manipulator_kdl/robot_kdl.h>
 //#include <pcl_mesh_tools/collision_checker/convex_collision_checker.h>
 
@@ -12,7 +11,9 @@
 #include <vector>
 
 #include <grasp_gaits/scene/allegro_env.h>
+
 using namespace std;
+
 namespace opt_problems
 {
   class optProblem
@@ -20,6 +21,7 @@ namespace opt_problems
   public:
     // constructor
     optProblem(int dummy);// dummy since pagmo requires default values for variables
+
     optProblem(int &time_steps, manipulator_kdl::robotKDL &robot_kdl, Eigen::VectorXd &des_pose, vector<double> &vel_limits, vector<double> &init_joint_angles,int &finger, allegroEnv &collision_checker);
     
     //optProblem(int time_steps,manipulator_kdl::robotKDL robot_kdl, vector<vector<double>> data_arr,vector<Eigen::MatrixXd> data_mats, vector<double> vel_limits,vector<double> init_joint_angles);
@@ -54,11 +56,9 @@ namespace opt_problems
     //mutable collisionChecker c_checker;
     int timesteps_;
     Eigen::VectorXd des_pose_,initial_pose_;
-    
+    Eigen::VectorXd init_joints;
     double vel_lim;
     int finger_;
     allegroEnv *c_check;
-
-
   };
 }

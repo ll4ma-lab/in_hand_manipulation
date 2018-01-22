@@ -28,7 +28,7 @@ optProblem::optProblem(int &time_steps, manipulator_kdl::robotKDL &robot_kdl, Ei
   // get initial pose:
   Map<Eigen::VectorXd> j0(&joints_0[0],joints_0.size());
   robot_kdl_->getFK(finger_,j0.segment(finger_*4,4),initial_pose_,true);
-  
+  init_joints=j0;
 }
 
 double optProblem::objFunction(const vector<double> x) const
@@ -59,7 +59,7 @@ double optProblem::objFunction(const vector<double> x) const
     }
     if(i==timesteps_-1)
     {
-      robot_kdl_->getFK(finger_,q.segment(finger_*4,4),ee_pose,true);
+      robot_kdl_->getFK(finger_,q,ee_pose,true);
       // object pose error:
       obj_pose_err=des_pose_.head(3)-ee_pose.head(3);
       cost_val+=100.0*obj_pose_err.squaredNorm();
@@ -68,7 +68,14 @@ double optProblem::objFunction(const vector<double> x) const
       for (int j=0;j<4;j++)
       {
         //finger joints:
-        finger_q.tail(4)=q.segment(4*j,4);
+        if(j==finger)
+        {
+          finger_q.tail(4)=q;
+        }
+        else
+        {
+          finger_q.tail(4)=init_joints.segment(j*4,4);
+        }
         for(int i=0;i<3;++i)
         {
           robot_kdl_->getLinkPose(j*3+i,finger_q,l_pose_);
@@ -139,9 +146,9 @@ vector<double> optProblem::objGradient(vector<double> x) const
 
     if(i==timesteps_-1)
     {
-      robot_kdl_->getFK(finger_,q.segment(finger_*4,4),ee_pose,true);
+      robot_kdl_->getFK(finger_,q,ee_pose,true);
       obj_pose_err=des_pose_.head(3)-ee_pose.head(3);
-      robot_kdl_->getJacobian(finger_,q.segment(finger_*4,4),J);
+      robot_kdl_->getJacobian(finger_,q,J);
       finger_gradient=-2.0*100.0*obj_pose_err.transpose()*J.block(0,0,3,J.cols());
 
       // contact:
@@ -170,7 +177,7 @@ vector<double> optProblem::objGradient(vector<double> x) const
     
     for (int k=0;k<4;++k) 
     {
-      gradient[finger_*4+k]+=finger_gradient[k];
+      gradient[k]+=finger_gradient[k];
     }
    
     for (int j=0;j<robot_kdl_->f_dof;++j)
@@ -525,6 +532,7 @@ vector<double> optProblem::eqGradient(vector<double> x) const
   vector<double> retval(m_dim*m_nec,0.0);
   return retval;
 }
+
 vector<vector<double>> optProblem::bounds() const
 {
   vector<vector<double>> bound;
