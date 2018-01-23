@@ -118,8 +118,9 @@ catkin_package(
 #  CATKIN_DEPENDS geometry_msgs ll4ma_kdl roscpp rospy sensor_msgs tf trajectory_msgs
 #  DEPENDS system_lib
 )
-add_library(mpc_framework src/in_grasp/mpc_framework.cpp)
-add_library(fg src/finger_gait/fg.cpp)
+#add_library(mpc_framework src/in_grasp/mpc_framework.cpp)
+#add_library(fg src/finger_gait/fg.cpp)
+add_library(grasp_contact src/grasp/contact_controller.cpp)
 ###########
 ## Build ##
 ###########
@@ -131,11 +132,13 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-add_executable(fg_server src/finger_gait/fg_server.cpp)
-target_link_libraries(fg_server ${catkin_LIBRARIES} fg)
+#add_executable(fg_server src/finger_gait/fg_server.cpp)
+#target_link_libraries(fg_server ${catkin_LIBRARIES} fg)
 #add_executable(in_grasp_mpc_server_demo src/in_grasp/mpc_server_demo.cpp)
 #target_link_libraries(in_grasp_mpc_server_demo mpc_framework ${catkin_LIBRARIES})
 
 #add_executable(in_grasp_mpc_server src/in_grasp/fb_obj_server.cpp)
 #target_link_libraries(in_grasp_mpc_server mpc_framework ${catkin_LIBRARIES})
 
+add_executable(grasp_tactile_controller src/grasp/tactile_contact_controller.cpp)
+target_link_libraries(grasp_tactile_controller grasp_contact ${catkin_LIBRARIES})

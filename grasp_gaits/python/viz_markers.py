@@ -278,7 +278,7 @@ class VizInHand:
             obj_m.pose.orientation.w=1.0
             m_arr.markers.append(obj_m)
         i=0
-        self.loop_rate=rospy.Rate(10)
+        self.loop_rate=rospy.Rate(200)
         while(not rospy.is_shutdown() and i<10):
             self.v_pub.publish(m_arr)
             self.loop_rate.sleep()
@@ -379,7 +379,7 @@ class VizInHand:
         obj_m.color.b=rgb[2]
         obj_m.pose=pose.pose
         i=0
-        self.loop_rate=rospy.Rate(10)
+        self.loop_rate=rospy.Rate(200)
         while(not rospy.is_shutdown() and i<5):
             obj_m.header.stamp=rospy.Time()
             obj_pub.publish(obj_m)

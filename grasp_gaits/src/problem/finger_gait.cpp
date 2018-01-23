@@ -10,9 +10,9 @@ optProblem::optProblem(int dummy)
 // Initializer
 optProblem::optProblem(int &time_steps, manipulator_kdl::robotKDL &robot_kdl, Eigen::VectorXd &des_pose, vector<double> &vel_limits, vector<double> &init_joint_angles, int &finger, allegroEnv &c_checker)
 {
-  m_dim=robot_kdl.f_dof*time_steps;
+  m_dim=robot_kdl.dof*time_steps;
   m_nec=0;
-  m_nic=robot_kdl.f_dof*(time_steps)+time_steps+1+time_steps+1;// velocity constraints, link collision(t_steps), f_tip contact at T, link collisions, stability constraint
+  m_nic=robot_kdl.dof*(time_steps)+time_steps+1+time_steps+1;// velocity constraints, link collision(t_steps), f_tip contact at T, link collisions, stability constraint
   timesteps_=time_steps;
   robot_kdl_=&robot_kdl;
   des_pose_=des_pose;
@@ -24,11 +24,12 @@ optProblem::optProblem(int &time_steps, manipulator_kdl::robotKDL &robot_kdl, Ei
   l_idx_={finger_*3,finger_*3+1,finger_*3+2};
   f_tip_=finger_*3+2;
   dist_thresh_=0.005;// 5mm
-  stability_thresh_=0.0001;// 1cm
+  stability_thresh_=0.002;// 1cm
   // get initial pose:
   Map<Eigen::VectorXd> j0(&joints_0[0],joints_0.size());
-  robot_kdl_->getFK(finger_,j0.segment(finger_*4,4),initial_pose_,true);
   init_joints=j0;
+  robot_kdl_->getFK(finger_,j0.segment(finger_*4,4),initial_pose_,true);
+  
 }
 
 double optProblem::objFunction(const vector<double> x) const
@@ -40,7 +41,7 @@ double optProblem::objFunction(const vector<double> x) const
   Eigen::VectorXd q;
   Eigen::VectorXd pos_err;
  
-  q.resize(robot_kdl_->f_dof);
+  q.resize(robot_kdl_->dof);
   
   Eigen::VectorXd ee_pose,obj_pose_err;
 
@@ -53,29 +54,23 @@ double optProblem::objFunction(const vector<double> x) const
   for(int i=0; i<timesteps_;++i)
   {
     // Getting joint angles for current timestep:
-    for(int j=0; j<robot_kdl_->f_dof;++j)
+    for(int j=0; j<robot_kdl_->dof;++j)
     {
-      q[j]=x[(i)*robot_kdl_->f_dof+j];
+      q[j]=x[(i)*robot_kdl_->dof+j];
     }
+
     if(i==timesteps_-1)
     {
-      robot_kdl_->getFK(finger_,q,ee_pose,true);
+      robot_kdl_->getFK(finger_,q.segment(finger_*4,4),ee_pose,true);
       // object pose error:
       obj_pose_err=des_pose_.head(3)-ee_pose.head(3);
-      cost_val+=100.0*obj_pose_err.squaredNorm();
+      cost_val+=1.0*obj_pose_err.squaredNorm();
       // add cost for contact on object:
            
       for (int j=0;j<4;j++)
       {
         //finger joints:
-        if(j==finger)
-        {
-          finger_q.tail(4)=q;
-        }
-        else
-        {
-          finger_q.tail(4)=init_joints.segment(j*4,4);
-        }
+        finger_q.tail(4)=q.segment(4*j,4);
         for(int i=0;i<3;++i)
         {
           robot_kdl_->getLinkPose(j*3+i,finger_q,l_pose_);
@@ -98,7 +93,7 @@ double optProblem::objFunction(const vector<double> x) const
       {
         sd_contact[k]=std::abs(c_data[k].distance);
       }
-      cost_val+=1.0*(sd_contact.minCoeff());
+      cost_val+=100.0*(sd_contact.minCoeff());
       
     }
     else
@@ -129,27 +124,27 @@ vector<double> optProblem::objGradient(vector<double> x) const
   Eigen::VectorXd finger_gradient(4);
   finger_gradient.setZero();
   vector<double> gradient;
-  gradient.resize(robot_kdl_->f_dof,0.0);
+  gradient.resize(robot_kdl_->dof,0.0);
 
-  q.resize(robot_kdl_->f_dof);
+  q.resize(robot_kdl_->dof);
   
   Eigen::VectorXd ee_pose,obj_pose_err;
   Eigen::MatrixXd J;
   for(int i=0;i<timesteps_;++i)
   {
     
-    for(int j=0; j<robot_kdl_->f_dof;++j)
+    for(int j=0; j<robot_kdl_->dof;++j)
     {
-      q[j]=x[(i)*robot_kdl_->f_dof+j];
+      q[j]=x[(i)*robot_kdl_->dof+j];
     }
 
 
     if(i==timesteps_-1)
     {
-      robot_kdl_->getFK(finger_,q,ee_pose,true);
+      robot_kdl_->getFK(finger_,q.segment(finger_*4,4),ee_pose,true);
       obj_pose_err=des_pose_.head(3)-ee_pose.head(3);
-      robot_kdl_->getJacobian(finger_,q,J);
-      finger_gradient=-2.0*100.0*obj_pose_err.transpose()*J.block(0,0,3,J.cols());
+      robot_kdl_->getJacobian(finger_,q.segment(finger_*4,4),J);
+      finger_gradient=-2.0*1.0*obj_pose_err.transpose()*J.block(0,0,3,J.cols());
 
       // contact:
       vector<double> ftip_pose;
@@ -169,20 +164,20 @@ vector<double> optProblem::objGradient(vector<double> x) const
         
       Map<Eigen::VectorXd> point(&c_data[min_idx].point[0],3);
       Map<Eigen::VectorXd> dir(&c_data[min_idx].dir[0],3);
-      double p_d=c_data[min_idx].distance;//-std::copysign(c_data[min_idx].distance,0.005);
-      Eigen::VectorXd delta_p=ee_pose.head(3)-(p_d*dir);
-      finger_gradient+=delta_p.transpose()*J.block(0,0,3,J.cols());
+      double p_d=c_data[min_idx].distance;
+      Eigen::VectorXd delta_p=p_d*dir;
+      finger_gradient+=100.0*delta_p.transpose()*J.block(0,0,3,J.cols());
 
     }
     
     for (int k=0;k<4;++k) 
     {
-      gradient[k]+=finger_gradient[k];
+      gradient[finger_*4+k]+=finger_gradient[k];
     }
    
-    for (int j=0;j<robot_kdl_->f_dof;++j)
+    for (int j=0;j<robot_kdl_->dof;++j)
     {
-      retval[j+robot_kdl_->f_dof*(i)]+=gradient[j];
+      retval[j+robot_kdl_->dof*(i)]+=gradient[j];
     }
     fill(gradient.begin(), gradient.end(), 0.0);
  
@@ -209,30 +204,29 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
   vector<double> vel_const(m_nic,0.0);
   Eigen::VectorXd hand_q(16),obj_pose_err;
  
-  for(int j=0;j<robot_kdl_->f_dof;++j)
+  for(int j=finger_*4;j<finger_*4+4;++j)
   {
-    vel_const[(0)*robot_kdl_->f_dof+j]=std::abs(x[(0)*robot_kdl_->f_dof+j]-joints_0[j])-vel_lim;
+    vel_const[(0)*robot_kdl_->dof+j]=std::abs(x[(0)*robot_kdl_->dof+j]-joints_0[j])-vel_lim;
   }
 
   for (int i=1; i<timesteps_-1; ++i)
   {
-    for(int j=0;j<robot_kdl_->f_dof;++j)
+    for(int j=finger_*4;j<finger_*4+4;++j)
     {
-      vel_const[(i)*robot_kdl_->f_dof+j]=std::abs(x[(i)*robot_kdl_->f_dof+j]-x[(i-1)*robot_kdl_->f_dof+j])-vel_lim;
+      vel_const[(i)*robot_kdl_->dof+j]=std::abs(x[(i)*robot_kdl_->dof+j]-x[(i-1)*robot_kdl_->dof+j])-vel_lim;
     }
   }
-  //
-  //return vel_const;
-   // collision const:
+  
+  // collision const:
   // Check collision between object and links:
   double collision_err=0.0;
   
   for(int t=0;t<timesteps_;++t)
   {
     //collision_err=0.0;
-    for(int j=0; j<robot_kdl_->f_dof;++j)
+    for(int j=0; j<robot_kdl_->dof;++j)
     {
-      hand_q[j]=x[(t)*robot_kdl_->f_dof+j];
+      hand_q[j]=x[(t)*robot_kdl_->dof+j];
     }
     
     vector<vector<double>> link_poses;
@@ -246,7 +240,14 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
     for (int j=0;j<4;j++)
     {
       //finger joints:
-      finger_q.tail(4)=hand_q.segment(4*j,4);
+      if(j==finger_)
+      {
+        finger_q.tail(4)=hand_q.segment(4*j,4);
+      }
+      else
+      {
+        finger_q.tail(4)=init_joints.segment(4*j,4);
+      }
       for(int i=0;i<3;++i)
       {
         robot_kdl_->getLinkPose(j*3+i,finger_q,l_pose_);
@@ -269,6 +270,7 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
         {
           sd_contact[k]=std::abs(contact_data[l_idx_[j]][k].distance);
         }
+        //vel_const[robot_kdl_->dof*timesteps_+timesteps_]=sd_contact.minCoeff();
       }
       
       if(!(t==timesteps_-1 && l_idx_[j]==l_idx_[l_idx_.size()-1]))
@@ -278,18 +280,17 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
         {
           if(contact_data[l_idx_[j]][k].collision)
           {
-            collision_err+=1.0*std::abs(contact_data[l_idx_[j]][k].distance);
+            collision_err+=std::abs(contact_data[l_idx_[j]][k].distance);
           }
         }
       }
     }
-    //vel_const[robot_kdl_->f_dof*timesteps_+t]=collision_err;
+    vel_const[robot_kdl_->dof*timesteps_+t]=collision_err;
     
     // check link to link collsions:
     contact_data.clear();
 
     
-    //c_check->check_link_collision(link_poses,contact_data,l_idx_,f_idx);
     c_check->check_link_collision(contact_data,l_idx_);
 
     collision_err=0.0;
@@ -303,30 +304,27 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
         }
       }
     }
-    vel_const[robot_kdl_->f_dof*timesteps_+timesteps_+1+t]=collision_err;
-    //cerr<<    vel_const[robot_kdl_->f_dof*timesteps_+timesteps_+1+t]<<endl;
+    vel_const[robot_kdl_->dof*timesteps_+timesteps_+1+t]=collision_err;
   }
   
   Eigen::VectorXd q(16),ee_pose;//obj_pose_err;
   // stability cost:
-  for(int j=0; j<robot_kdl_->f_dof;++j)
+  for(int j=0; j<robot_kdl_->dof;++j)
   {
-    q[j]=x[(timesteps_-1)*robot_kdl_->f_dof+j];
+    q[j]=x[(timesteps_-1)*robot_kdl_->dof+j];
   }
 
   robot_kdl_->getFK(finger_,q.segment(finger_*4,4),ee_pose,true);
-  // object pose error:
   obj_pose_err=initial_pose_.head(3)-ee_pose.head(3);
-  //vel_const[robot_kdl_->f_dof*timesteps_+timesteps_*2+1]=obj_pose_err.squaredNorm()-stability_thresh_;
-  //cerr<<obj_pose_err.squaredNorm()<<endl;
+  vel_const[robot_kdl_->dof*timesteps_+timesteps_*2+1]=obj_pose_err.squaredNorm()-stability_thresh_;
   return vel_const;
 }
 
 
 vector<double> optProblem::inEqGradient(vector<double> x) const
 {
-  vector<double> retval(1*robot_kdl_->f_dof+2*(timesteps_-1)*robot_kdl_->f_dof,0.0);
-  for(int j=0;j<robot_kdl_->f_dof;++j)
+  vector<double> retval(1*robot_kdl_->dof+2*(timesteps_-1)*robot_kdl_->dof,0.0);
+  for(int j=finger_*4;j<finger_*4+4;++j)
   {
     if(x[j]-joints_0[j]<0.0)
     {
@@ -340,20 +338,20 @@ vector<double> optProblem::inEqGradient(vector<double> x) const
  
   for(int i=1;i<timesteps_;++i)
   {
-      for(int j=0;j<robot_kdl_->f_dof;++j)
+      for(int j=finger_*4;j<finger_*4+4;++j)
       {
-        if(x[(i)*robot_kdl_->f_dof+j]-x[(i-1)*robot_kdl_->f_dof+j]<0.0)
+        if(x[(i)*robot_kdl_->dof+j]-x[(i-1)*robot_kdl_->dof+j]<0.0)
         {
-          retval[1*robot_kdl_->f_dof+2*(i-1)*robot_kdl_->f_dof+j]=1.0;
+          retval[1*robot_kdl_->dof+2*(i-1)*robot_kdl_->dof+j]=1.0;
           
-          retval[1*robot_kdl_->f_dof+2*(i-1)*robot_kdl_->f_dof+robot_kdl_->f_dof+j]=-1.0;
+          retval[1*robot_kdl_->dof+2*(i-1)*robot_kdl_->dof+robot_kdl_->dof+j]=-1.0;
 
         }
         else
         {
-          retval[1*robot_kdl_->f_dof+2*(i-1)*robot_kdl_->f_dof+j]=-1.0;
+          retval[1*robot_kdl_->dof+2*(i-1)*robot_kdl_->dof+j]=-1.0;
                                                                 
-          retval[1*robot_kdl_->f_dof+2*(i-1)*robot_kdl_->f_dof+robot_kdl_->f_dof+j]=1.0;
+          retval[1*robot_kdl_->dof+2*(i-1)*robot_kdl_->dof+robot_kdl_->dof+j]=1.0;
           
         }
       }
@@ -375,7 +373,7 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
     }
   }
   
-  vector<double> retval(robot_kdl_->f_dof*(timesteps_+2+timesteps_),0.0);
+  vector<double> retval(robot_kdl_->dof*(timesteps_+2+timesteps_),0.0);
   Eigen::VectorXd hand_q(16),obj_pose_err;
   //double collision_err=0.0;
   Eigen::VectorXd gradient,finger_gradient,contact_gradient;
@@ -389,9 +387,9 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
     finger_gradient.setZero();
     gradient.setZero();
     //collision_err=0.0;
-    for(int j=0; j<robot_kdl_->f_dof;++j)
+    for(int j=0; j<robot_kdl_->dof;++j)
     {
-      hand_q[j]=x[(t)*robot_kdl_->f_dof+j];
+      hand_q[j]=x[(t)*robot_kdl_->dof+j];
     }
     
     vector<vector<double>> link_poses;
@@ -404,8 +402,14 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
  
     for (int j=0;j<4;j++)
     {
-      //finger joints:
-      finger_q.tail(4)=hand_q.segment(4*j,4);
+      if(j==finger_)
+      {
+        finger_q.tail(4)=hand_q.segment(4*j,4);
+      }
+      else
+      {
+        finger_q.tail(4)=init_joints.segment(4*j,4);
+      }
       for(int i=0;i<3;++i)
       {
         if(j==finger_)
@@ -425,11 +429,12 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
 
     for(int i=0;i<3;++i)
     {
+      int n_js=hand_J[j*3+i].cols();
+
       if(!(t==timesteps_-1 && i==2))
       {
         Map<Eigen::VectorXd> link_pose(&link_poses[j*3+i][0],3);
         
-        int n_js=hand_J[j*3+i].cols();
     
         for(int k=0;k<contact_data[j*3+i].size();++k)
         {
@@ -441,7 +446,7 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
             //cerr<<"pt"<<contact_data[j][k].distance<<endl;
             double p_d=contact_data[j*3+i][k].distance;
             //cerr<<"pd"<<endl;
-            Eigen::VectorXd delta_p=10.0*(link_pose-p_d*dir);
+            Eigen::VectorXd delta_p=p_d*dir;
             //return retval;
     
             //cerr<<"Computing gradient"<<endl;
@@ -451,13 +456,39 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
         gradient.segment(j*4,4)+=finger_gradient;
         finger_gradient.setZero();
       }
+      else
+      {
+        Eigen::VectorXd sd_contact(contact_data[j*3+i].size());
+        sd_contact.setZero();
+        // check for contact
+        for(int k=0;k<contact_data[j*3+i].size();++k)
+        {
+          sd_contact[k]=std::abs(contact_data[j*3+i][k].distance);
+        }
+
+        int min_idx;
+        sd_contact.minCoeff(&min_idx);
+        
+        Map<Eigen::VectorXd> point(&contact_data[j*3+i][min_idx].point[0],3);
+        Map<Eigen::VectorXd> dir(&contact_data[j*3+i][min_idx].dir[0],3);
+        double p_d=contact_data[j*3+i][min_idx].distance;
+        Eigen::VectorXd delta_p=p_d*dir;
+        
+        finger_gradient.segment(0,n_js)=1.0*delta_p.transpose()*hand_J[j*3+i].block(0,0,3,n_js);
+        for(int k=0;k<4;++k)
+        {
+          //retval[timesteps_*robot_kdl_->dof+finger_*4+k]=finger_gradient[k];
+        }
+        finger_gradient.setZero();
+
+      }
       
     }
     
     // add robot collision gradient to main
     for(int k=finger_*4;k<finger_*4+4;++k)
     {
-      //retval[t*robot_kdl_->f_dof+k]+=gradient[k];
+      retval[t*robot_kdl_->dof+k]+=gradient[k];
     }
         
     gradient.setZero();
@@ -479,24 +510,28 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
             Map<Eigen::VectorXd> dir(&contact_data[j*3+i][k].dir[0],3);
             //cerr<<"pt"<<contact_data[j][k].distance<<endl;
             double p_d=contact_data[j*3+i][k].distance;
-            Eigen::VectorXd delta_p=-1.0*(p_d*dir-link_pose);
+            Eigen::VectorXd delta_p=p_d*dir;
             //cerr<<"Computing gradient"<<endl;
-            finger_gradient.segment(0,n_js)+=1.0*delta_p.transpose()*hand_J[j*3+i].block(0,0,3,n_js);
+            finger_gradient.segment(0,n_js)+=delta_p.transpose()*hand_J[j*3+i].block(0,0,3,n_js);
+            
           }
       }
+     
       gradient.segment(j*4,4)+=finger_gradient;
       finger_gradient.setZero();
      }
+    //cerr<<gradient.transpose()<<endl;
     for(int k=finger_*4;k<finger_*4+4;++k)
     {
-      retval[timesteps_*robot_kdl_->f_dof+robot_kdl_->f_dof+t*robot_kdl_->f_dof+k]+=gradient[k];
-    }    
+      retval[timesteps_*robot_kdl_->dof+robot_kdl_->dof+t*robot_kdl_->dof+k]=gradient[k];
+    }
+    gradient.setZero();
   }
   // stability gradient:
-  Eigen::VectorXd ee_pose,q(robot_kdl_->f_dof);
-  for(int j=0; j<robot_kdl_->f_dof;++j)
+  Eigen::VectorXd ee_pose,q(robot_kdl_->dof);
+  for(int j=0; j<robot_kdl_->dof;++j)
   {
-    q[j]=x[(timesteps_-1)*robot_kdl_->f_dof+j];
+    q[j]=x[(timesteps_-1)*robot_kdl_->dof+j];
   }
 
   robot_kdl_->getFK(finger_,q.segment(finger_*4,4),ee_pose,true);
@@ -509,10 +544,9 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
   finger_gradient=-2.0*obj_pose_err.transpose()*J.block(0,0,3,J.cols());
   gradient.setZero();
   gradient.segment(finger_*4,4)=finger_gradient;
-  //cerr<<gradient<<endl;
   for(int k=finger_*4;k<finger_*4+4;++k)
   {
-    //retval[timesteps_*robot_kdl_->f_dof+robot_kdl_->f_dof+timesteps_*robot_kdl_->f_dof+k]+=gradient[k];
+    retval[timesteps_*robot_kdl_->dof+robot_kdl_->dof+timesteps_*robot_kdl_->dof+k]+=gradient[k];
   }    
   
   return retval;
@@ -532,7 +566,6 @@ vector<double> optProblem::eqGradient(vector<double> x) const
   vector<double> retval(m_dim*m_nec,0.0);
   return retval;
 }
-
 vector<vector<double>> optProblem::bounds() const
 {
   vector<vector<double>> bound;
@@ -567,17 +600,17 @@ vector<double> optProblem::sparse_gradient(const vector<double> x) const
     grad[i]=obj_grad[i];
   }
 
-  for(int j=0;j<robot_kdl_->f_dof;++j)
+  for(int j=0;j<robot_kdl_->dof;++j)
   {
     grad.emplace_back(ineq_grad[j]);
   }
   
   for(int i=1;i<timesteps_;++i)
   {
-    for(int j=0;j<robot_kdl_->f_dof;++j)
+    for(int j=0;j<robot_kdl_->dof;++j)
     {
-      grad.emplace_back(ineq_grad[1*robot_kdl_->f_dof+2*(i-1)*robot_kdl_->f_dof+j]);
-      grad.emplace_back(ineq_grad[1*robot_kdl_->f_dof+2*(i-1)*robot_kdl_->f_dof+robot_kdl_->f_dof+j]);
+      grad.emplace_back(ineq_grad[1*robot_kdl_->dof+2*(i-1)*robot_kdl_->dof+j]);
+      grad.emplace_back(ineq_grad[1*robot_kdl_->dof+2*(i-1)*robot_kdl_->dof+robot_kdl_->dof+j]);
     }
   }
 
@@ -587,16 +620,16 @@ vector<double> optProblem::sparse_gradient(const vector<double> x) const
   {
     for(int j=finger_*4;j<finger_*4+4;++j)
     {
-      grad.emplace_back(collision_grad[i*robot_kdl_->f_dof+j]);
+      grad.emplace_back(collision_grad[i*robot_kdl_->dof+j]);
     }
-    //cerr<<i<<" "<<collision_grad[i*robot_kdl_->f_dof]<<endl;
+    //cerr<<i<<" "<<collision_grad[i*robot_kdl_->dof]<<endl;
   }
 
   
   // contact gradient:
-  for(int j=0;j<robot_kdl_->f_dof;++j)
+  for(int j=finger_*4;j<finger_*4+4;++j)
   {
-    grad.emplace_back(collision_grad[timesteps_*robot_kdl_->f_dof+j]);
+    grad.emplace_back(collision_grad[timesteps_*robot_kdl_->dof+j]);
   }
 
   // link collision gradient:
@@ -604,15 +637,15 @@ vector<double> optProblem::sparse_gradient(const vector<double> x) const
   {
     for(int j=finger_*4;j<finger_*4+4;++j)
     {
-      grad.emplace_back(collision_grad[timesteps_*robot_kdl_->f_dof+robot_kdl_->f_dof+i*robot_kdl_->f_dof+j]);
+      grad.emplace_back(collision_grad[timesteps_*robot_kdl_->dof+robot_kdl_->dof+i*robot_kdl_->dof+j]);
     }
-    //cerr<<i<<" "<<collision_grad[i*robot_kdl_->f_dof]<<endl;
+    //cerr<<i<<" "<<collision_grad[i*robot_kdl_->dof]<<endl;
   }
 
   // stability gradient:
-  for(int j=0;j<robot_kdl_->f_dof;++j)
+  for(int j=0;j<robot_kdl_->dof;++j)
   {
-    grad.emplace_back(collision_grad[2*timesteps_*robot_kdl_->f_dof+robot_kdl_->f_dof+j]);
+    grad.emplace_back(collision_grad[2*timesteps_*robot_kdl_->dof+robot_kdl_->dof+j]);
   }
   
 
@@ -631,7 +664,7 @@ std::vector<std::pair<vector<double>::size_type, vector<double>::size_type>> opt
   // inequality constraints:
   // Initial joints:
   // inequality constraints:
-  for(int i=0;i<robot_kdl_->f_dof;++i)
+  for(int i=0;i<robot_kdl_->dof;++i)
   {
     retval.emplace_back(1+m_nec+i,i);
   }
@@ -639,23 +672,26 @@ std::vector<std::pair<vector<double>::size_type, vector<double>::size_type>> opt
   //for(int i=0;
   for(int i=1;i<timesteps_;++i)
   {
-    for(int j=0;j<robot_kdl_->f_dof;++j)
+    for(int j=0;j<robot_kdl_->dof;++j)
     {
-      retval.emplace_back(1+m_nec+1*robot_kdl_->f_dof+(i-1)*robot_kdl_->f_dof+j, (i-1)*robot_kdl_->f_dof+j);
-      retval.emplace_back(1+m_nec+1*robot_kdl_->f_dof+(i-1)*robot_kdl_->f_dof+j,(i)*robot_kdl_->f_dof+j);
+      retval.emplace_back(1+m_nec+1*robot_kdl_->dof+(i-1)*robot_kdl_->dof+j, (i-1)*robot_kdl_->dof+j);
+      retval.emplace_back(1+m_nec+1*robot_kdl_->dof+(i-1)*robot_kdl_->dof+j,(i)*robot_kdl_->dof+j);
     }
   }
+
+  // object collision gradient
   for(int i=0;i<timesteps_;++i)
   {
     for(int j=finger_*4;j<finger_*4+4;++j)
     {
-      retval.emplace_back(1+m_nec+robot_kdl_->f_dof*timesteps_+i,i*robot_kdl_->f_dof+j);
+      retval.emplace_back(1+m_nec+robot_kdl_->dof*timesteps_+i,i*robot_kdl_->dof+j);
     }
   }
-  
-  for(int j=0;j<robot_kdl_->f_dof;++j)
+
+  // contact gradient
+  for(int j=finger_*4;j<finger_*4+4;++j)
   {
-    retval.emplace_back(1+m_nec+robot_kdl_->f_dof*timesteps_+timesteps_,(timesteps_-1)*robot_kdl_->f_dof+j);
+    retval.emplace_back(1+m_nec+robot_kdl_->dof*timesteps_+timesteps_,(timesteps_-1)*robot_kdl_->dof+j);
   }
 
   // link collision gradient
@@ -663,16 +699,15 @@ std::vector<std::pair<vector<double>::size_type, vector<double>::size_type>> opt
   {
     for(int j=finger_*4;j<finger_*4+4;++j)
     {
-      retval.emplace_back(1+m_nec+robot_kdl_->f_dof*timesteps_+timesteps_+1+i,i*robot_kdl_->f_dof+j);
+      retval.emplace_back(1+m_nec+robot_kdl_->dof*timesteps_+timesteps_+1+i,i*robot_kdl_->dof+j);
     }
   }
   // stability constraint:
   
-  for(int j=0;j<robot_kdl_->f_dof;++j)
+  for(int j=0;j<robot_kdl_->dof;++j)
   {
-    retval.emplace_back(1+m_nec+robot_kdl_->f_dof*timesteps_+(timesteps_*2)+1,(timesteps_-1)*robot_kdl_->f_dof+j);
+    retval.emplace_back(1+m_nec+robot_kdl_->dof*timesteps_+(timesteps_*2)+1,(timesteps_-1)*robot_kdl_->dof+j);
   }
 
   return retval;
 }
-

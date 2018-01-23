@@ -29,7 +29,7 @@ int robotNode::init(ros::NodeHandle& n, std::string robot_prefix)
   joint_pub_=n.advertise<sensor_msgs::JointState>(joint_cmd_topic.insert(0,robot_prefix),1);
   // create ros subscriber
   joint_sub_=n.subscribe<sensor_msgs::JointState>(joint_state_topic.insert(0,robot_prefix), 1,&robotNode::stCallback,this);
-  biotac_sub_=n.subscribe<std_msgs::Float32MultiArray>("biotac/force_data",1,&robotNode::biotacCallback,this);
+  biotac_sub_=n.subscribe<std_msgs::Float32MultiArray>("biotac/sigmoid",1,&robotNode::biotacCallback,this);
   got_robot_state=false;
   got_biotac_state=false;
   std::string names[]={"index_joint_0","index_joint_1","index_joint_2", "index_joint_3",

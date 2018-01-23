@@ -142,7 +142,6 @@ public:
     }
 
     c_check.update_collision_links(f_idx);
-    allegro_kdl.f_dof=4;
     opt_problems::optProblem opt_problem(t_steps,allegro_kdl,des_pt,vel_limits,joints_0,f,c_check);
     
     problem prob{trajectory_optimization{opt_problem}};
@@ -152,18 +151,18 @@ public:
     pagmo::snopt7 sn_v(false,"/usr/local/lib/");
     sn_v.set_integer_option("Iteration limit",1000);
     sn_v.set_numeric_option("Major optimality tolerance",1e-2); 
-    sn_v.set_numeric_option("Linesearch tolerance",0.3); 
-
+    //sn_v.set_numeric_option("Linesearch tolerance",0.3); 
+    
     algorithm algo{sn_v};
-    algo.set_verbosity(100);
+    algo.set_verbosity(1);
     //algorithm algo{cmaes(500)};
-    population pop{prob,1u};
+    population pop{prob,10u};
     
     vector<double> x_in(16*t_steps,0.0);
     vector<double> joint_init=joints_0;
     //joint_init[f*4+1]=0.1;
-    joint_init[f*4+2]=0.1;
-    joint_init[f*4+3]=0.1;
+    //joint_init[f*4+2]=0.1;
+    //joint_init[f*4+3]=0.1;
         
     for(int i=0;i<t_steps;++i)
     {    
@@ -217,7 +216,7 @@ public:
         {
           for(int j=0;j<4;j++)
           {
-            j_arr[k*4+j]=j_best[i*16+k*4+j];//joints_0[k*4+j];
+            j_arr[k*4+j]=joints_0[k*4+j];
           }
         }
       }

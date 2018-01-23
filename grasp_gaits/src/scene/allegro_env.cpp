@@ -13,7 +13,7 @@ allegroEnv::allegroEnv(float narrow_vsize, float broad_vsize)
   ccd.support1       = support_convex; // support function for first object
   ccd.support2       = support_convex; // support function for second object
   ccd.max_iterations = 1000;     // maximal number of iterations
-  ccd.epa_tolerance  = 0.001;  // maximal tolerance for EPA part
+  ccd.epa_tolerance  = 0.0001;  // maximal tolerance for EPA part
 
 }
 
@@ -106,6 +106,7 @@ void allegroEnv::update_collision_links(const vector<int> &l_idx)
   //cerr<<collision_link_objs_[0]->vertices.size()<<endl;
   
 }
+
 void allegroEnv::check_link_collision(vector<vector<collision_data>> &c_data, vector<int> l_idx)
 {
   //update_hand_state(l_poses);
