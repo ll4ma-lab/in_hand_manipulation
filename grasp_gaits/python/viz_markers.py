@@ -216,14 +216,14 @@ class VizInHand:
             obj_m.header.stamp=rospy.Time()
             self.obj_pub.publish(obj_m)
 
-    def viz_pts(self,cpts,t='cpt',rgb=[0.0,0.0,1.0]):
+    def viz_pts(self,cpts,t='cpt',rgb=[0.0,0.0,1.0],frame='palm_link'):
         scale=0.01
         self.v_pub=rospy.Publisher(t,MarkerArray,queue_size=1)
         m_arr=MarkerArray()
         for i in range(len(cpts)):
             pt=cpts[i]
             obj_m=Marker()
-            obj_m.header.frame_id='palm_link'
+            obj_m.header.frame_id=frame
             obj_m.header.stamp=rospy.Time()
             obj_m.id=i
             obj_m.type=Marker.SPHERE
@@ -250,14 +250,14 @@ class VizInHand:
             self.loop_rate.sleep()
             i+=1
 
-    def viz_cpts(self,cpts,t='cpt',rgb=[1.0,0.1,0.1]):
-        scale=0.01
+    def viz_cpts(self,cpts,t='cpt',rgb=[1.0,0.1,0.1],frame='palm_link'):
+        scale=0.05
         self.v_pub=rospy.Publisher(t,MarkerArray,queue_size=1)
         m_arr=MarkerArray()
         for i in range(len(cpts)):
             pt=cpts[i]
             obj_m=Marker()
-            obj_m.header.frame_id='palm_link'
+            obj_m.header.frame_id=frame
             obj_m.header.stamp=rospy.Time()
             obj_m.id=i
             obj_m.type=Marker.SPHERE
@@ -269,16 +269,16 @@ class VizInHand:
             obj_m.color.r=rgb[0]
             obj_m.color.g=rgb[1]
             obj_m.color.b=rgb[2]
-            obj_m.pose.position.x=pt.point.x
-            obj_m.pose.position.y=pt.point.y
-            obj_m.pose.position.z=pt.point.z
+            obj_m.pose.position.x=pt.x
+            obj_m.pose.position.y=pt.y
+            obj_m.pose.position.z=pt.z
             obj_m.pose.orientation.x=0.0
             obj_m.pose.orientation.y=0.0
             obj_m.pose.orientation.z=0.0
             obj_m.pose.orientation.w=1.0
             m_arr.markers.append(obj_m)
         i=0
-        self.loop_rate=rospy.Rate(200)
+        self.loop_rate=rospy.Rate(10)
         while(not rospy.is_shutdown() and i<10):
             self.v_pub.publish(m_arr)
             self.loop_rate.sleep()
