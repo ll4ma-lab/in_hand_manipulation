@@ -20,6 +20,7 @@ public:
   void load_obj(const string &mesh_location);
   void update_grasp_obj_pose(vector<double> &pose);
   void get_obj_pointcloud(pcl::PointCloud<PointXYZRGB>::Ptr);
+  void get_link_pointcloud(pcl::PointCloud<PointXYZRGB>::Ptr cloud_obj1,int l_idx_);
   // collision checking functions:
   //checking collision between all robot links and the environment
 

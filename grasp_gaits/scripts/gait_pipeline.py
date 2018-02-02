@@ -208,7 +208,7 @@ if __name__=='__main__':
 
     # load object mesh and pose:
     mesh_f='/home/bala/object_models/pringles/vertices.ply'
-    mesh_stl='file:///home/bala/object_models/pringles/nontextured.stl'
+    mesh_stl='file:///home/bala/object_models/pringles/nontextured_cvx.stl'
 
     #mesh_f="/home/bala/catkin_ws/src/urlg_robots_description/meshes/allegro/convex_hull/vertices/index_link_1.ply"
     pose=obj_pose.pose
@@ -221,40 +221,32 @@ if __name__=='__main__':
     d_pts=gait_help.get_cpt(obj_pose,des_cpt,des_obj_pose)
     gg.viz.viz_cpts(d_pts,t='d_cpt',rgb=[0.0,1.0,0.0])
 
-    # intial grasp vis:
-    i_jtraj=JointTrajectory()
     
     
     
     # move to initial grasp
-    j_initial=init_js.position
-    js=JointState()
-    js.position=np.array([0.1,0.1,0.2,0.1,
-                          0.1,0.1,0.2,0.1,
-                          0.1,0.1,0.2,0.1,
-                          1.5,0.1,0.1,0.1])
-
+    #j_initial=init_js.position
+    js=init_js#JointState()
+    #js.position=np.array([0.1,0.1,0.2,0.1,
+    #                      0.1,0.1,0.2,0.1,
+    #                      0.1,0.1,0.2,0.1,
+    #                      1.5,0.1,0.1,0.1])
+    
     #raw_input('next finger?')
-    gg.grasp_client.update_obj(obj_pose.pose,mesh_f)
+    #gg.grasp_client.update_obj(obj_pose.pose,mesh_f)
     
-    des_pts=[]
-    for i in range(len(cpt)):
-        des_pts.append(cpt[i].point)
+    #des_pts=[]
+    #for i in range(len(cpt)):
+    #    des_pts.append(cpt[i].point)
 
-    jtraj=gg.grasp_client.call(des_pts,js)
-    n_traj=gg.interpolate_jtraj(jtraj)
+    #jtraj=gg.grasp_client.call(des_pts,js)
+    #n_traj=gg.interpolate_jtraj(jtraj)
 
-    gg.traj_server.viz_joint_traj(n_traj,base_link='allegro_mount')
+    #gg.traj_server.viz_joint_traj(n_traj,base_link='allegro_mount')
 
-    raw_input('move to initial grasp')
-    gg.allegro_drv.publish_joints(js.position)
+    #raw_input('move to initial grasp')
+    #gg.allegro_drv.publish_joints(js.position)
     
-    # move to initial grasp:
-    raw_input('Send to robot?')
-    # interpolate traj
-    gg.grasp_client.send_robot(n_traj)
-
-    exit()
     for t in range(10):
         raw_input('Next timestep?')
         

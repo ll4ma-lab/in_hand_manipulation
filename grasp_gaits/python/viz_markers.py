@@ -251,11 +251,11 @@ class VizInHand:
             i+=1
 
     def viz_cpts(self,cpts,t='cpt',rgb=[1.0,0.1,0.1],frame='palm_link'):
-        scale=0.05
+        scale=0.01
         self.v_pub=rospy.Publisher(t,MarkerArray,queue_size=1)
         m_arr=MarkerArray()
         for i in range(len(cpts)):
-            pt=cpts[i]
+            pt=cpts[i].point
             obj_m=Marker()
             obj_m.header.frame_id=frame
             obj_m.header.stamp=rospy.Time()

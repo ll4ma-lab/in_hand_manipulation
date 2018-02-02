@@ -20,7 +20,7 @@ public:
   {
     nh=&n;
     // initialize collision checker
-    c_check=allegroEnv(0.01,0.01);
+    c_check=allegroEnv(0.02,0.02);
     // setup optimization:
     string urdf_file="/home/bala/catkin_ws/src/in_hand_manipulation/in_grasp_manipulation/urdf/allegro.urdf";
     
@@ -71,9 +71,9 @@ public:
     c_check.update_grasp_obj_pose(pose);
 
     // visualize object pointcloud:
-    pcl::PointCloud<PointXYZRGB>::Ptr cloud_obj1(new PointCloud<PointXYZRGB>);
-    c_check.get_obj_pointcloud(cloud_obj1);
-    pub.publish(cloud_obj1);
+    // pcl::PointCloud<PointXYZRGB>::Ptr cloud_obj1(new PointCloud<PointXYZRGB>);
+    //c_check.get_obj_pointcloud(cloud_obj1);
+    //pub.publish(cloud_obj1);
     return true;
   }
   bool fg_call(grasp_gaits::RelocateFingerKin::Request &req, grasp_gaits::RelocateFingerKin::Response &res)
@@ -149,20 +149,20 @@ public:
     
     prob.set_c_tol(tol);
     pagmo::snopt7 sn_v(false,"/usr/local/lib/");
-    sn_v.set_integer_option("Iteration limit",1000);
-    sn_v.set_numeric_option("Major optimality tolerance",1e-2); 
+    //sn_v.set_integer_option("Iteration limit",1000);
+    //sn_v.set_numeric_option("Major optimality tolerance",1e-3); 
     //sn_v.set_numeric_option("Linesearch tolerance",0.3); 
     
     algorithm algo{sn_v};
     algo.set_verbosity(1);
     //algorithm algo{cmaes(500)};
-    population pop{prob,10u};
+    population pop{prob,1u};
     
     vector<double> x_in(16*t_steps,0.0);
     vector<double> joint_init=joints_0;
     //joint_init[f*4+1]=0.1;
-    //joint_init[f*4+2]=0.1;
-    //joint_init[f*4+3]=0.1;
+    joint_init[f*4+2]=0.1;
+    joint_init[f*4+3]=0.1;
         
     for(int i=0;i<t_steps;++i)
     {    
@@ -180,12 +180,24 @@ public:
     
     cerr<<"Solving"<<endl;  
     population pop_res = algo.evolve(pop);
-    cerr<<"optimization completed!  Final cost: "<<pop_res.champion_f()[0]<<endl;
+    cerr<<"optimization completed!  Final cost: "<<pop_res.champion_f()[0]<<" "<<pop_res.champion_f()[1+allegro_kdl.dof*1+1]<<endl;
     
-    
+    // check values:
+    vector<double> f_out=prob.fitness(pop_res.champion_x());
+    cerr<<"Test Final cost: "<<f_out[0]<<" "<<f_out[1+allegro_kdl.dof*1*1+1]<<endl;
+    pcl::PointCloud<PointXYZRGB>::Ptr cloud_obj1(new PointCloud<PointXYZRGB>);
+    c_check.get_link_pointcloud(cloud_obj1,f*3+2);
+    c_check.get_obj_pointcloud(cloud_obj1);
+   
+    pub.publish(cloud_obj1);
+
     vector<double> j_best=pop_res.champion_x();
-    
-    
+    /*
+    for(int l=0;l<j_best.size();++l)
+    {
+      cerr<<j_best[l]<<endl;
+    }
+    */
     trajectory_msgs::JointTrajectory joint_traj;
     std::vector<std::string> joint_names={"index_joint_0","index_joint_1","index_joint_2","index_joint_3",
                                         "middle_joint_0","middle_joint_1","middle_joint_2","middle_joint_3",

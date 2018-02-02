@@ -19,8 +19,8 @@ allegroEnv::allegroEnv(int n_links, float downsample_size, float narrow_vsize, f
   
   ccd.support1       = support_convex; // support function for first object
   ccd.support2       = support_convex; // support function for second object
-  ccd.max_iterations = 10;     // maximal number of iterations
-  ccd.epa_tolerance  = 0.001;  // maximal tolerance for EPA part
+  ccd.max_iterations = 1000;     // maximal number of iterations
+  ccd.epa_tolerance  = 0.0001;  // maximal tolerance for EPA part
 
 }
 

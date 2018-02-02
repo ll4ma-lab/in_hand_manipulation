@@ -13,7 +13,11 @@ allegroEnv::allegroEnv(float narrow_vsize, float broad_vsize)
   ccd.support1       = support_convex; // support function for first object
   ccd.support2       = support_convex; // support function for second object
   ccd.max_iterations = 1000;     // maximal number of iterations
-  ccd.epa_tolerance  = 0.0001;  // maximal tolerance for EPA part
+  ccd.epa_tolerance  = 0.00001;  // maximal tolerance for EPA part
+
+  ccd.center1 = center; // center function for first object
+  ccd.center2 = center; // center function for second object
+  ccd.mpr_tolerance = 0.0001;
 
 }
 
@@ -84,6 +88,40 @@ void allegroEnv::get_obj_pointcloud(pcl::PointCloud<PointXYZRGB>::Ptr cloud_obj1
   cloud_obj1->header.frame_id="palm_link";
 
 }
+void allegroEnv::get_link_pointcloud(pcl::PointCloud<PointXYZRGB>::Ptr cloud_obj1,int l_idx_)
+{
+  // iterate through the object points, with color for each
+  float r=rand()%200, g = rand()%200, b = rand()%200;
+  
+  vector<Vector3d> obj=hand_link_objs_[l_idx_].vertices;
+  Vector4f trans={hand_link_objs_[l_idx_].pos.v[0],
+                    hand_link_objs_[l_idx_].pos.v[1],
+                    hand_link_objs_[l_idx_].pos.v[2],1.0};
+  Matrix3f m; m=Quaternionf(hand_link_objs_[l_idx_].quat.q[3],
+                            hand_link_objs_[l_idx_].quat.q[0], hand_link_objs_[l_idx_].quat.q[1],
+                            hand_link_objs_[l_idx_].quat.q[2]);
+  Matrix4f T;
+  T.setIdentity();
+  T.block<3,3>(0,0)=m;
+  T.rightCols<1>()=trans;
+    
+  for (int j=0; j <  obj.size() ; ++j) {
+    Vector4f point={obj[j][0],obj[j][1],obj[j][2],1.0};
+    point=T*point;
+    PointXYZRGB newpt;
+    newpt.x = point[0];
+    newpt.y = point[1];
+    newpt.z = point[2];
+    newpt.r = r;
+    newpt.g = g;
+    newpt.b = b;
+    cloud_obj1->push_back(newpt);
+  }
+  
+  cloud_obj1->header.frame_id="palm_link";
+
+}
+
 void allegroEnv::check_ftip_contact(vector<double> pose, vector<collision_data> &c_data, int ftip_idx)
 {
   update_obj_pose(hand_link_objs_[ftip_idx],pose);
