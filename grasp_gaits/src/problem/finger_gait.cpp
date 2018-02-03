@@ -274,13 +274,13 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
         //cerr<<link_poses[l_idx_[j]].tr<<endl;
         // allow for some penetration:
         cerr<<sd_contact[0]<<endl;
-        if(sd_contact[0]<dist_thresh_ && sd_contact[0]>0.0)
+        /*if(sd_contact[0]<dist_thresh_ && sd_contact[0]>0.0)
         {
           cerr<<sd_contact[0]<<endl;
           sd_contact[0]=0.0;
         }
-       
-        vel_const[robot_kdl_->dof*timesteps_+timesteps_]=abs(sd_contact[0]);//.minCoeff();
+        */
+        vel_const[robot_kdl_->dof*timesteps_+timesteps_]=-1.0*sd_contact[0];//.minCoeff();
       }
       
       if(!(t==timesteps_-1 && l_idx_[j]==l_idx_[l_idx_.size()-1]))
@@ -482,20 +482,21 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
         Map<Eigen::VectorXd> point(&contact_data[j*3+i][min_idx].point[0],3);
         Map<Eigen::VectorXd> dir(&contact_data[j*3+i][min_idx].dir[0],3);
         double p_d=contact_data[j*3+i][min_idx].distance;
-        if(p_d<dist_thresh_ && p_d>0.0)
+
+        /*if(p_d<dist_thresh_ && p_d>0.0)
         {
           p_d=0.0;//dist_thresh_-p_d;
         }
-
+        */
         Eigen::VectorXd delta_p;
         //cerr<<p_d<<endl;
         if(contact_data[j*3+i][min_idx].collision)
         {
-          delta_p=1.0*p_d*dir;
+          delta_p=-1.0*p_d*dir;
         }
         else
         {
-          delta_p=1.0*p_d*dir;          
+          delta_p=-1.0*p_d*dir;          
         }
         finger_gradient.segment(0,n_js)=delta_p.transpose()*hand_J[j*3+i].block(0,0,3,n_js);
         for(int k=0;k<4;++k)
