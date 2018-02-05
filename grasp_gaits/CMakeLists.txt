@@ -79,7 +79,7 @@ catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES grasp_gaits
   CATKIN_DEPENDS message_runtime
-#  DEPENDS s
+#  DEPENDS 
 )
 
 ###########
@@ -98,6 +98,9 @@ include_directories(
 
 set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRARIES}  ${CMAKE_DL_LIBS})
 
+add_library(finger_gait_nc STATIC src/problem/finger_gait_nc.cpp)
+target_link_libraries(finger_gait_nc ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
+
 add_library(finger_gait STATIC src/problem/finger_gait.cpp)
 target_link_libraries(finger_gait ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
 
@@ -112,6 +115,9 @@ target_link_libraries(allegro_env ccd ${catkin_LIBRARIES})
 
 add_executable(fg_server src/fg_server.cpp)
 target_link_libraries(fg_server finger_gait allegro_env ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
+
+add_executable(fg_nc_server src/fg_nc_server.cpp)
+target_link_libraries(fg_nc_server finger_gait_nc allegro_env ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
 
 #add_executable(fg_traj_server src/fg_traj_server.cpp)
 #target_link_libraries(fg_traj_server finger_gait_traj allegro_env ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})

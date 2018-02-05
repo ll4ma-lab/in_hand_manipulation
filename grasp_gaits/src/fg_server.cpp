@@ -20,7 +20,7 @@ public:
   {
     nh=&n;
     // initialize collision checker
-    c_check=allegroEnv(0.02,0.02);
+    c_check=allegroEnv(0.01,0.01);
     // setup optimization:
     string urdf_file="/home/bala/catkin_ws/src/in_hand_manipulation/in_grasp_manipulation/urdf/allegro.urdf";
     
@@ -161,8 +161,8 @@ public:
     vector<double> x_in(16*t_steps,0.0);
     vector<double> joint_init=joints_0;
     //joint_init[f*4+1]=0.1;
-    joint_init[f*4+2]=0.1;
-    joint_init[f*4+3]=0.1;
+    //joint_init[f*4+2]=0.2;
+    //joint_init[f*4+3]=0.1;
         
     for(int i=0;i<t_steps;++i)
     {    
@@ -171,20 +171,31 @@ public:
         x_in[i*16+j]=joint_init[j];//+(final_joints[j]-joints_0[j])*(i+1)/(t_steps_);
       }
     }
+    if(req.init_jtraj.points.size()>0)
+    {
+      for(int i=1;i<req.init_jtraj.points.size();++i)
+      {
+        for(int j=0;j<req.init_jtraj.points[i].positions.size();++j)
+        {
+          x_in[(i-1)*16+j]=req.init_jtraj.points[i].positions[j];
+        }
+      }
+              
+    }
     vector<double> f_in=prob.fitness(x_in);
     
     //vector<double> f_in_1=prob.fitness(x_in);
     cerr<<"Initial fitness: "<<f_in[0]<<endl;
   
     pop.set_xf(0,x_in,f_in);
-    
+    //return -1;
     cerr<<"Solving"<<endl;  
     population pop_res = algo.evolve(pop);
     cerr<<"optimization completed!  Final cost: "<<pop_res.champion_f()[0]<<" "<<pop_res.champion_f()[1+allegro_kdl.dof*1+1]<<endl;
     
     // check values:
     vector<double> f_out=prob.fitness(pop_res.champion_x());
-    cerr<<"Test Final cost: "<<f_out[0]<<" "<<f_out[1+allegro_kdl.dof*1*1+1]<<endl;
+    cerr<<"Test Final cost: "<<f_out[0]<<" "<<f_out[1+allegro_kdl.dof*1+1]<<" "<<f_out[1+allegro_kdl.dof*1+1+1+1]<<endl;
     pcl::PointCloud<PointXYZRGB>::Ptr cloud_obj1(new PointCloud<PointXYZRGB>);
     c_check.get_link_pointcloud(cloud_obj1,f*3+2);
     c_check.get_obj_pointcloud(cloud_obj1);

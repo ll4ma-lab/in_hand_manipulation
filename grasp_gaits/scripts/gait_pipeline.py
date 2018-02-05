@@ -35,8 +35,8 @@ class graspGait:
         self.allegro_drv=handAPI(init_node=False,publish_prefix=hand_prefix,listen_prefix=hand_prefix)
                 
         self.viz=VizInHand(o_mesh,init_node=False)
-    def fg_finger(self,finger,js,des_cpt,TRAJ=False):
-        j_traj,cpt=self.fg_client.call(des_cpt,finger,js)
+    def fg_finger(self,finger,js,des_cpt,TRAJ=False,T=1):
+        j_traj,cpt=self.fg_client.call(des_cpt,finger,js,T=T)
         # get full trajectory?
         if(TRAJ):
             print 'Getting full trajectory'
@@ -194,7 +194,7 @@ class gaitHelper:
 if __name__=='__main__':
     gait_help=gaitHelper()
     p_data=pickleData()
-    obj_file='../python/r_pringles_0.p'
+    obj_file='../python/r_mustard_0.p'
 
     obj_dat=p_data.read_file(obj_file)
     obj_pose,init_js,cpt,_=p_data.get_config(obj_dat,0)
@@ -207,8 +207,8 @@ if __name__=='__main__':
     
 
     # load object mesh and pose:
-    mesh_f='/home/bala/object_models/pringles/vertices.ply'
-    mesh_stl='file:///home/bala/object_models/pringles/nontextured_cvx.stl'
+    mesh_f='/home/bala/object_models/mustard_bottle/google_16k/vertices.ply'
+    mesh_stl='file:///home/bala/object_models/mustard_bottle/google_16k/nontextured.stl'
 
     #mesh_f="/home/bala/catkin_ws/src/urlg_robots_description/meshes/allegro/convex_hull/vertices/index_link_1.ply"
     pose=obj_pose.pose
@@ -252,14 +252,16 @@ if __name__=='__main__':
         
         gg.fg_client.update_obj(obj_pose.pose,mesh_f)
     
-        for i in range(3,-1,-1):
+        #for i in range(3,-1,-1):
+        for i in range(4):
+
             print i
             des_contact_pt=d_pts[i].point
-            jtraj,cpt[i]=gg.fg_finger(i,js,des_contact_pt)
+            jtraj,cpt[i]=gg.fg_finger(i,js,des_contact_pt,T=5)
             gg.viz.viz_cpts(cpt)
             
             # visualize jtraj:
-            jtraj.points[0]=jtraj.points[-1]
+            #jtraj.points[0]=jtraj.points[-1]
             gg.traj_server.viz_joint_traj(jtraj,base_link='allegro_mount')
             js.position=jtraj.points[-1].positions
             raw_input('Next finger?')
