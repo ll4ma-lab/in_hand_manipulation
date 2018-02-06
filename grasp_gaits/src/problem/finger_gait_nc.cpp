@@ -64,6 +64,8 @@ double optProblem::objFunction(const vector<double> x) const
       robot_kdl_->getFK(finger_,q.segment(finger_*4,4),ee_pose,true);
       // object pose error:
       obj_pose_err=des_pose_.head(3)-ee_pose.head(3);
+      obj_pose_err[0]=obj_pose_err[0]*0.1;
+      obj_pose_err[2]=obj_pose_err[2]*0.1;
       cost_val+=0.1*obj_pose_err.squaredNorm();
       // add cost for contact on object:
            
@@ -145,6 +147,9 @@ vector<double> optProblem::objGradient(vector<double> x) const
     {
       robot_kdl_->getFK(finger_,q.segment(finger_*4,4),ee_pose,true);
       obj_pose_err=des_pose_.head(3)-ee_pose.head(3);
+      obj_pose_err[0]=obj_pose_err[0]*0.1;
+      obj_pose_err[2]=obj_pose_err[2]*0.1;
+
       robot_kdl_->getJacobian(finger_,q.segment(finger_*4,4),J);
       finger_gradient=-0.1*2.0*obj_pose_err.transpose()*J.block(0,0,3,J.cols());
       robot_kdl_->getFK(finger_,q.segment(finger_*4,4),ee_pose,false);

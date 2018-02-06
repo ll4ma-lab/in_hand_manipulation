@@ -11,7 +11,7 @@ class fgClient:
 
         rospy.wait_for_service('in_hand/finger_gait')
         fg=rospy.ServiceProxy('in_hand/finger_gait',RelocateFingerKin)
-        resp=fg(finger,des_contact_pt,init_js,T,Pose(),Point(),resp.joint_traj)
+        resp=fg(finger,resp.next_contact_pt.point,init_js,T,Pose(),Point(),resp.joint_traj)
         return resp.joint_traj,resp.next_contact_pt
     def update_obj(self,obj_pose,mesh):
         rospy.wait_for_service('in_hand/finger_gait/update_obj')

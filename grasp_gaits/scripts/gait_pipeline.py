@@ -257,7 +257,7 @@ if __name__=='__main__':
 
             print i
             des_contact_pt=d_pts[i].point
-            jtraj,cpt[i]=gg.fg_finger(i,js,des_contact_pt,T=5)
+            jtraj,cpt[i]=gg.fg_finger(i,js,des_contact_pt,T=10)
             gg.viz.viz_cpts(cpt)
             
             # visualize jtraj:
