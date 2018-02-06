@@ -80,7 +80,7 @@ double optProblem::objFunction(const vector<double> x) const
   for(int i=0; i<timesteps_;++i)
   {
     acc_cost=q_arr[i-2+2]-2.0*q_arr[i+2-1]+q_arr[i+2];
-    cost_val+=0.001*acc_cost.squaredNorm();
+    cost_val+=0.0001*acc_cost.squaredNorm();
 
     // Getting joint angles for current timestep:
     for(int j=0; j<robot_kdl_->dof;++j)
@@ -192,7 +192,7 @@ vector<double> optProblem::objGradient(vector<double> x) const
     q=q_arr[i+2];
     //gradient.setZero();
     // min acc grad:
-    acc_cost=0.001*(q_arr[i-2+2]-2.0*q_arr[i+2-1]+q_arr[i+2]);
+    acc_cost=0.0001*(q_arr[i-2+2]-2.0*q_arr[i+2-1]+q_arr[i+2]);
     acc_grad=2.0*acc_cost;
     for (int j=0;j<robot_kdl_->dof;++j)
     {
@@ -424,7 +424,7 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
 
   robot_kdl_->getFK(finger_,q.segment(finger_*4,4),ee_pose,true);
   obj_pose_err=initial_pose_.head(3)-ee_pose.head(3);
-  vel_const[robot_kdl_->dof*timesteps_+timesteps_*2+1]=obj_pose_err.squaredNorm()-stability_thresh_;
+  //vel_const[robot_kdl_->dof*timesteps_+timesteps_*2+1]=obj_pose_err.squaredNorm()-stability_thresh_;
 
   for(int i=0;i<vel_const.size();++i)
   {
@@ -670,7 +670,7 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
   gradient.segment(finger_*4,4)=finger_gradient;
   for(int k=finger_*4;k<finger_*4+4;++k)
   {
-    retval[timesteps_*robot_kdl_->dof+robot_kdl_->dof+timesteps_*robot_kdl_->dof+k]+=gradient[k];
+    //retval[timesteps_*robot_kdl_->dof+robot_kdl_->dof+timesteps_*robot_kdl_->dof+k]+=gradient[k];
   }    
   
   return retval;
