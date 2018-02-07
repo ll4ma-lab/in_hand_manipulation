@@ -2,6 +2,8 @@
 from gait_client import *
 from grasp_client import *
 import sys
+from read_data import *
+
 from rospkg import RosPack
 rp=RosPack()
 path_=rp.get_path('optimization_pkg')+'/scripts'
@@ -35,8 +37,9 @@ class graspGait:
         self.allegro_drv=handAPI(init_node=False,publish_prefix=hand_prefix,listen_prefix=hand_prefix)
                 
         self.viz=VizInHand(o_mesh,init_node=False)
-    def fg_finger(self,finger,js,des_cpt,TRAJ=False,T=1):
-        j_traj,cpt=self.fg_client.call(des_cpt,finger,js,T=T)
+        
+    def fg_finger(self,finger,js,des_cpt,final_js,TRAJ=False,T=1):
+        j_traj,cpt=self.fg_client.call(des_cpt,finger,js,final_js,T=T)
         # get full trajectory?
         if(TRAJ):
             print 'Getting full trajectory'
@@ -193,95 +196,67 @@ class gaitHelper:
 
 if __name__=='__main__':
     gait_help=gaitHelper()
-    p_data=pickleData()
-    obj_file='../python/r_mustard_0.p'
+    obj_file='mustard_0.p'
+    gF=gaitFile()
+    g_f=gF.read_file(obj_file)
+    mesh_f=g_f[0].mesh_f
+    mesh_stl=g_f[0].mesh_stl
 
-    obj_dat=p_data.read_file(obj_file)
-    obj_pose,init_js,cpt,_=p_data.get_config(obj_dat,0)
-    des_obj_pose=obj_dat[-2][0]
     
-    des_cpt=obj_dat[-2][2]
-    print "read file"
-    # load pickle file:
-    #print obj_pose,js,cpt,des_cpt
+    obj_pose=g_f[0].init_o_pose
+    cpt=g_f[0].cpt
+    d_pts=g_f[0].des_cpt
     
-
-    # load object mesh and pose:
-    mesh_f='/home/bala/object_models/mustard_bottle/google_16k/vertices.ply'
-    mesh_stl='file:///home/bala/object_models/mustard_bottle/google_16k/nontextured.stl'
-
-    #mesh_f="/home/bala/catkin_ws/src/urlg_robots_description/meshes/allegro/convex_hull/vertices/index_link_1.ply"
-    pose=obj_pose.pose
     gg=graspGait(mesh_stl,weights=[0.001,10.0,10.0,0.0,100.0])
     
     gg.viz.viz_obj_mesh(obj_pose,a=1.0)
     gg.viz.viz_cpts(cpt)
     
     # transform desired points to initial obj pose:
-    d_pts=gait_help.get_cpt(obj_pose,des_cpt,des_obj_pose)
+    
     gg.viz.viz_cpts(d_pts,t='d_cpt',rgb=[0.0,1.0,0.0])
 
     
     
-    
+    init_js=g_f[0].i_js
     # move to initial grasp
     #j_initial=init_js.position
-    js=init_js#JointState()
-    #js.position=np.array([0.1,0.1,0.2,0.1,
-    #                      0.1,0.1,0.2,0.1,
-    #                      0.1,0.1,0.2,0.1,
-    #                      1.5,0.1,0.1,0.1])
+    js=init_js
     
-    #raw_input('next finger?')
-    #gg.grasp_client.update_obj(obj_pose.pose,mesh_f)
-    
-    #des_pts=[]
-    #for i in range(len(cpt)):
-    #    des_pts.append(cpt[i].point)
-
-    #jtraj=gg.grasp_client.call(des_pts,js)
-    #n_traj=gg.interpolate_jtraj(jtraj)
-
-    #gg.traj_server.viz_joint_traj(n_traj,base_link='allegro_mount')
-
-    #raw_input('move to initial grasp')
-    #gg.allegro_drv.publish_joints(js.position)
-    
-    for t in range(10):
-        raw_input('Next timestep?')
-        
+    for t in range(10):        
         gg.fg_client.update_obj(obj_pose.pose,mesh_f)
-    
-        #for i in range(3,-1,-1):
-        for i in range(4):
+        raw_input("updated mesh")
+        for i in range(len(g_f)):
+            #
+            if(g_f[i].ig):
+                # perform ingrasp
+                print "performing in-grasp"
+                
+                #d_obj_pose=gait_help.rigid_translate(cpt,d_pts,obj_pose)
+                 
+                #n_obj_pose,n_js,jtraj=gg.in_grasp(js,obj_pose,d_obj_pose)
+                       
+                #gg.viz.viz_obj_mesh(d_obj_pose,t='n_obj_pose',rgb=[0,1,0],a=0.5)
+                #gg.viz.viz_obj_mesh(n_obj_pose,t='ig_obj_pose',rgb=[1,0,0],a=0.5)
+                #jtraj.points[0]=jtraj.points[-1]
+                #gg.traj_server.viz_joint_traj(jtraj,base_link='allegro_mount')
 
-            print i
-            des_contact_pt=d_pts[i].point
-            jtraj,cpt[i]=gg.fg_finger(i,js,des_contact_pt,T=10)
-            gg.viz.viz_cpts(cpt)
+            else:
+                print "performing finger gait",g_f[i].f
+                js=g_f[i].i_js
+                des_js=g_f[i].f_js
+                des_contact_pt=d_pts[g_f[i].f].point
+                jtraj,cpt[i]=gg.fg_finger(i,js,des_contact_pt,des_js,T=10)
+                gg.viz.viz_cpts(cpt)
             
-            # visualize jtraj:
-            #jtraj.points[0]=jtraj.points[-1]
-            gg.traj_server.viz_joint_traj(jtraj,base_link='allegro_mount')
-            js.position=jtraj.points[-1].positions
-            raw_input('Next finger?')
+                # visualize jtraj:
+                #jtraj.points[0]=jtraj.points[-1]
+                gg.traj_server.viz_joint_traj(jtraj,base_link='allegro_mount')
+                js.position=jtraj.points[-1].positions
+                raw_input('Next finger?')
+                
 
-        # 
-        exit()
-        # get rigid transform to minimize distance:
-        d_obj_pose=gait_help.rigid_translate(cpt,d_pts,obj_pose)
-
-        gg.viz.viz_obj_mesh(d_obj_pose,t='n_obj_pose',rgb=[0,1,0],a=0.5)
-
-        # call in-grasp:
-        n_obj_pose,n_js,jtraj=gg.in_grasp(js,obj_pose,d_obj_pose)
-    
-        gg.viz.viz_obj_mesh(n_obj_pose,t='ig_obj_pose',rgb=[1,0,0],a=0.5)
-        
-        # visualize jtraj:
-        jtraj.points[0]=jtraj.points[-1]
-        gg.traj_server.viz_joint_traj(jtraj,base_link='allegro_mount')
-
+        '''
         # update contact points:
         d_pts=gait_help.get_cpt(n_obj_pose,d_pts,obj_pose)
         cpt=gait_help.get_cpt(n_obj_pose,cpt,obj_pose)
@@ -291,4 +266,4 @@ if __name__=='__main__':
         # update obj pose:
         gg.viz.viz_obj_mesh(obj_pose,a=0.9)
         js.position=jtraj.points[-1].positions
-
+        '''

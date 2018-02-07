@@ -116,6 +116,9 @@ target_link_libraries(allegro_env ccd ${catkin_LIBRARIES})
 add_executable(fg_server src/fg_server.cpp)
 target_link_libraries(fg_server finger_gait allegro_env ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
 
+add_executable(mesh_collision_demo src/mesh_collision_demo.cpp)
+target_link_libraries(mesh_collision_demo allegro_env ccd  ${catkin_LIBRARIES})
+
 add_executable(fg_nc_server src/fg_nc_server.cpp)
 target_link_libraries(fg_nc_server finger_gait_nc allegro_env ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
 

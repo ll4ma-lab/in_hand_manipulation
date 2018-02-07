@@ -328,7 +328,7 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
   // Check collision between object and links:
   double collision_err=0.0;
   
-  for(int t=0;t<timesteps_;++t)
+  for(int t=3;t<timesteps_-3;++t)
   {
     //collision_err=0.0;
     for(int j=0; j<robot_kdl_->dof;++j)
@@ -498,7 +498,9 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
   gradient.resize(16);
   gradient.setZero();
   vector<Eigen::MatrixXd> hand_J(12);
-  for(int t=0;t<timesteps_;++t)
+  //for(int t=0;t<timesteps_;++t)
+  for(int t=3;t<timesteps_-3;++t)
+
   {
     finger_gradient.setZero();
     gradient.setZero();
@@ -562,7 +564,7 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
             //cerr<<"pt"<<contact_data[j][k].distance<<endl;
             double p_d=contact_data[j*3+i][k].distance;
             //cerr<<"pd"<<endl;
-            Eigen::VectorXd delta_p=-p_d*dir;
+            Eigen::VectorXd delta_p=link_pose-p_d*dir;
             //return retval;
             
             //cerr<<"Computing gradient"<<endl;

@@ -199,7 +199,7 @@ public:
       {
         for(int j=0;j<req.init_jtraj.points[0].positions.size();++j)
         {
-          x_in[(i)*16+j]=req.init_jtraj.points[0].positions[j];
+          x_in[(i)*16+j]=joint_init[j]+(req.init_jtraj.points[0].positions[j]-joint_init[j])*double(i)/t_steps;
         }
       }
               
@@ -220,9 +220,9 @@ public:
     vector<double> f_out=prob.fitness(pop_res.champion_x());
     cerr<<"Test Final cost: "<<f_out[0]<<" "<<f_out[1+allegro_kdl.dof*1+1]<<" "<<f_out[1+allegro_kdl.dof*1+1+1+1]<<endl;
     pcl::PointCloud<PointXYZRGB>::Ptr cloud_obj1(new PointCloud<PointXYZRGB>);
-    c_check.get_link_pointcloud(cloud_obj1,f*3+2);
+    //c_check.get_link_pointcloud(cloud_obj1,f*3+2);
     c_check.get_obj_pointcloud(cloud_obj1);
-   
+    
     pub.publish(cloud_obj1);
 
     vector<double> j_best=pop_res.champion_x();
