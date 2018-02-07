@@ -142,6 +142,17 @@ public:
     }
 
     c_check.update_collision_links(f_idx);
+
+    // get desired point for allegro :
+    Eigen::VectorXd jpt;
+    allegro_kdl.getFK(f,hand_q.segment(f*4,4),jpt);
+    cerr<<"f: "<<f<<endl;
+    cerr<<hand_q.transpose()<<endl;
+    cerr<<jpt.transpose()<<endl;
+    des_pt[0]=jpt[0];
+    des_pt[1]=jpt[1];
+    des_pt[2]=jpt[2];
+    
     opt_problems::optProblem opt_problem(t_steps,allegro_kdl,des_pt,vel_limits,joints_0,f,c_check);
     
     problem prob{trajectory_optimization{opt_problem}};
@@ -171,7 +182,7 @@ public:
         x_in[i*16+j]=joint_init[j];//+(final_joints[j]-joints_0[j])*(i+1)/(t_steps_);
       }
     }
-    if(req.init_jtraj.points.size()>0)
+    if(req.init_jtraj.points.size()==t_steps+1)
     {
       for(int i=1;i<req.init_jtraj.points.size();++i)
       {
@@ -182,6 +193,18 @@ public:
       }
               
     }
+    else if(req.init_jtraj.points.size()<t_steps)
+    {
+      for(int i=0;i<t_steps;++i)
+      {
+        for(int j=0;j<req.init_jtraj.points[0].positions.size();++j)
+        {
+          x_in[(i)*16+j]=req.init_jtraj.points[0].positions[j];
+        }
+      }
+              
+    }
+
     vector<double> f_in=prob.fitness(x_in);
     
     //vector<double> f_in_1=prob.fitness(x_in);
