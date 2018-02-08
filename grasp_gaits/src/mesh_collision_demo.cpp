@@ -43,9 +43,13 @@ int main(int argc,char** argv)
   c_check.update_grasp_obj_pose(pose);
 
 
+  double x=atof(argv[1]);
+  double y=atof(argv[2]);
+  double z=atof(argv[3]);
+  
   // update link object pose:
   vector<collision_data> c_data;
-  vector<double> ftip_pose={0.4,0.2,0.3,0.0,0.0,0.0,1.0};
+  vector<double> ftip_pose={x,y,z,0.0,0.0,0.0,1.0};
 
   ros::Rate loop_r(5);
   while(ros::ok())
@@ -72,33 +76,27 @@ int main(int argc,char** argv)
     Map<Eigen::VectorXd> point(&c_data[min_idx].point[0],3);
     Map<Eigen::VectorXd> dir(&c_data[min_idx].dir[0],3);
     double p_d=c_data[min_idx].distance;
-    Eigen::VectorXd delta_p;
-    if(c_data[min_idx].collision)
-    {
-      cerr<<"in collision"<<endl;
-      //delta_p=-p_d*dir;
-    }
+    Eigen::VectorXd delta_p(3);
+
     cerr<<p_d<<endl;
-    if(p_d>-0.01 && p_d<0.0)
+
+
+    // testing collision avoidance gradient:
+    if(p_d>-0.01 && p_d<0.0)// when mesh is close to contact with the object
     {
       cerr<<"d"<<endl;
-      delta_p=-p_d*dir;
+      delta_p=-(p_d)*dir;
     }
-    else if(p_d>0.0 && p_d<0.02)
+    else if(p_d>0.0)
     {
-      delta_p=2.0*p_d*dir;
+      delta_p=(p_d+0.02)*dir;
     }
-    else
+    else// this will move the mesh close to the object, this can be used to make contact with the object
     {
-      delta_p=p_d*dir;          
+      delta_p=(p_d+0.02)*dir;
+      //delta_p.setZero();
     }
-    /*
-    cerr<<"m"<<endl;
-    cerr<<delta_p.transpose()<<endl;
-    cerr<<p_d<<endl;
-    */
-    //manipulator_kdl::robotKDL robot;
-    //robot.getSTDVector(delta_p,
+
     if(!std::isnan(delta_p[0]))
     {
       new_pose[0]+=delta_p[0];
@@ -108,14 +106,14 @@ int main(int argc,char** argv)
     cerr<<delta_p.transpose()<<endl;
     c_check.check_ftip_contact(new_pose,c_data,2);
     c_check.get_link_pointcloud(cloud_obj2,2);
-    //for(int i=0;i<4;++i)
+    for(int i=0;i<4;++i)
     {
       pub_1.publish(cloud_obj2);
       pub.publish(cloud_obj1);
       loop_r.sleep();
     }
     ftip_pose=new_pose;
-    //getchar();
+    getchar();
     //cin<<"h";
   }
   

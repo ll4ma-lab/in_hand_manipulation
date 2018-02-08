@@ -379,7 +379,7 @@ class VizInHand:
         obj_m.color.b=rgb[2]
         obj_m.pose=pose.pose
         i=0
-        self.loop_rate=rospy.Rate(200)
+        self.loop_rate=rospy.Rate(10)
         while(not rospy.is_shutdown() and i<5):
             obj_m.header.stamp=rospy.Time()
             obj_pub.publish(obj_m)

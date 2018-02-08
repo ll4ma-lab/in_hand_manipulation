@@ -104,6 +104,9 @@ target_link_libraries(finger_gait_nc ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
 add_library(finger_gait STATIC src/problem/finger_gait.cpp)
 target_link_libraries(finger_gait ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
 
+add_library(finger_slide STATIC src/problem/finger_slide.cpp)
+target_link_libraries(finger_slide ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
+
 #add_library(finger_gait_traj STATIC src/problem/finger_gait_traj.cpp)
 #target_link_libraries(finger_gait_traj ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
 
@@ -115,6 +118,9 @@ target_link_libraries(allegro_env ccd ${catkin_LIBRARIES})
 
 add_executable(fg_server src/fg_server.cpp)
 target_link_libraries(fg_server finger_gait allegro_env ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
+
+add_executable(fs_server src/fs_server.cpp)
+target_link_libraries(fs_server finger_slide allegro_env ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
 
 add_executable(mesh_collision_demo src/mesh_collision_demo.cpp)
 target_link_libraries(mesh_collision_demo allegro_env ccd  ${catkin_LIBRARIES})

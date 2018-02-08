@@ -93,7 +93,7 @@ public:
     }
     else
     {
-      vel_limits.resize(16,0.2);
+      vel_limits.resize(16,0.5);
 
     }
    

@@ -1,7 +1,7 @@
 import pickle
 import numpy as np
 from trajectory_msgs.msg import JointTrajectory
-'''
+
 class pickleData:
     def read_file(self,file_name):
         file_ = open(file_name,'rb')
@@ -15,7 +15,6 @@ class pickleData:
         des_contact_pt=obj[i][2]
         return obj_pose,js,cpt,des_contact_pt
 
-'''
 class gaitObj:
     def __init__(self,i_js,f_js,init_o_pose,final_o_pose,cpt,des_cpt,r_cpt,fg=False,ig=False,f=0,traj=JointTrajectory(),mesh_f="h",mesh_stl="j"):
         self.mesh_f=mesh_f
@@ -37,10 +36,9 @@ class gaitFile:
         g=pickle.load(open(obj_file,"rb"))
         return g
 
-'''
 if __name__=='__main__':
-    obj_name='mustard_7.p'
-    obj_file='../python/r_mustard_7.p'
+    obj_name='mustard_2.p'
+    obj_file='../python/r_mustard_2.p'
     mesh_f='/home/bala/object_models/mustard_bottle/google_16k/vertices.ply'
     mesh_stl='file:///home/bala/object_models/mustard_bottle/google_16k/nontextured.stl'
 
@@ -73,4 +71,3 @@ if __name__=='__main__':
         g.append(g1)
 
     pickle.dump(g,open(obj_name,"wb"))
-'''
