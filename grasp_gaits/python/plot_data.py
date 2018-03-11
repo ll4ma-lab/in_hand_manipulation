@@ -121,7 +121,7 @@ def plot_convergence_all(obj_names_sd, obj_names_svd, obj_idx):
     #plt.plot(d_sum_sd,label='SD',color=colors[0])
     d=np.ones(100)*1e-1
     #plt.plot(d,label='minimum error',color=colors[-1],linestyle='-.')
-    plt.ylabel('Convergence Rate')
+    plt.ylabel('Normalized Average Point Error')
     plt.xlabel('Iteration')
     plt.ylim(ymin=0)
     handles, labels = plt.gca().get_legend_handles_labels()
@@ -427,8 +427,8 @@ if __name__=='__main__':
     sd_pd=get_panda_base(names_sd,obj_idx,'sd')
     svd_pd=get_panda_base(names_svd,obj_idx,'svd')
     dat=sd_pd.append(svd_pd)
-    plot_panda(dat)
-    #plot_convergence_all(names_sd,names_svd,obj_idx)
+    #plot_panda(dat)
+    plot_convergence_all(names_sd,names_svd,obj_idx)
     
     '''
     o_name=obj_idx[2]
