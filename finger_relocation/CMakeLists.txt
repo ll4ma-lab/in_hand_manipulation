@@ -10,10 +10,11 @@ add_compile_options(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   in_hand_manipulation_msgs
   optimization_pkg
-  pcl_mesh_tools
+  ll4ma_collision_wrapper
   roscpp
   rospy
   in_hand_collision_lib
+  in_hand_manipulation
 )
 
 find_package(fcl)
@@ -42,4 +43,7 @@ set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRA
 add_library(finger_gait STATIC src/problem/finger_gait.cpp)
 
 target_link_libraries(finger_gait ccd ${PAGMO_LIBS} ${catkin_LIBRARIES} fcl)
+
+add_executable(fg_server src/fg_server.cpp)
+target_link_libraries(fg_server ${catkin_LIBRARIES} finger_gait)
 

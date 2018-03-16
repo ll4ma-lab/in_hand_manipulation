@@ -1,0 +1,8 @@
+geometry_msgs/PointStamped d_cpt
+int64 f_idx
+sensor_msgs/JointState js
+bool copmute_fd
+---
+float64 g_dist
+sensor_msgs/JointState gradient_js
+

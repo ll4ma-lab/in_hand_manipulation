@@ -1,5 +1,5 @@
 import rospy
-from grasp_gaits.srv import RelocateFingerKin, UpdateObj
+from in_hand_manipulation_msgs.srv import RelocateFingerKin, UpdateObj
 from geometry_msgs.msg import Pose,Point
 from sensor_msgs.msg import JointState
 from trajectory_msgs.msg import JointTrajectory,JointTrajectoryPoint

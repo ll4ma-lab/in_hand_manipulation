@@ -1,0 +1,4 @@
+in_hand_manipulation_msgs/Grasp init_grasp
+
+---
+in_hand_manipulation_msgs/GaitPlan plan

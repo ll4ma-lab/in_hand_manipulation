@@ -63,7 +63,7 @@ optProblem::optProblem(int time_steps, manipulator_kdl::robotKDL robot_kdl, vect
 
 void optProblem::setupCollisionSrv(string srv_topic,ros::NodeHandle &n)
 {
-  ros::ServiceClient client_ = n.serviceClient<pcl_mesh_tools::collision_checker_msg>(srv_topic);
+  ros::ServiceClient client_ = n.serviceClient<ll4ma_collision_wrapper::collision_checker_msg>(srv_topic);
   client=&client_;
 }
 
@@ -140,12 +140,12 @@ double optProblem::objFunction(const vector<double> x) const
     
     obj_poses.push_back(obj_pose);
     
-    pcl_mesh_tools::collision_checker_msg srv_msg;
+    ll4ma_collision_wrapper::collision_checker_msg srv_msg;
     srv_msg.request.link_pose=obj_poses;
     bool res=client->call(srv_msg);
 
     // compute obj_pose collision cost:
-    pcl_mesh_tools::link_collision_data obj_coll=srv_msg.response.link_data[0];
+    ll4ma_collision_wrapper::link_collision_data obj_coll=srv_msg.response.link_data[0];
     for(int k=0;k<obj_coll.c_data.size();k++)
     {
       if(obj_coll.c_data[k].collision)
@@ -296,12 +296,12 @@ vector<double> optProblem::objGradient(vector<double> x) const
     
     obj_poses.push_back(obj_pose);
     
-    pcl_mesh_tools::collision_checker_msg srv_msg;
+    ll4ma_collision_wrapper::collision_checker_msg srv_msg;
     srv_msg.request.link_pose=obj_poses;
     bool res=client->call(srv_msg);
 
     // compute obj_pose collision cost:
-    pcl_mesh_tools::link_collision_data obj_coll=srv_msg.response.link_data[0];
+    ll4ma_collision_wrapper::link_collision_data obj_coll=srv_msg.response.link_data[0];
 
     Eigen::Vector3d delta_p;
     delta_p.setZero();

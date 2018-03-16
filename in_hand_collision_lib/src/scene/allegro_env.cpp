@@ -1,5 +1,5 @@
 #include <grasp_gaits/scene/allegro_env.h>
-#include <pcl_mesh_tools/libs/collision_checker/support_fn.h>
+#include <ll4ma_collision_wrapper/libs/collision_checker/support_fn.h>
 // constructor:
 allegroEnv::allegroEnv()
 {

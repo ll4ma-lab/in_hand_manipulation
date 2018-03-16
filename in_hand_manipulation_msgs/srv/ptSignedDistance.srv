@@ -1,0 +1,4 @@
+geometry_msgs/PointStamped d_cpt
+int64 f_idx
+---
+geometry_msgs/PointStamped signed_distance

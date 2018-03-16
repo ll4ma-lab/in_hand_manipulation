@@ -86,7 +86,7 @@ cerr<<"Updating environment cloud"<<endl;
     tf::Quaternion q(pose[3],pose[4],pose[5],pose[6]);
     transform.setRotation(q);
 
-        visualization_msgs::MarkerArray oc_map; 
+    visualization_msgs::MarkerArray oc_map; 
     hand_env.get_env_markers(oc_map,"obj_frame");
 
     // visualize pointcloud:

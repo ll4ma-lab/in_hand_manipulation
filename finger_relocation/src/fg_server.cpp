@@ -3,8 +3,8 @@
 #endif
 #include "finger_relocation/problem/finger_gait.h"
 #include <in_hand_manipulation/pagmo_opt/trajectory_optimization.hpp>
-#include <grasp_gaits/RelocateFingerKin.h>
-#include <grasp_gaits/UpdateObj.h>
+#include <in_hand_manipulation_msgs/RelocateFingerKin.h>
+#include <in_hand_manipulation_msgs/UpdateObj.h>
 #include <geometry_msgs/PointStamped.h>
 #include <ros/ros.h>
 #include <ros/package.h>
@@ -14,44 +14,37 @@ class fgPlanner
 {
 public:
   manipulator_kdl::robotKDL allegro_kdl;
-  allegroEnv c_check;
+  handEnv c_check;
   ros::NodeHandle* nh;
   void init(ros::NodeHandle &n)
   {
     nh=&n;
     // initialize collision checker
-    c_check=allegroEnv(0.01,0.01);
-    // setup optimization:
-    string urdf_file="/home/bala/catkin_ws/src/in_hand_manipulation/in_grasp_manipulation/urdf/allegro.urdf";
+    c_check=handEnv(0.01);
     
-    // Load allegro kdl object:
-    vector<string> ee_names={"index_tip","middle_tip","ring_tip","thumb_tip"};
-    vector<string> base_names={"palm_link","palm_link","palm_link","palm_link"};
-    vector<string> link_names={"index_link_1","index_link_2","index_tip", "middle_link_1","middle_link_2","middle_tip", "ring_link_1","ring_link_2","ring_tip", "thumb_link_2","thumb_link_3","thumb_tip"};
+    vector<double> g_vec={0.0,0.0,-9.8};
+        
+    vector<string> hand_link_names={"index_link_1","index_link_2","index_tip", "middle_link_1","middle_link_2","middle_tip","ring_link_1","ring_link_2","ring_tip", "thumb_link_2","thumb_link_3","thumb_tip"};
 
-    vector<double> g_vec={0.0,0.0,0.0};// Gravity needed for dynamics
-
-    allegro_kdl=manipulator_kdl::robotKDL(urdf_file,base_names,ee_names,link_names,g_vec);
-    allegro_kdl.urdfParser();
+    // initialize collision environment:
+    std::string robot_desc_string;
     
-    
-    // load robot collision checking env:
-    std::string hand_mesh_location=ros::package::getPath("urlg_robots_description");
-    hand_mesh_location.append("/meshes/allegro/convex_hull/vertices/");
-    vector<string> hand_link_names={"index_link_1","index_link_2","index_tip", "index_link_1","index_link_2","index_tip","index_link_1","index_link_2","index_tip", "thumb_link_2","thumb_link_3","thumb_tip"};
+    // read urdf as a string:
+    nh->param("robot_description", robot_desc_string, std::string());
+    c_check.load_hand_links(hand_link_names,robot_desc_string);
 
-    // load hand links:
-    for(int i=0;i<hand_link_names.size();++i)
-    {
-      hand_link_names[i].insert(0,hand_mesh_location);
-      hand_link_names[i].append(".ply");
-    }
-    c_check.load_hand_links(hand_link_names);
+
+    vector<string> hand_base_names={"palm_link","palm_link","palm_link","palm_link"};
+    vector<string> hand_ee_names={"index_tip","middle_tip","ring_tip","thumb_tip"}; 
+
+    allegro_kdl=manipulator_kdl::robotKDL("robot_description",*nh,hand_base_names, hand_ee_names, hand_link_names,g_vec);
+    
+      
     cerr<<"Created robot collision files"<<endl;
     
   }
 
-  bool update_obj(grasp_gaits::UpdateObj::Request &req, grasp_gaits::UpdateObj::Response &res)
+  bool update_obj(in_hand_manipulation_msgs::UpdateObj::Request &req, in_hand_manipulation_msgs::UpdateObj::Response &res)
   {
     string mesh=req.mesh_file;
     vector<double> pose(7,0.0);
@@ -76,7 +69,7 @@ public:
     //pub.publish(cloud_obj1);
     return true;
   }
-  bool fg_call(grasp_gaits::RelocateFingerKin::Request &req, grasp_gaits::RelocateFingerKin::Response &res)
+  bool fg_call(in_hand_manipulation_msgs::RelocateFingerKin::Request &req, in_hand_manipulation_msgs::RelocateFingerKin::Response &res)
   { // Getting parameters from service request:
     
     vector<double> joints_0=req.js.position;
@@ -219,11 +212,7 @@ public:
     // check values:
     vector<double> f_out=prob.fitness(pop_res.champion_x());
     cerr<<"Test Final cost: "<<f_out[0]<<" "<<f_out[1+allegro_kdl.dof*1+1]<<" "<<f_out[1+allegro_kdl.dof*1+1+1+1]<<endl;
-    pcl::PointCloud<PointXYZRGB>::Ptr cloud_obj1(new PointCloud<PointXYZRGB>);
-    //c_check.get_link_pointcloud(cloud_obj1,f*3+2);
-    c_check.get_obj_pointcloud(cloud_obj1);
-    
-    pub.publish(cloud_obj1);
+
 
     vector<double> j_best=pop_res.champion_x();
     /*

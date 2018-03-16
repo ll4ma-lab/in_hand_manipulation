@@ -191,7 +191,7 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   int t_steps_=req.T;
   // Creating opt problem instance:
   opt_problems::optProblem opt_problem(t_steps_,allegro_kdl,data_arr,data_mat,vel_limits,joints_0);
-  ros::ServiceClient client = n_ptr->serviceClient<pcl_mesh_tools::collision_checker_msg>("collision_checker/check");
+  ros::ServiceClient client = n_ptr->serviceClient<ll4ma_collision_wrapper::collision_checker_msg>("collision_checker/check");
   opt_problem.client=&client;
   //opt_problem.setupCollisionSrv("collision_checker/check",*n_ptr);
 

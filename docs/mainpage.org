@@ -31,9 +31,10 @@ Contains scripts to evaluate various experiments.
 
 *** in_hand_manipulation_data
 Contains data files collected/used in various experiments.
-
+*** in_hand_manipulation
+Contains optimization pkg
 * External Dependencies
-- pcl_mesh_tools
+- ll4ma_collision_wrapper
 - ll4ma_kdl
 - allegro_driver
 - optimization_pkg

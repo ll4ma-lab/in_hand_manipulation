@@ -27,7 +27,7 @@ find_package(catkin REQUIRED COMPONENTS
   in_hand_manipulation_msgs
   trajectory_msgs
   in_hand_manipulation
-  pcl_mesh_tools
+  ll4ma_collision_wrapper
 )
 
 #find_package(Eigen REQUIRED)

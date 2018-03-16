@@ -1,0 +1,8 @@
+geometry_msgs/PoseStamped obj_pose
+geometry_msgs/PointStamped[] contact_pts
+int64 f_idx
+geometry_msgs/PointStamped des_contact_pt
+in_hand_manipulation_msgs/Ellipse ellipse
+---
+geometry_msgs/PointStamped next_contact_pt
+float64 stability_score

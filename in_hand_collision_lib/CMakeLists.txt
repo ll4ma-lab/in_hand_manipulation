@@ -11,7 +11,7 @@ add_compile_options(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   ll4ma_kdl
-  pcl_mesh_tools
+  ll4ma_collision_wrapper
   roscpp
   rospy
   sensor_msgs
@@ -28,7 +28,7 @@ endif (fcl_FOUND)
 catkin_package(
 INCLUDE_DIRS include
 LIBRARIES hand_env
-CATKIN_DEPENDS geometry_msgs ll4ma_kdl pcl_mesh_tools roscpp rospy sensor_msgs
+CATKIN_DEPENDS geometry_msgs ll4ma_kdl ll4ma_collision_wrapper roscpp rospy sensor_msgs
 DEPENDS fcl ccd
 )
 

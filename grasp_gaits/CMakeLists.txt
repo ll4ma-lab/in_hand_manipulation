@@ -17,7 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   message_generation
   trajectory_msgs
-  pcl_mesh_tools
+  ll4ma_collision_wrapper
   optimization_pkg
   in_hand_manipulation
 )

@@ -1,0 +1,10 @@
+geometry_msgs/Point[] des_contact_pt
+sensor_msgs/JointState js
+int64 T
+geometry_msgs/Pose obj_pose
+int32[] f_idx
+trajectory_msgs/JointTrajectory init_jtraj
+---
+geometry_msgs/PointStamped[] next_contact_pt
+sensor_msgs/JointState n_js
+trajectory_msgs/JointTrajectory joint_traj

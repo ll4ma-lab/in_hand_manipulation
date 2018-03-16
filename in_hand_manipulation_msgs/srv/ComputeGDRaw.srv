@@ -1,0 +1,9 @@
+float64[] d_cpt
+float64[] obj_pose
+int64 f_idx
+float64[] js
+bool compute_fd
+---
+float64 g_dist
+float64[] gradient_js
+
