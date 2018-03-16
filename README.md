@@ -1,19 +1,10 @@
-- [Sub Packages](#orgbcba842)
-  - [Perception](#orge0ec722)
-  - [Motion Planning](#org73accc3)
-  - [Control](#org857c512)
-  - [Util](#org4b18f17)
-- [External Dependencies](#org3044e2f)
 
 This package contains research code that I am working on as part of my PhD program at the University of Utah. Visit my website for more information: <https://balakumar-s.github.io>
 
 
-<a id="orgbcba842"></a>
 
 # Sub Packages
 
-
-<a id="orge0ec722"></a>
 
 ## Perception
 
@@ -23,7 +14,6 @@ This package contains research code that I am working on as part of my PhD progr
 Contains collision checking classes.
 
 
-<a id="org73accc3"></a>
 
 ## Motion Planning
 
@@ -43,8 +33,6 @@ Relocates fingertip on the object surface.
 Generates plans for regrasping the object using in-hand manipulation primitives.
 
 
-<a id="org857c512"></a>
-
 ## Control
 
 
@@ -52,8 +40,6 @@ Generates plans for regrasping the object using in-hand manipulation primitives.
 
 Contains code to run generated motion plans on the robot(open-loop/feedback/MPC).
 
-
-<a id="org4b18f17"></a>
 
 ## Util
 
@@ -72,8 +58,6 @@ Contains scripts to evaluate various experiments.
 
 Contains data files collected/used in various experiments.
 
-
-<a id="org3044e2f"></a>
 
 # External Dependencies
 
