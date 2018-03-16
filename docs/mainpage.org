@@ -1,0 +1,39 @@
+#+TITLE: In-Hand Manipulation
+#+SUBTITLE: Motion Planning and Feedback Control 
+#+OPTIONS: toc:2
+#+OPTIONS: _:nil
+
+#+AUTHOR: Balakumar Sundaralingam, LL4MA Lab, University of Utah
+
+This package contains research code that I am working on as part of my PhD program at the University of Utah.
+Visit my website for more information: https://balakumar-s.github.io
+
+* Sub Packages
+** Perception
+*** in_hand_collision_lib
+Contains collision checking classes.
+** Motion Planning
+*** in_grasp_manipulation
+Reposes object with respect to the palm without breaking/making new contact.
+*** finger_relocation
+Relocates fingertip on the object surface.
+*** regrasp_planner
+Generates plans for regrasping the object using in-hand manipulation primitives.
+** Control
+*** in_hand_feedback_controller
+Contains code to run generated motion plans on the robot(open-loop/feedback/MPC).
+** Util
+*** in_hand_manipulation_msgs
+Contains custom messages and services used by other sub-packages.
+
+*** in_hand_manipulation_pipeline
+Contains scripts to evaluate various experiments.
+
+*** in_hand_manipulation_data
+Contains data files collected/used in various experiments.
+
+* External Dependencies
+- pcl_mesh_tools
+- ll4ma_kdl
+- allegro_driver
+- optimization_pkg

@@ -21,6 +21,12 @@ find_package(catkin REQUIRED COMPONENTS
   optimization_pkg
   in_hand_manipulation
 )
+find_package(fcl)
+
+if (fcl_FOUND)
+  message("fcl found!")
+  include_directories(${fcl_INCLUDE_DIRS})
+endif (fcl_FOUND)
 
 find_package(Pagmo REQUIRED)
 
@@ -98,39 +104,42 @@ include_directories(
 
 set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRARIES}  ${CMAKE_DL_LIBS})
 
-add_library(finger_gait_nc STATIC src/problem/finger_gait_nc.cpp)
-target_link_libraries(finger_gait_nc ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
+#add_library(finger_gait_nc STATIC src/problem/finger_gait_nc.cpp)
+#target_link_libraries(finger_gait_nc ccd ${PAGMO_LIBS} ${catkin_LIBRARIES} fcl)
 
-add_library(finger_gait STATIC src/problem/finger_gait.cpp)
-target_link_libraries(finger_gait ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
+#add_library(finger_gait STATIC src/problem/finger_gait.cpp)
+#target_link_libraries(finger_gait ccd ${PAGMO_LIBS} ${catkin_LIBRARIES} fcl)
 
-add_library(finger_slide STATIC src/problem/finger_slide.cpp)
-target_link_libraries(finger_slide ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
+#add_library(finger_slide STATIC src/problem/finger_slide.cpp)
+#target_link_libraries(finger_slide ccd ${PAGMO_LIBS} ${catkin_LIBRARIES} fcl)
 
 #add_library(finger_gait_traj STATIC src/problem/finger_gait_traj.cpp)
 #target_link_libraries(finger_gait_traj ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
 
-add_library(ftip_grasp STATIC src/problem/ftip_grasp.cpp)
-target_link_libraries(ftip_grasp ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
+#add_library(ftip_grasp STATIC src/problem/ftip_grasp.cpp)
+#target_link_libraries(ftip_grasp ccd ${PAGMO_LIBS} ${catkin_LIBRARIES} fcl)
 
-add_library(allegro_env STATIC src/scene/allegro_env.cpp)
-target_link_libraries(allegro_env ccd ${catkin_LIBRARIES})
+#add_library(allegro_env STATIC src/scene/allegro_env.cpp)
+#target_link_libraries(allegro_env ccd ${catkin_LIBRARIES} fcl)
 
-add_executable(fg_server src/fg_server.cpp)
-target_link_libraries(fg_server finger_gait allegro_env ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
+#add_library(fcl_allegro_env STATIC src/scene/fcl_allegro_env.cpp)
+#target_link_libraries(fcl_allegro_env ccd ${catkin_LIBRARIES} fcl)
 
-add_executable(fs_server src/fs_server.cpp)
-target_link_libraries(fs_server finger_slide allegro_env ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
+#add_executable(fg_server src/fg_server.cpp)
+#target_link_libraries(fg_server finger_gait allegro_env ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
 
-add_executable(mesh_collision_demo src/mesh_collision_demo.cpp)
-target_link_libraries(mesh_collision_demo allegro_env ccd  ${catkin_LIBRARIES})
+#add_executable(fs_server src/fs_server.cpp)
+#target_link_libraries(fs_server finger_slide allegro_env ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
 
-add_executable(fg_nc_server src/fg_nc_server.cpp)
-target_link_libraries(fg_nc_server finger_gait_nc allegro_env ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
+#add_executable(mesh_collision_demo src/mesh_collision_demo.cpp)
+#target_link_libraries(mesh_collision_demo allegro_env ccd  ${catkin_LIBRARIES})
+
+#add_executable(fg_nc_server src/fg_nc_server.cpp)
+#target_link_libraries(fg_nc_server finger_gait_nc allegro_env ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
 
 #add_executable(fg_traj_server src/fg_traj_server.cpp)
 #target_link_libraries(fg_traj_server finger_gait_traj allegro_env ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
 
-add_executable(grasp_server src/grasp_server.cpp)
-target_link_libraries(grasp_server ftip_grasp allegro_env ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
+#add_executable(grasp_server src/grasp_server.cpp)
+#target_link_libraries(grasp_server ftip_grasp allegro_env ccd ${PAGMO_LIBS} ${catkin_LIBRARIES})
 

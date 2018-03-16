@@ -24,6 +24,7 @@ add_service_files(
   GetHandIK.srv
   PrecisionGrasp.srv
   FingerGaitServo.srv
+  UpdateObj.srv
   )
 
 generate_messages(

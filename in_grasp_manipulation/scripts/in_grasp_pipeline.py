@@ -948,7 +948,10 @@ def run_open_loop(n_trials=5):
 def run_open_loop_test():
     in_grasp_pip=inGraspPipeline(init_node=True)
     in_grasp_pip.read_objects()
-    in_grasp_pip.run_traj(int(sys.argv[1]),OBJ_TRACKING=False,FROM_FILE=True,RECORD_DATA=False, DBOT_TRACKING=False,RECORD_BAG_=False)
+    method='j'
+    folder=path_in_hand_data+'/interpolation/'+method+'/'
+
+    in_grasp_pip.run_traj(int(sys.argv[1]),OBJ_TRACKING=False,FROM_FILE=True,RECORD_DATA=False, DBOT_TRACKING=False,RECORD_BAG_=False,folder=folder)
 
 def fb_exp(n_trials=1):
     in_grasp_pip=inGraspPipeline(init_node=True)
@@ -1048,10 +1051,10 @@ if __name__=='__main__':
     #in_grasp_pip=inGraspPipeline(init_node=True)
     #in_grasp_pip.read_objects()
     #get_trajectories()
-    vis_traj(False)
+    #vis_traj(False)
     #run_mpc(FROM_FILE=True)
     #run_open_loop()
-    #run_open_loop_test()
+    run_open_loop_test()
     #in_grasp_pip=inGraspPipeline(init_node=True,publish_prefix='/allegroHand_0',listen_prefix='/allegroHand_0')
     #waypoint_exp()
     #vis_traj()

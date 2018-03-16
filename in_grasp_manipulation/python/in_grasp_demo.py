@@ -19,12 +19,12 @@ def read_objects(file,folder):
 
 
 if __name__=='__main__':
-    method=sys.argv[1]
-    f_name='../data/trajectories/debug_'+method+'_solution.csv'
+    method='relaxed-rigidity'
+    f_name='/home/bala/catkin_ws/src/in_hand_manipulation/in_hand_manipulation_data/data/in_grasp_manipulation/trajectories/debug_'+method+'_solution.csv'
     trial_name=method+'_deb.csv'
-    folder='../data/trials/'
+    folder='/home/bala/catkin_ws/src/in_hand_manipulation/in_hand_manipulation_data/data/in_grasp_manipulation/trials/'
     #traj_folder='../data/trajectories/reachable_poses/'+method+'/'
-    traj_folder='../data/trajectories/debug/'
+    traj_folder='/home/bala/catkin_ws/src/in_hand_manipulation/in_hand_manipulation_data/data/in_grasp_manipulation/trajectories/debug/'
     if(MAKE_TRIAL_LIST):
         ''' RUN only once'''
         # read file and store as object list
@@ -39,20 +39,16 @@ if __name__=='__main__':
     #objects.add_aruco_centroid_locations('../data/object_grasps/object_centroids_4f.csv')
 
     repeat=1
-    t_no=-1
+    t_no=int(sys.argv[1])
+    print t_no
     trial_no=-1
     while(repeat<2):
-        if(repeat==1):
-            t_no_input=raw_input('Trajectory number ('+str(t_no+1)+'): ')
-            if(t_no_input!=''):
-                t_no=int(t_no_input)
-            else:
-                t_no+=1
-            # Get Object
-            print 'Object: '+objects.arr[t_no*n_trials].name
-            trial_no=0
-        index=t_no*n_trials+trial_no
+        print 'Object: '+objects.arr[t_no*n_trials].name
+        print 'Object: '+objects.arr[t_no*n_trials].f_name
 
+        trial_no=0
+        index=t_no*n_trials
+        raw_input('send grasp?')
          # Publishing joint positions to robot
         allegroStates.position_mode()
         allegroStates.publish_grasp(objects.arr[index].grasp)

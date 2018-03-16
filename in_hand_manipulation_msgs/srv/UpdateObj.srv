@@ -1,0 +1,4 @@
+geometry_msgs/Pose obj_pose
+string mesh_file
+---
+bool status

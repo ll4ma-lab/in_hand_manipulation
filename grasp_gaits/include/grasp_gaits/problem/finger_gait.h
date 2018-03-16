@@ -10,10 +10,10 @@
 
 #include <vector>
 
-#include <grasp_gaits/scene/allegro_env.h>
+#include <grasp_gaits/scene/fcl_allegro_env.h>
 
 using namespace std;
-
+using namespace fcl_ccheck;
 namespace opt_problems
 {
   class optProblem
