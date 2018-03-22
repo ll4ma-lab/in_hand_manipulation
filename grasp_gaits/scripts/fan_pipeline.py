@@ -25,7 +25,7 @@ import copy
 import frames
 path_=rp.get_path('in_grasp_manipulation')+'/scripts'
 sys.path.insert(0,path_)
-from in_grasp_client import inGraspClient
+#from in_grasp_client import inGraspClient
 path_allegro=rp.get_path('allegro_driver')+'/scripts'
 sys.path.insert(0,path_allegro)
 from allegro_ros_api import handAPI
@@ -33,8 +33,8 @@ from allegro_ros_api import handAPI
 class graspGait:
     def __init__(self,o_mesh,weights,hand_prefix='/allegro_hand_right'):
         self.fg_client=fgClient()
-        self.grasp_client=graspClient()
-        self.ig_client=inGraspClient(weights)
+        #self.grasp_client=graspClient()
+        #self.ig_client=inGraspClient(weights)
         
         self.traj_server=trajectoryServer(10,init_node=True,topic_name='/in_hand/jtraj',robot_name='allegro')
         self.allegro_drv=handAPI(init_node=False,publish_prefix=hand_prefix,listen_prefix=hand_prefix)
@@ -80,9 +80,9 @@ class graspGait:
 
     def in_grasp(self,init_js,obj_pose,des_obj_pose):
 
-        j_traj,n_obj_pose,n_js=self.ig_client.call_server(init_js,obj_pose.pose,des_obj_pose.pose)
-        
-        return n_obj_pose,n_js,j_traj
+        #j_traj,n_obj_pose,n_js=self.ig_client.call_server(init_js,obj_pose.pose,des_obj_pose.pose)
+        print 'hi'
+        #return n_obj_pose,n_js,j_traj
     
 class pickleData:
     def read_file(self,file_name):
@@ -305,7 +305,7 @@ if __name__=='__main__':
     #j_initial=init_js.position
     js=init_js#gg.allegro_drv.get_joint_state()
     raw_input('Move to initial grasp?')
-    gg.allegro_drv.publish_joints(js.position)
+    gg.allegro_drv.publish_joints_slow(js.position)
     #js=gg.allegro_drv.get_joint_state
     
     # visualize initial grasp:
@@ -318,6 +318,15 @@ if __name__=='__main__':
     gg.traj_server.viz_joint_traj(jtraj,base_link='allegro_mount')
     gg.fg_client.update_obj(obj_pose.pose,mesh_f)
     raw_input("updated mesh")
+
+
+    # Move index finger behind object:
+
+
+
+    # update joint state of index finger:
+    
+
     
     f_order=[0,0,0]
     for i in range(1):
@@ -380,22 +389,27 @@ if __name__=='__main__':
         '''
 
     # grasp object:
-    raw_input('Pinch Grasp?')
+    #raw_input('Pinch Grasp?')
     
-    n_js=np.array(gg.allegro_drv.get_joint_state().position)
+    n_js=np.array(jtraj.points[-1].positions)
     js.position=np.array(js.position)
     js.position[0]=n_js[0]
-    js.position[1]=n_js[1]+0.2
-    js.position[2]=n_js[2]+0.0
-    js.position[3]=n_js[3]
+    js.position[1]=n_js[1]+0.4
+    js.position[2]=n_js[2]+0.2
+    js.position[3]=n_js[3]-0.2
+    js.position[15]=n_js[15]+0.4
+    print js.position
+    n_js=copy.deepcopy(js.position)
+    #print n_js
 
     gg.allegro_drv.publish_joints(js.position)
-
     raw_input('Open fan?')
     #n_js=np.array(gg.allegro_drv.get_joint_state().position)
-    js.position=np.array(js.position)
-    js.position[4]=0.0
-    js.position[5]=0.3
-    js.position[6]=0.3
-    js.position[7]=0.0
-    gg.allegro_drv.publish_joints(js.position)
+    
+    js.position=n_js
+    #print js.position
+    js.position[4]=-0.1
+    js.position[5]=0.6
+    js.position[6]=0.6
+    #js.position[7]=0.0
+    gg.allegro_drv.publish_joints_slow_finger(js.position,1)

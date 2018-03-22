@@ -34,14 +34,13 @@ public:
     std::string robot_desc_string;
     
     // read urdf as a string:
-    nh->param("robot_description", robot_desc_string, std::string());
+    nh->param("allegro_planning/robot_description", robot_desc_string, std::string());
     c_check.load_hand_links(hand_link_names,robot_desc_string);
 
 
     vector<string> hand_base_names={"palm_link","palm_link","palm_link","palm_link"};
     vector<string> hand_ee_names={"index_tip","middle_tip","ring_tip","thumb_tip"}; 
-    string urdf_file="/home/bala/catkin_ws/src/in_hand_manipulation/in_grasp_manipulation/urdf/allegro.urdf";
-    allegro_kdl=manipulator_kdl::robotKDL("robot_description",*nh,hand_base_names,hand_ee_names,hand_link_names,g_vec);
+    allegro_kdl=manipulator_kdl::robotKDL("allegro_planning/robot_description",*nh,hand_base_names,hand_ee_names,hand_link_names,g_vec);
     allegro_kdl.urdfParser();
     allegro_kdl.dof=16;
       
