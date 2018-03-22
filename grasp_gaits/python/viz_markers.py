@@ -1,6 +1,7 @@
 #
 import rospy
 from visualization_msgs.msg import Marker, MarkerArray
+from geometry_msgs.msg import Point
 import numpy as np
 # import required allegro model files
 from rospkg import RosPack
@@ -250,12 +251,43 @@ class VizInHand:
             self.loop_rate.sleep()
             i+=1
 
+    def viz_contact_normal(self, cpt,normal,rgb=[1.0,0.1,0.1],frame='palm_link',t='contact'):
+        self.m_pub=rospy.Publisher(t,Marker,queue_size=1)
+        arrow=Marker()
+
+        arrow.header.frame_id=frame
+        arrow.header.stamp=rospy.Time()
+        arrow.id=0
+        arrow.type=Marker.ARROW
+        arrow.points.append(cpt)
+        end_pt=np.ravel([cpt.x,cpt.y,cpt.z])+np.ravel([normal.x,normal.y,normal.z])*0.05
+        end_p=Point()
+        end_p.x=end_pt[0]
+        end_p.y=end_pt[1]
+        end_p.z=end_pt[2]
+        
+        arrow.points.append(end_p)
+        arrow.color.a=1.0
+        arrow.color.r=rgb[0]
+        arrow.color.g=rgb[1]
+        arrow.color.b=rgb[2]
+        arrow.scale.x=0.005
+        arrow.scale.y=0.01
+        arrow.scale.z=0.005
+
+        self.loop_rate=rospy.Rate(10)
+        i=0
+        while(not rospy.is_shutdown() and i<10):
+            self.m_pub.publish(arrow)
+            self.loop_rate.sleep()
+            i+=1
+
     def viz_cpts(self,cpts,t='cpt',rgb=[1.0,0.1,0.1],frame='palm_link'):
         scale=0.01
         self.v_pub=rospy.Publisher(t,MarkerArray,queue_size=1)
         m_arr=MarkerArray()
         for i in range(len(cpts)):
-            pt=cpts[i].point
+            pt=cpts[i]#.point
             obj_m=Marker()
             obj_m.header.frame_id=frame
             obj_m.header.stamp=rospy.Time()

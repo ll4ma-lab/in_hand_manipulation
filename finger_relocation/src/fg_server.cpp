@@ -8,6 +8,9 @@
 #include <geometry_msgs/PointStamped.h>
 #include <ros/ros.h>
 #include <ros/package.h>
+
+#include <tf/transform_broadcaster.h>
+
 using namespace pagmo;
 ros::Publisher pub;
 class fgPlanner
@@ -16,15 +19,16 @@ public:
   manipulator_kdl::robotKDL allegro_kdl;
   handEnv c_check;
   ros::NodeHandle* nh;
+  ros::Publisher m_pub;
   void init(ros::NodeHandle &n)
   {
     nh=&n;
     // initialize collision checker
-    c_check=handEnv(0.01);
+    c_check=handEnv(0.002);
     
     vector<double> g_vec={0.0,0.0,-9.8};
         
-    vector<string> hand_link_names={"index_link_1","index_link_2","index_tip", "middle_link_1","middle_link_2","middle_tip","ring_link_1","ring_link_2","ring_tip", "thumb_link_2","thumb_link_3","thumb_tip"};
+    vector<string> hand_link_names={"index_link_1","index_link_2","index_tip", "middle_link_1","middle_link_2","middle_tip","ring_link_1","ring_link_2","ring_tip", "thumb_link_2","thumb_link_2","thumb_tip"};
 
     // initialize collision environment:
     std::string robot_desc_string;
@@ -36,9 +40,10 @@ public:
 
     vector<string> hand_base_names={"palm_link","palm_link","palm_link","palm_link"};
     vector<string> hand_ee_names={"index_tip","middle_tip","ring_tip","thumb_tip"}; 
-
-    allegro_kdl=manipulator_kdl::robotKDL("robot_description",*nh,hand_base_names, hand_ee_names, hand_link_names,g_vec);
-    
+    string urdf_file="/home/bala/catkin_ws/src/in_hand_manipulation/in_grasp_manipulation/urdf/allegro.urdf";
+    allegro_kdl=manipulator_kdl::robotKDL("robot_description",*nh,hand_base_names,hand_ee_names,hand_link_names,g_vec);
+    allegro_kdl.urdfParser();
+    allegro_kdl.dof=16;
       
     cerr<<"Created robot collision files"<<endl;
     
@@ -63,7 +68,30 @@ public:
     // update object pose
     c_check.update_grasp_obj_pose(pose);
 
+    
     // visualize object pointcloud:
+    m_pub=nh->advertise<visualization_msgs::MarkerArray>("collision_env", 1);
+    static tf::TransformBroadcaster br;
+    ros::Rate l(100);
+
+    tf::Transform transform;
+    transform.setOrigin( tf::Vector3(pose[0],pose[1],pose[2]) );
+    tf::Quaternion q(pose[3],pose[4],pose[5],pose[6]);
+    transform.setRotation(q);
+
+    visualization_msgs::MarkerArray oc_map; 
+    c_check.get_env_markers(oc_map,"obj_frame");
+
+    // visualize pointcloud:
+    for(int i=0;i<100;++i)
+    {
+       br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "palm_link", "obj_frame"));
+
+      // visualize octomap:
+      m_pub.publish(oc_map);
+      l.sleep();
+    }
+
     // pcl::PointCloud<PointXYZRGB>::Ptr cloud_obj1(new PointCloud<PointXYZRGB>);
     //c_check.get_obj_pointcloud(cloud_obj1);
     //pub.publish(cloud_obj1);
@@ -71,12 +99,18 @@ public:
   }
   bool fg_call(in_hand_manipulation_msgs::RelocateFingerKin::Request &req, in_hand_manipulation_msgs::RelocateFingerKin::Response &res)
   { // Getting parameters from service request:
-    
+    cerr<<"Calling fg service"<<endl;
     vector<double> joints_0=req.js.position;
-    Eigen::VectorXd des_pt(3);
+    Eigen::VectorXd des_pt(6);
     des_pt[0]=req.des_contact_pt.x;
     des_pt[1]=req.des_contact_pt.y;
     des_pt[2]=req.des_contact_pt.z;
+
+    // contact normals:
+    des_pt[3]=req.des_contact_normal.x;
+    des_pt[4]=req.des_contact_normal.y;
+    des_pt[5]=req.des_contact_normal.z;
+    
     int t_steps=req.T;
     vector<double> vel_limits;//(16,0.2);
 
@@ -86,12 +120,12 @@ public:
     }
     else
     {
-      vel_limits.resize(16,0.5);
+      vel_limits.resize(16,0.2);
 
     }
    
     int f=req.f_idx;
-    
+    cerr<<"reading joint angles"<<endl;
     // setup collision checking
     Eigen::VectorXd hand_q(16);
     // initialize object meshes to initial joint state:
@@ -107,7 +141,7 @@ public:
     Eigen::VectorXd finger_q;
     finger_q.resize(4);
     Eigen::VectorXd l_pose_;
-        
+    cerr<<"computing link poses"<<endl;
     for (int j=0;j<4;j++)
     {
       //finger joints:
@@ -118,9 +152,10 @@ public:
         allegro_kdl.getSTDVector(l_pose_,link_poses[j*3+i]);
       }
     }
-    
+    cerr<<"updating hand state"<<endl;
     // get contact data:
     c_check.update_hand_state(link_poses);
+    cerr<<"updated hand state"<<endl;
     // update link collision index:
     vector<int> f_idx;
     for(int i=0;i<4;++i)
@@ -137,14 +172,12 @@ public:
     c_check.update_collision_links(f_idx);
 
     // get desired point for allegro :
-    Eigen::VectorXd jpt;
-    allegro_kdl.getFK(f,hand_q.segment(f*4,4),jpt);
+    //Eigen::VectorXd jpt;
+    //allegro_kdl.getFK(f,hand_q.segment(f*4,4),jpt);
     cerr<<"f: "<<f<<endl;
-    cerr<<hand_q.transpose()<<endl;
-    cerr<<jpt.transpose()<<endl;
-    des_pt[0]=jpt[0];
-    des_pt[1]=jpt[1];
-    des_pt[2]=jpt[2];
+    //cerr<<hand_q.transpose()<<endl;
+    //cerr<<jpt.transpose()<<endl;
+    // get desired point from service call:
     
     opt_problems::optProblem opt_problem(t_steps,allegro_kdl,des_pt,vel_limits,joints_0,f,c_check);
     
@@ -153,12 +186,15 @@ public:
     
     prob.set_c_tol(tol);
     pagmo::snopt7 sn_v(false,"/usr/local/lib/");
-    //sn_v.set_integer_option("Iteration limit",1000);
+    sn_v.set_integer_option("Iteration limit",200);
+    //sn_v.set_integer_option("Major Iteration limit",100);
+    //sn_v.set_integer_option("Iteration limit",100);
+
     //sn_v.set_numeric_option("Major optimality tolerance",1e-3); 
     //sn_v.set_numeric_option("Linesearch tolerance",0.3); 
     
     algorithm algo{sn_v};
-    algo.set_verbosity(1);
+    algo.set_verbosity(100);
     //algorithm algo{cmaes(500)};
     population pop{prob,1u};
     
@@ -186,13 +222,14 @@ public:
       }
               
     }
-    else if(req.init_jtraj.points.size()<t_steps)
+    else if(req.init_jtraj.points.size()>1 && req.init_jtraj.points.size()<t_steps)
     {
+      cerr<<"Initializing from traj"<<endl;
       for(int i=0;i<t_steps;++i)
       {
-        for(int j=0;j<req.init_jtraj.points[0].positions.size();++j)
+        for(int j=0;j<req.init_jtraj.points[1].positions.size();++j)
         {
-          x_in[(i)*16+j]=joint_init[j]+(req.init_jtraj.points[0].positions[j]-joint_init[j])*double(i)/t_steps;
+          x_in[(i)*16+j]=joint_init[j]+(req.init_jtraj.points[1].positions[j]-joint_init[j])*double(i)/t_steps;
         }
       }
               
@@ -264,13 +301,26 @@ public:
     // compute next contact point from fk:
     geometry_msgs::PointStamped cpt;
     Map<Eigen::VectorXd> final_joints(&joint_traj.points[joint_traj.points.size()-1].positions[f*4],4);
+    cerr<<final_joints.transpose()<<endl;
     Eigen::VectorXd f_p;
     allegro_kdl.getFK(f,final_joints,f_p);
+    // get contact point:
+    //cerr<<f_p<<endl;
+    /*
+    vector<double> ftip_pose;
+    allegro_kdl.getSTDVector(f_p,ftip_pose);
+    coll_data ftip_data;
+    c_check.check_ftip_contact(ftip_pose,ftip_data,f*3+2);
+    cerr<<ftip_data.collision<<" "<<f*3+2<<endl;
+    cpt.point.x=ftip_data.p1.x();
+    cpt.point.y=ftip_data.p1.y();
+    cpt.point.z=ftip_data.p1.z();
+    */
     cpt.point.x=f_p[0];
     cpt.point.y=f_p[1];
     cpt.point.z=f_p[2];
     res.next_contact_pt=cpt;
-    
+    //cerr<<final_joints<<endl;
     return true;
   }
   
@@ -287,7 +337,6 @@ int main(int argc,char** argv)
 
   ros::ServiceServer service=n.advertiseService("/in_hand/finger_gait",&fgPlanner::fg_call,&fg_planner);
   ros::ServiceServer obj_service=n.advertiseService("/in_hand/finger_gait/update_obj",&fgPlanner::update_obj,&fg_planner);
-  pub=n.advertise<pcl::PointCloud<PointXYZRGB>>("/collision_checker/object",1);
 
   ros::spin();// Loop rate?
 }

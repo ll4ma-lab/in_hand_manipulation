@@ -36,41 +36,6 @@ set(ccd_INCLUDE_DIRS $ENV{HOME}/local/include)
 set(ccd_LIBRARY_DIRS $ENV{HOME}/local/lib)
 
 
-## Generate messages in the 'msg' folder
- add_message_files(
-   FILES
-   Ellipse.msg
-   Grasp.msg
-   GaitNode.msg
-   GaitPlan.msg
- )
-
-## Generate services in the 'srv' folder
-add_service_files(
-  FILES
-  GetEllipse.srv
-  RelocateFinger.srv
-  RelocateFingerKin.srv
-  MoveObj.srv
-  GetGaitPlan.srv
-  RelocateObj.srv
-  RelocateObjSd.srv
-  ComputeGD.srv
-  ComputeGDRaw.srv
-  UpdateObj.srv
-  GraspObj.srv
-)
-
-
-## Generate added messages and services with any dependencies listed here
- generate_messages(
-   DEPENDENCIES
-   sensor_msgs
-   std_msgs
-   geometry_msgs
-   grasp_gaits
-   trajectory_msgs
- )
 
 ###################################
 ## catkin specific configuration ##

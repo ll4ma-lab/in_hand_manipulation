@@ -24,6 +24,13 @@ void handEnv::update_hand_state(vector<vector<double>> &link_poses)
   update_pose(hand_link_objs_,l_poses);
 }
 
+void handEnv::update_link_state(vector<double> &link_pose, int l_idx)
+{
+  Transform3d l_pose;
+  add_offsets(hand_link_offsets_[l_idx],link_pose,l_pose);
+  update_pose(hand_link_objs_[l_idx],l_pose);
+}
+
 void handEnv::load_obj(const string &mesh_file_location)
 {
   /*
@@ -51,8 +58,14 @@ void handEnv::update_grasp_obj_pose(vector<double> &pose)
 }
 
 
+void handEnv::get_ftip_contact_pt(vector<double> &in_pose,int ftip_idx, Vector3d &c_pt)
+{
+  Transform3d f_pose;
+  add_offsets(hand_link_offsets_[ftip_idx],in_pose,f_pose);
+  c_pt=f_pose.translation();
+}
 
-void handEnv::check_ftip_contact(vector<double> &pose, vector<coll_data> &c_data, int ftip_idx)
+void handEnv::check_ftip_contact(vector<double> &pose, coll_data &c_data, int ftip_idx)
 {
   Transform3d f_pose;
   add_offsets(hand_link_offsets_[ftip_idx],pose,f_pose);
@@ -60,8 +73,6 @@ void handEnv::check_ftip_contact(vector<double> &pose, vector<coll_data> &c_data
   
   // check collision data
   signedDistance(hand_link_objs_[ftip_idx],env_objs_,c_data);
-
-  
 }
 
 
@@ -80,7 +91,7 @@ void handEnv::update_collision_links(const vector<int> &l_idx)
 void handEnv::check_link_collision(vector<vector<coll_data>> &c_data, vector<int> l_idx)
 {
   //update_hand_state(l_poses);
-
+  
   c_data.resize(n_hand_links_);
   for(int i=0;i<collision_link_objs_.size();++i)
   {
@@ -88,7 +99,31 @@ void handEnv::check_link_collision(vector<vector<coll_data>> &c_data, vector<int
   }
 }
 
+void handEnv::check_link_collision( int l_idx, vector<double> &l_pose, coll_data &c_data)
+{
+  // update link state:
+  update_link_state(l_pose,l_idx);
+
+  signedDistance(hand_link_objs_[l_idx],env_objs_,c_data);
+}
+
+
 void handEnv::check_contacts(vector<vector<double>> &l_poses, vector<vector<coll_data>> &c_data)
+{
+  //cerr<<"updating hand state"<<endl;
+  // update robot link poses:
+  
+  update_hand_state(l_poses);
+  
+  c_data.resize(n_hand_links_);
+  
+  // get contact data
+  for(int i=0;i<l_poses.size();++i)
+  {
+    signedDistance(hand_link_objs_[i], env_objs_,c_data[i]);
+  }
+}
+void handEnv::check_contacts(vector<vector<double>> &l_poses, vector<coll_data> &c_data)
 {
   //cerr<<"updating hand state"<<endl;
   // update robot link poses:
@@ -119,6 +154,69 @@ void handEnv::check_contacts(vector<vector<double>> &l_poses, vector<vector<coll
     signedDistance(hand_link_objs_[l_idx[i]], env_objs_,c_data[l_idx[i]]);
   }
 }
+void handEnv::check_contacts(vector<vector<double>> &l_poses, vector<coll_data> &c_data,vector<int> l_idx)
+{
+  //cerr<<"updating hand state"<<endl;
+  // update robot link poses:
+  
+  update_hand_state(l_poses);
+  
+  c_data.resize(n_hand_links_);
+  
+  // get contact data
+  for(int i=0;i<l_idx.size();++i)
+  {
+    signedDistance(hand_link_objs_[l_idx[i]], env_objs_,c_data[l_idx[i]]);
+  }
+}
+
+void handEnv::get_orient_contacts(vector<vector<double>> &l_poses, vector<int> l_idx, vector<Eigen::VectorXd> &or_grad,double delta)
+{
+  or_grad.resize(l_poses.size());
+  // using central difference:
+  
+  for(int i=0;i<l_idx.size();++i)
+  {
+    int l=l_idx[i];
+    // get link orientation in euler:
+    Eigen::VectorXd l_orient=transforms.get_RPY_q(l_poses[l][4],l_poses[l][5],l_poses[l][6],l_poses[l][7]);
+    Eigen::VectorXd l_or=l_orient;
+    or_grad[i].resize(3);
+    for(int j=0;j<3;++j)
+    {
+      l_or[j]+=delta;
+      // update link pose:
+      vector<double> l_pose(7,0.0);
+      l_pose=l_poses[l];
+
+      Eigen::VectorXd l_new=transforms.get_q_RPY(l_or[0],l_or[1],l_or[2]);
+      l_pose[3]=l_new[0];
+      l_pose[4]=l_new[1];
+      l_pose[5]=l_new[2];
+      l_pose[6]=l_new[3];
+      
+      // check contacts:
+      coll_data c_dat;
+      check_link_collision(l,l_pose,c_dat);
+      double sd_p=c_dat.distance;
+      l_or=l_orient;
+      l_or[j]-=delta;
+      
+      l_new=transforms.get_q_RPY(l_or[0],l_or[1],l_or[2]);
+      l_pose[3]=l_new[0];
+      l_pose[4]=l_new[1];
+      l_pose[5]=l_new[2];
+      l_pose[6]=l_new[3];
+   
+      // check contacts:
+      check_link_collision(l,l_pose,c_dat);
+      
+      double sd_n=c_dat.distance;
+      or_grad[i][j]=(sd_p-sd_n)/(2*delta);
+    }
+  }
+}
+
 void handEnv::get_env_markers(visualization_msgs::MarkerArray &box_m, const string &frame_id)
 {
   _pcl_eigen.get_marker_octree(obj_tree_,box_m,frame_id);

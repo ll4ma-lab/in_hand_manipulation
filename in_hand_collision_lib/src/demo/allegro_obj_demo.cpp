@@ -18,9 +18,9 @@ class srvClass
 public:
   handEnv hand_env;
   ros::NodeHandle* nh;
-  ros::Publisher pub,m_pub,l_pub;
+  ros::Publisher pub,m_pub,l_pub,c_pub;
   manipulator_kdl::robotKDL hand_kdl;
-  vector<vector<coll_data>> hand_c_data;
+  vector<coll_data> hand_c_data;
   bool collision_ready=false;
   
   void init(ros::NodeHandle &n)
@@ -34,7 +34,8 @@ public:
   void init_robot_meshes()
   {
     l_pub=nh->advertise<visualization_msgs::MarkerArray>("link_env", 1);
-
+    c_pub=nh->advertise<visualization_msgs::Marker>("contact_pt", 1);
+    
     vector<double> g_vec={0.0,0.0,-9.8};
 
     vector<string> hand_link_names={"index_link_1","index_link_2","index_tip", "middle_link_1","middle_link_2","middle_tip","ring_link_1","ring_link_2","ring_tip", "thumb_link_2","thumb_link_3","thumb_tip"};
@@ -106,9 +107,9 @@ cerr<<"Updating environment cloud"<<endl;
     Eigen::VectorXd hand_js;
     hand_js.resize(16);
 
-    for(int i=0;i<16;++i)
+    for(int i=7;i<16+7;++i)
     {
-      hand_js[i]=j_msg.position[i];
+      hand_js[i-7]=j_msg.position[i];
     }
     if(collision_ready)
     {
@@ -141,26 +142,54 @@ cerr<<"Updating environment cloud"<<endl;
     visualization_msgs::MarkerArray oc_map; 
     hand_env.get_link_markers(oc_map,"palm_link");
 
+    visualization_msgs::Marker c_pt;
+    std_msgs::ColorRGBA m_color;
+    
+    m_color.r = 1.0;
+    m_color.g = 0.0;
+    m_color.b = 0.0;
+    m_color.a = 1.0;
+    uint32_t shape = visualization_msgs::Marker::SPHERE;
+    c_pt.header.frame_id="palm_link";
+    c_pt.header.stamp=ros::Time();
+    c_pt.id=0;
+    c_pt.type=shape;
+    c_pt.scale.x=0.01;
+    c_pt.scale.y=0.01;
+    c_pt.scale.z=0.01;
+    c_pt.pose.orientation.w=1.0;
+
+    c_pt.pose.position.x=0.0;
+    c_pt.pose.position.y=0.0;
+    c_pt.pose.position.z=0.0;
+    c_pt.color=m_color;
     for(int i=0;i<10;++i)
     {
       l_pub.publish(oc_map);
     }
-
+    
     if(hand_c_data.size()>0)
     {
       for(int i=0;i<hand_c_data.size();++i)
       {
-	for(int j=0;j<hand_c_data[i].size();++j)
-	{
-          //cerr<<"hand link in collision: "<<i<<" d: "<<hand_c_data[i][j].distance<<endl;
-	  if(hand_c_data[i][j].distance<0.0)
-	  {
-	    cerr<<"hand link in collision: "<<i<<" d: "<<hand_c_data[i][j].distance<<endl;
-	  }
+        if(hand_c_data[i].distance<0.0)
+        {
+          cerr<<"hand link in collision: "<<i<<" d: "<<hand_c_data[i].distance<<endl;
+          cerr<<hand_c_data[i].p1.transpose()<<endl;
+          c_pt.pose.position.x=hand_c_data[i].p2(0);
+          c_pt.pose.position.y=hand_c_data[i].p2(1);
+          c_pt.pose.position.z=hand_c_data[i].p2(2);
+
 	}
       }
     }
+    ros::Rate l(100);
 
+    for(int i=0;i<10;++i)
+    {
+      c_pub.publish(c_pt);
+      l.sleep();
+    }
   }
 
 };

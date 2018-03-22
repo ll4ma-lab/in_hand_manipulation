@@ -39,6 +39,7 @@ namespace opt_problems
     vector<double> inEqGradient(vector<double> x) const;
     vector<double> eqGradient(vector<double> x) const;
     vector<double> collisionGradient(vector<double> x) const;
+    vector<double> collisionGradientFD(vector<double> x) const;
 
     vector<vector<double>> bounds() const;
     //#if SPARSE_GRADIENT==true
