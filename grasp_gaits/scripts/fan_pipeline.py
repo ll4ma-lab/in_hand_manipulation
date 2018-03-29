@@ -215,7 +215,7 @@ if __name__=='__main__':
     #raw_input('hi?')
     obj_pose=PoseStamped()
 
-    obj_pose.pose.position.x=0.14
+    obj_pose.pose.position.x=0.125
     obj_pose.pose.position.y=-0.1
     obj_pose.pose.position.z=0.01
     
@@ -244,8 +244,8 @@ if __name__=='__main__':
     d_pts.append(thumb_pt)
 
     md_pt=Point()
-    md_pt.x=-0.019
-    md_pt.y=0.007
+    md_pt.x=0.012
+    md_pt.y=0.01
     md_pt.z=0.11
     d_pts.append(md_pt)
 
@@ -283,7 +283,7 @@ if __name__=='__main__':
     init_js.position[12]=1.6
     init_js.position[13]=-0.1
     init_js.position[14]=0.9
-    init_js.position[15]=-0.15
+    init_js.position[15]=0.0
 
     '''
     init_js.position[0]=0.0
@@ -321,14 +321,11 @@ if __name__=='__main__':
 
 
     # Move index finger behind object:
-
+    
 
 
     # update joint state of index finger:
-    
-
-    
-    f_order=[0,0,0]
+    f_order=[0]
     for i in range(1):
         print "performing finger gait",f_order[i]
         
@@ -366,27 +363,7 @@ if __name__=='__main__':
         js.position=jtraj.points[-1].positions
         raw_input('Send to robot?')
         gg.allegro_drv.publish_joint_traj(jtraj,dt=10)
-        
-        #print jtraj.points[-1].positions
-        #raw_input('Next finger?')
-        #n_js=np.array(gg.allegro_drv.get_joint_state().position)
-        #js.position=np.array(js.position)
-        #js.position[0]=n_js[0]
-        #js.position[1]=n_js[1]
-        #js.position[2]=n_js[2]
-        #js.position[3]=n_js[3]
 
-        '''
-        # update contact points:
-        d_pts=gait_help.get_cpt(n_obj_pose,d_pts,obj_pose)
-        cpt=gait_help.get_cpt(n_obj_pose,cpt,obj_pose)
-        gg.viz.viz_cpts(cpt)
-        gg.viz.viz_cpts(d_pts,t='d_cpt',rgb=[0.0,1.0,0.0])
-        obj_pose=copy.deepcopy(n_obj_pose)
-        # update obj pose:
-        gg.viz.viz_obj_mesh(obj_pose,a=0.9)
-        js.position=jtraj.points[-1].positions
-        '''
 
     # grasp object:
     #raw_input('Pinch Grasp?')
@@ -413,3 +390,43 @@ if __name__=='__main__':
     js.position[6]=0.6
     #js.position[7]=0.0
     gg.allegro_drv.publish_joints_slow_finger(js.position,1)
+
+    # move middle finger to a grasp:
+    f_order=[1]
+    for i in range(1):
+        print "performing finger gait",f_order[i]
+        
+        des_contact_pt=d_cpt[i]
+
+        # get normal at contact point:
+        o_pt=gait_help.get_cpt(home_pose,[copy.deepcopy(des_contact_pt)],obj_pose)[0]
+
+        pt=[o_pt.x,o_pt.y,o_pt.z]
+        pt_n=gg.get_normal(pt)
+        normal=Point()
+        normal.x=pt_n[0]
+        normal.y=pt_n[1]
+        normal.z=pt_n[2]
+        n_pts=Point()
+        n_pts=normal
+        #print normal
+        # transform normal to object pose:
+        n_pt=gait_help.get_cpt(obj_pose,[n_pts],home_pose)[0]
+        #print n_pt
+        # visualize contact point and normal:
+        gg.viz.viz_contact_normal(des_contact_pt,n_pt)
+        slide=False
+
+        des_js=JointState()
+        #print des_contact_pt
+        jtraj,pt=gg.fg_finger(f_order[i],js,des_contact_pt,des_js,T=1,slide=slide,normal=normal)
+        npt=[pt.point]
+        print pt.point
+        print des_contact_pt
+        gg.viz.viz_cpts(npt)
+        # visualize jtraj:
+        #jtraj.points[0]=jtraj.points[-1]
+        gg.traj_server.viz_joint_traj(jtraj,base_link='allegro_mount')
+        js.position=jtraj.points[-1].positions
+        raw_input('Send to robot?')
+        gg.allegro_drv.publish_joint_traj(jtraj,dt=10)

@@ -34,13 +34,13 @@ public:
     std::string robot_desc_string;
     
     // read urdf as a string:
-    nh->param("allegro_planning/robot_description", robot_desc_string, std::string());
+    nh->param("robot_description", robot_desc_string, std::string());
     c_check.load_hand_links(hand_link_names,robot_desc_string);
 
 
     vector<string> hand_base_names={"palm_link","palm_link","palm_link","palm_link"};
     vector<string> hand_ee_names={"index_tip","middle_tip","ring_tip","thumb_tip"}; 
-    allegro_kdl=manipulator_kdl::robotKDL("allegro_planning/robot_description",*nh,hand_base_names,hand_ee_names,hand_link_names,g_vec);
+    allegro_kdl=manipulator_kdl::robotKDL("robot_description",*nh,hand_base_names,hand_ee_names,hand_link_names,g_vec);
     allegro_kdl.urdfParser();
     allegro_kdl.dof=16;
       
@@ -98,18 +98,32 @@ public:
   }
   bool fg_call(in_hand_manipulation_msgs::RelocateFingerKin::Request &req, in_hand_manipulation_msgs::RelocateFingerKin::Response &res)
   { // Getting parameters from service request:
+    int f=req.f_idx;
+
     cerr<<"Calling fg service"<<endl;
     vector<double> joints_0=req.js.position;
-    Eigen::VectorXd des_pt(6);
-    des_pt[0]=req.des_contact_pt.x;
-    des_pt[1]=req.des_contact_pt.y;
-    des_pt[2]=req.des_contact_pt.z;
+    Eigen::VectorXd des_pt;//(6);
+    if(req.des_js.position.size()>0)
+    {
+      des_pt.resize(4);
+      des_pt[0]=req.des_js.position[f*4];
+      des_pt[1]=req.des_js.position[f*4+1];
+      des_pt[2]=req.des_js.position[f*4+2];
+      des_pt[3]=req.des_js.position[f*4+3];
 
-    // contact normals:
-    des_pt[3]=req.des_contact_normal.x;
-    des_pt[4]=req.des_contact_normal.y;
-    des_pt[5]=req.des_contact_normal.z;
-    
+    }
+    else
+    {
+      des_pt.resize(6);
+      des_pt[0]=req.des_contact_pt.x;
+      des_pt[1]=req.des_contact_pt.y;
+      des_pt[2]=req.des_contact_pt.z;
+
+      // contact normals:
+      des_pt[3]=req.des_contact_normal.x;
+      des_pt[4]=req.des_contact_normal.y;
+      des_pt[5]=req.des_contact_normal.z;
+    }
     int t_steps=req.T;
     vector<double> vel_limits;//(16,0.2);
 
@@ -123,7 +137,6 @@ public:
 
     }
    
-    int f=req.f_idx;
     cerr<<"reading joint angles"<<endl;
     // setup collision checking
     Eigen::VectorXd hand_q(16);
