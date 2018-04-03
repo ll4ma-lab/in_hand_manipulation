@@ -9,6 +9,7 @@ rp=RosPack()
 path_=rp.get_path('ll4ma_planner')+'/scripts'
 sys.path.insert(0,path_)
 from tf_helper import *
+from lbr4_joint_planner_client import *
 path_=rp.get_path('optimization_pkg')+'/scripts'
 sys.path.insert(0,path_)
 from trajectory_pub import *
@@ -25,7 +26,7 @@ import copy
 import frames
 path_=rp.get_path('in_grasp_manipulation')+'/scripts'
 sys.path.insert(0,path_)
-#from in_grasp_client import inGraspClient
+from in_grasp_client import inGraspClient
 path_allegro=rp.get_path('hand_services')+'/scripts'
 sys.path.insert(0,path_allegro)
 from hand_client import *
@@ -34,18 +35,19 @@ path_allegro=rp.get_path('allegro_driver')+'/scripts'
 sys.path.insert(0,path_allegro)
 from allegro_ros_api import handAPI
 
+
 class graspGait:
     def __init__(self,o_mesh,weights,hand_prefix='/allegro_hand_right'):
         self.fg_client=fgClient()
         #self.grasp_client=graspClient()
-        #self.ig_client=inGraspClient(weights)
+        self.ig_client=inGraspClient(weights)
         
-        self.traj_server=trajectoryServer(10,init_node=True,topic_name='/in_hand/jtraj',robot_name='allegro')
+        self.traj_server=trajectoryServer(10,init_node=True,topic_name='/in_hand/jtraj',robot_name='lbr4_allegro')
         self.allegro_drv=handAPI(init_node=False,publish_prefix=hand_prefix,listen_prefix=hand_prefix)
         self.hand_client=handClient()
         self.viz=VizInHand(o_mesh,init_node=False)
         self.obj=grasp_class.object(o_mesh[7:])
-
+        self.lbr4=jointClient()
     def get_normal(self,contact_pt):
         dat=trimesh.proximity.nearby_faces(self.obj.mesh,[contact_pt])
         norm=self.obj.mesh.face_normals[dat[0][0]]
@@ -82,11 +84,27 @@ class graspGait:
             new_jtraj.points.append(pt)
         return new_jtraj
 
-    def in_grasp(self,init_js,obj_pose,des_obj_pose):
-
-        #j_traj,n_obj_pose,n_js=self.ig_client.call_server(init_js,obj_pose.pose,des_obj_pose.pose)
-        print 'hi'
-        #return n_obj_pose,n_js,j_traj
+    def finger_relocation(self,cpts,f_order,init_js):
+        js=copy.deepcopy(init_js)
+        for i in range(len(f_order)):
+            print "performing finger gait",f_order[i]
+            des_contact_pt=cpts[f_order[i]]
+            slide=False
+            normal=Point()
+            normal.x=0.0
+            normal.y=0.0
+            normal.z=0.0
+            des_js=JointState()
+            #print des_contact_pt
+            jtraj,pt=self.fg_finger(f_order[i],js,des_contact_pt,des_js,T=1,slide=slide,normal=normal)
+            # visualize jtraj:
+            #jtraj.points[0]=jtraj.points[-1]
+            #self.traj_server.viz_joint_traj(jtraj,base_link='base_link')
+            js.position=jtraj.points[-1].positions
+            _,jtraj=self.allegro_drv.interpolate_joint_traj(jtraj)
+            #raw_input('Send to robot?')
+            self.hand_client.send_jtraj(jtraj)
+        return js
     
 class pickleData:
     def read_file(self,file_name):
@@ -206,7 +224,7 @@ class gaitHelper:
         d_obj_pose.pose.orientation.w=n_pose[6]
         return d_obj_pose
 
-
+        
 
 
 if __name__=='__main__':
@@ -216,7 +234,7 @@ if __name__=='__main__':
     
     mesh_stl='file:///home/bala/object_models/fan/fan_small.stl'
 
-    gg=graspGait(mesh_stl,weights=[0.001,10.0,10.0,0.0,100.0])
+    gg=graspGait(mesh_stl,weights=[0.001,10.0,1.0,0.0,0.4])
     
     # get object pose from perception:
     
@@ -233,16 +251,28 @@ if __name__=='__main__':
     obj_pose.pose.orientation.w=0.5
         
     
-    #gg.viz.viz_obj_mesh(obj_pose,a=1.0)
-
-    
     mesh_f='/home/bala/object_models/fan/fan_small.binvox'
 
 
+    # arm poses:
+    initial_arm=JointState()
+    initial_arm.position=np.array([1.43,1.0,0.0,-0.55,0.7,0.0,0.7])
+
+    close_fan_arm=JointState()
+    close_fan_arm.position=np.array([1.43,1.0,0.0,-0.51,2.4,0.0,2.3])
+
+    palm_face_up_arm=JointState()
+    palm_face_up_arm.position=np.array([1.4,0.9,0.0,-0.65,2.29,0.02,0.9])
+
+    drop_arm=JointState()
+    drop_arm.position=np.array([1.43,1.35,0.0,-0.797,0.71,-0.742,-0.623])
+
+    wave_arm=JointState()
+    wave_arm.position=np.array([1.43,1.35,0.0,0.31,0.7,0.0,0.0])
     # Desired contact points for relocation:
     
     d_pts=[]
-
+    close_pts=[]
     idx_pt=Point()
     idx_pt.x=0.017#0.012
     idx_pt.y=0.01
@@ -250,33 +280,120 @@ if __name__=='__main__':
     d_pts.append(idx_pt)
 
     md_pt=Point()
-    md_pt.x=0.019
-    md_pt.y=0.01
-    md_pt.z=0.11
+    md_pt.x=0.021
+    md_pt.y=0.005
+    md_pt.z=0.09
     d_pts.append(md_pt)
     
     ring_pt=Point()
-    ring_pt.x=0.035
-    ring_pt.y=0.02
-    ring_pt.z=0.095
-    d_pts.append(ring_pt)
+    ring_pt.x=0.03
+    ring_pt.y=0.08
+    ring_pt.z=0.0
+    #d_pts.append(ring_pt)
 
 
     thumb_pt=Point()
     thumb_pt.x=0.017
     thumb_pt.y=0.01
     thumb_pt.z=0.125
-    d_pts.append(thumb_pt)
+    #d_pts.append(thumb_pt)
+
+
+    # close regrasp pts:
+    
+    idx_pt=Point()
+    idx_pt.x=0.05#0.012
+    idx_pt.y=0.05
+    idx_pt.z=0.11
+    close_pts.append(idx_pt)
+
+    md_pt=Point()
+    md_pt.x=0.05
+    md_pt.y=0.0
+    md_pt.z=0.11
+    close_pts.append(md_pt)
+    
+    ring_pt=Point()
+    ring_pt.x=0.05
+    ring_pt.y=-0.1
+    ring_pt.z=0.0
+    close_pts.append(ring_pt)
+
+
+    thumb_pt=Point()
+    thumb_pt.x=0.11
+    thumb_pt.y=0.02
+    thumb_pt.z=-0.02
+    close_pts.append(thumb_pt)
 
     home_pose=PoseStamped()
     home_pose.pose.orientation.w=1.0
     # transform points:
     #print d_pts
     d_cpt=gait_help.get_cpt(obj_pose,copy.deepcopy(d_pts),home_pose)
+    close_cpt=close_pts
+
     gg.viz.viz_cpts(d_cpt,t='d_cpt',rgb=[0.0,1.0,0.0])
-    print d_cpt
+    gg.viz.viz_cpts(close_cpt,t='close_cpt',rgb=[1.0,0.0,0.0])
+        
 
     # Joint state for initial grasp on object:
+
+    open_js=JointState()
+    
+    open_js.position=np.ones(16)*0.1
+
+    
+    open_js.position[0]=0.4
+    open_js.position[1]=0.0
+    open_js.position[2]=0.3
+    open_js.position[3]=0.3
+
+    open_js.position[4]=0.4
+    open_js.position[5]=0.0
+    open_js.position[6]=0.3
+    open_js.position[7]=0.7
+    
+    open_js.position[8]=0.0
+    open_js.position[9]=0.0
+    open_js.position[10]=0.3
+    open_js.position[11]=0.0
+
+    
+    open_js.position[12]=1.6
+    open_js.position[13]=0.0
+    open_js.position[14]=0.0
+    open_js.position[15]=0.0
+
+    
+
+
+    power_js=JointState()
+    
+    power_js.position=np.ones(16)*0.1
+
+    
+    power_js.position[0]=0.4
+    power_js.position[1]=1.0
+    power_js.position[2]=1.7
+    power_js.position[3]=1.6
+
+    power_js.position[4]=0.4
+    power_js.position[5]=0.0
+    power_js.position[6]=0.3
+    power_js.position[7]=0.7
+
+    power_js.position[8]=0.0
+    power_js.position[9]=1.2
+    power_js.position[10]=1.7
+    power_js.position[11]=1.6
+
+    
+    power_js.position[12]=1.6
+    power_js.position[13]=0.1
+    power_js.position[14]=1.7
+    power_js.position[15]=0.3
+
     
     init_js=JointState()
     init_js.position=np.ones(16)*0.1
@@ -288,142 +405,172 @@ if __name__=='__main__':
     init_js.position[3]=0.6
 
     init_js.position[4]=0.3
-    init_js.position[5]=0.7
-    init_js.position[6]=1.73
+    init_js.position[5]=0.8
+    init_js.position[6]=1.3
+    init_js.position[7]=-0.1
+    '''    
+    init_js.position[4]=0.3
+    init_js.position[5]=0.6
+    init_js.position[6]=1.7
     init_js.position[7]=-0.2
-    
-    init_js.position[8]=0.3
-    init_js.position[9]=0.5
-    init_js.position[10]=1.6
-    init_js.position[11]=0.6
+    '''
+    init_js.position[8]=0.0
+    init_js.position[9]=0.0
+    init_js.position[10]=0.0
+    init_js.position[11]=0.0
 
     
-    init_js.position[12]=1.6
-    init_js.position[13]=-0.1
+    init_js.position[12]=1.62
+    init_js.position[13]=0.0
     init_js.position[14]=0.9
     init_js.position[15]=0.0
 
+    preshape_js=copy.deepcopy(init_js)
+    
+    preshape_js.position[4]=0.3
+    preshape_js.position[5]=0.5
+    preshape_js.position[6]=1.0
+    preshape_js.position[7]=-0.1
+
+    preshape_js.position[12]=1.62
+    preshape_js.position[13]=0.0
+    preshape_js.position[14]=0.3
+    preshape_js.position[15]=0.0
+    
+    # Detect fan and get desired palm pose:
+
+    # move hand to grasp preshape
+    #gg.hand_client.send_pos_cmd(preshape_js.position)
+    #raw_input('grasp?')
+    # move arm to grasp pose
+    gg.hand_client.send_pos_cmd(init_js.position)
+    
+    raw_input('grasp successful?')
+    _,n_js=gg.hand_client.increase_stiffness([1,3],init_js)
+    '''
+    raw_input('Perform in-grasp?')
+
+    j0=n_js
+    
+    in_obj_pose=Pose()
+    in_obj_pose.position.x=0.0
+    in_obj_pose.position.y=0.0
+    in_obj_pose.position.z=0.0
+    in_obj_pose.orientation.x=0.0
+    in_obj_pose.orientation.y=0.0
+    in_obj_pose.orientation.z=0.0
+    in_obj_pose.orientation.w=1.0
+
+    in_des_obj_pose=Pose()
+    in_des_obj_pose=copy.deepcopy(in_obj_pose)
+    in_des_obj_pose.position.x=-0.01
+    in_des_obj_pose.position.z=0.00
+
+    j_traj,_,_=gg.ig_client.call_server(j0,in_obj_pose,in_des_obj_pose)
+    #j_traj.points[-1].positions=n_js.position
+    #j_traj.points[-1].positions[
+    gg.traj_server.viz_joint_traj(j_traj,base_link='base_link')
+    raw_input('send to robot?')
+    
+    #gg.hand_client.send_pos_cmd(j_traj.points[-1].positions)
+    gg.hand_client.send_jtraj(j_traj)
+    # grasp fan
+    '''
+    
+    init_js=n_js
+    # Move arm to initial pose:
+    #gg.lbr4.get_plan(initial_arm.position)
     # move to initial grasp
-    #j_initial=init_js.position
-    js=init_js#gg.allegro_drv.get_joint_state()
-    raw_input('Move to initial grasp?')
-    gg.hand_client.send_pos_cmd(js.position)
-    #gg.allegro_drv.publish_joints_slow(js.position)
+    #raw_input('Move to initial grasp?')
+    #gg.hand_client.send_pos_cmd(init_js.position)
     
     
     # visualize initial grasp:
-    
+    #init_js.position=j_traj.points[-1].positions
     jtraj=JointTrajectory()
     j_pt=JointTrajectoryPoint()
     j_pt.positions=init_js.position
-    jtraj.joint_names=js.name
+    jtraj.joint_names=init_js.name
+    js=init_js
     jtraj.points.append(j_pt)
-    gg.traj_server.viz_joint_traj(jtraj,base_link='allegro_mount')
+    #gg.traj_server.viz_joint_traj(jtraj,base_link='base_link')
     gg.fg_client.update_obj(obj_pose.pose,mesh_f)
-    #raw_input("updated object pose and mesh")
     
+    raw_input('begin fan challenge??')
+    ## Open fan phase:
     
-
-
-    # update joint state of index finger:
+    # Move index finger:
     f_order=[0]
-    for i in range(1):
-        print "performing finger gait",f_order[i]
-        
-        des_contact_pt=d_cpt[i]
-
-        # get normal at contact point:
-        o_pt=gait_help.get_cpt(home_pose,[copy.deepcopy(des_contact_pt)],obj_pose)[0]
-
-        pt=[o_pt.x,o_pt.y,o_pt.z]
-        pt_n=gg.get_normal(pt)
-        normal=Point()
-        normal.x=pt_n[0]
-        normal.y=pt_n[1]
-        normal.z=pt_n[2]
-        n_pts=Point()
-        n_pts=normal
-        #print normal
-        # transform normal to object pose:
-        n_pt=gait_help.get_cpt(obj_pose,[n_pts],home_pose)[0]
-        #print n_pt
-        # visualize contact point and normal:
-        gg.viz.viz_contact_normal(des_contact_pt,n_pt)
-        slide=False
-
-        des_js=JointState()
-        #print des_contact_pt
-        jtraj,pt=gg.fg_finger(f_order[i],js,des_contact_pt,des_js,T=1,slide=slide,normal=normal)
-        npt=[pt.point]
-        print pt.point
-        print des_contact_pt
-        gg.viz.viz_cpts(npt)
-        # visualize jtraj:
-        #jtraj.points[0]=jtraj.points[-1]
-        gg.traj_server.viz_joint_traj(jtraj,base_link='allegro_mount')
-        js.position=jtraj.points[-1].positions
-        #print jtraj
-        _,jtraj=gg.allegro_drv.interpolate_joint_traj(jtraj)
-        #print jtraj
-        raw_input('Send to robot?')
-        gg.hand_client.send_jtraj(jtraj)
-        #gg.allegro_drv.publish_joint_traj(jtraj,dt=10)
+    n_js=gg.finger_relocation(d_cpt,f_order,js)
 
 
-    # grasp object:
-    #raw_input('Pinch Grasp?')
-    
-    raw_input("increase stiffness?")
-    n_js=np.array(jtraj.points[-1].positions)
-
+    #raw_input("increase stiffness?")
     _,n_js=gg.hand_client.increase_stiffness([0,3],n_js)
-    js.position=n_js
+
     # move middle finger to the pinch grasp:
-    f_order=[1,2]
-    for i in range(len(f_order)):
-        print "performing finger gait",f_order[i]
-        
-        des_contact_pt=d_cpt[f_order[i]]
-        
-        # get normal at contact point:
-        o_pt=gait_help.get_cpt(home_pose,[copy.deepcopy(des_contact_pt)],obj_pose)[0]
-
-        pt=[o_pt.x,o_pt.y,o_pt.z]
-        pt_n=gg.get_normal(pt)
-        normal=Point()
-        normal.x=pt_n[0]
-        normal.y=pt_n[1]
-        normal.z=pt_n[2]
-        n_pts=Point()
-        n_pts=normal
-        #print normal
-        # transform normal to object pose:
-        n_pt=gait_help.get_cpt(obj_pose,[n_pts],home_pose)[0]
-        #print n_pt
-        # visualize contact point and normal:
-        gg.viz.viz_contact_normal(des_contact_pt,n_pt)
-        slide=False
-
-        des_js=JointState()
-        #print des_contact_pt
-        jtraj,pt=gg.fg_finger(f_order[i],js,des_contact_pt,des_js,T=1,slide=slide,normal=normal)
-        npt=[pt.point]
-        gg.viz.viz_cpts(npt)
-        # visualize jtraj:
-        #jtraj.points[0]=jtraj.points[-1]
-        gg.traj_server.viz_joint_traj(jtraj,base_link='allegro_mount')
-        js.position=jtraj.points[-1].positions
-        _,jtraj=gg.allegro_drv.interpolate_joint_traj(jtraj)
-        raw_input('Send to robot?')
-        gg.hand_client.send_jtraj(jtraj)
+    js=n_js
+    f_order=[1]
+    n_js=gg.finger_relocation(d_cpt,f_order,js)
 
 
-    raw_input("increase stiffness?")
-    n_js=np.array(jtraj.points[-1].positions)
-
-    _,n_js=gg.hand_client.increase_stiffness([1,2],n_js)
-
+    #raw_input("increase stiffness?")
+    _,n_js=gg.hand_client.increase_stiffness([1],n_js)
+    js.position=n_js
     #
-    raw_input("increase stiffness?")
+    #raw_input("increase stiffness?")
+    _,n_js=gg.hand_client.increase_stiffness([0,1,3],n_js)
+    raw_input("success?")
+    ## Close fan phase:
+    # Rotate arm:
 
-    _,n_js=gg.hand_client.increase_stiffness([0,1,2,3],n_js)
+    gg.lbr4.get_plan(close_fan_arm.position)
+
+    # Rotate arm to palm facing up:
+
+    gg.lbr4.get_plan(palm_face_up_arm.position)
+    
+
+    ## Drop object to palm:
+    # Move fingers to open positions:
+    f_order=[1]
+    n_js=gg.finger_relocation(close_cpt,f_order,n_js)
+
+    # move index and thumb:
+    f_order=[0,3]
+    n_js=gg.allegro_drv.get_joint_state()
+    n_js.position=np.array(n_js.position)
+    n_js.position[3]=0.0
+    n_js=gg.finger_relocation(close_cpt,f_order,n_js)
+    
+    
+    # Move thumb to palm:
+    #raw_input('Power grasp?')
+    gg.hand_client.send_pos_cmd(power_js.position)
+    
+    
+    
+
+    # Power grasp object
+
+    ## get desired points for power grasping object:
+
+    #f_order=[0,2]
+
+    #raw_input('Close other fingers?')
+    _,n_js=gg.hand_client.increase_stiffness([0,2,3],power_js)
+        
+    # Move arm to top of table
+
+    gg.lbr4.get_plan(drop_arm.position)
+
+
+    # open hand:
+
+    #raw_input('Open hand?')
+    gg.hand_client.send_pos_cmd(open_js.position)
+
+    # move to home:
+    
+    gg.lbr4.get_plan(wave_arm.position)
+
+

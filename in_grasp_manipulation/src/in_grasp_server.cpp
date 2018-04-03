@@ -122,7 +122,7 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   data_arr[1]=weights;
   data_arr[2]=r_fin;
   data_arr[3]=fingers_d;
-  
+  //cerr<<fingers_d.size()<<endl;
   Eigen::VectorXd thumb_pose;
   
   allegro_kdl.getFK(r_f,joints_0.segment(12,4),thumb_pose,true);
@@ -256,11 +256,19 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   
   
   for (int i=0;i<j_best.size()/16;i++)
-  { 
+  {
     for(int j=0;j<16;j++)
     {
-      j_arr[j]=j_best[i*16+j];
+      j_arr[j]=j0[j];
     }  
+ 
+    for(int k=0; k<fingers.size();++k)
+    {
+      for (int j=0;j<4;++j)
+      {
+        j_arr[fingers[k]*4+j]=j_best[i*16+fingers[k]*4+j];
+      }
+    }
     jt_pt.positions=j_arr;
     joint_traj.points.push_back(jt_pt);
   }
