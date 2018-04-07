@@ -106,11 +106,21 @@ cerr<<"Updating environment cloud"<<endl;
   {
     Eigen::VectorXd hand_js;
     hand_js.resize(16);
-
-    for(int i=7;i<16+7;++i)
+    if(j_msg.position.size()>16)
     {
-      hand_js[i-7]=j_msg.position[i];
+      for(int i=7;i<16+7;++i)
+      {
+        hand_js[i-7]=j_msg.position[i];
+      }
     }
+    else
+    {
+      for(int i=0;i<16;++i)
+      {
+        hand_js[i]=j_msg.position[i];
+      }
+    }
+        
     if(collision_ready)
     {
       check_hand_coll(hand_js);
@@ -176,10 +186,12 @@ cerr<<"Updating environment cloud"<<endl;
         {
           cerr<<"hand link in collision: "<<i<<" d: "<<hand_c_data[i].distance<<endl;
           cerr<<hand_c_data[i].p1.transpose()<<endl;
+          cerr<<hand_c_data[i].p2.transpose()<<endl;
           c_pt.pose.position.x=hand_c_data[i].p2(0);
           c_pt.pose.position.y=hand_c_data[i].p2(1);
           c_pt.pose.position.z=hand_c_data[i].p2(2);
-
+          // visualize contact point on object msh:
+          
 	}
       }
     }

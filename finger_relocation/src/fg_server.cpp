@@ -198,7 +198,7 @@ public:
     
     prob.set_c_tol(tol);
     pagmo::snopt7 sn_v(false,"/usr/local/lib/");
-    sn_v.set_integer_option("Iteration limit",200);
+    //sn_v.set_integer_option("Iteration limit",200);
     //sn_v.set_integer_option("Major Iteration limit",100);
     //sn_v.set_integer_option("Iteration limit",100);
 
@@ -206,7 +206,7 @@ public:
     //sn_v.set_numeric_option("Linesearch tolerance",0.3); 
     
     algorithm algo{sn_v};
-    algo.set_verbosity(100);
+    algo.set_verbosity(1);
     //algorithm algo{cmaes(500)};
     population pop{prob,1u};
     

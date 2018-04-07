@@ -3,7 +3,7 @@ project(finger_relocation)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
-
+##set(CMAKE_BUILD_TYPE Release)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -15,8 +15,13 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   in_hand_collision_lib
   in_hand_manipulation
+  ompl_wrapper
 )
+find_package(PCL 1.7 REQUIRED)
 
+find_package(Eigen3 REQUIRED)
+
+find_package(ompl REQUIRED)
 find_package(Pagmo REQUIRED)
 
 set(ccd_DIR $ENV{HOME}/local/lib/ccd/)
@@ -42,14 +47,20 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   $ENV{HOME}/pkgs/pagmo_plugins_nonfree/include
   ${Boost_INCLUDE_DIRS}
+  ${OMPL_INCLUDE_DIRS}
 )
 
 set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRARIES}  ${CMAKE_DL_LIBS})
 
 add_library(finger_gait STATIC src/problem/finger_gait.cpp)
 
-target_link_libraries(finger_gait ccd ${PAGMO_LIBS} ${catkin_LIBRARIES} fcl)
+target_link_libraries(finger_gait ccd ${PAGMO_LIBS} ${catkin_LIBRARIES} fcl )
 
 add_executable(fg_server src/fg_server.cpp)
 target_link_libraries(fg_server ${catkin_LIBRARIES} finger_gait)
 
+add_library(rrt_finger_gait src/problem/rrt_finger_gait.cpp)
+target_link_libraries(rrt_finger_gait ccd ${catkin_LIBRARIES} fcl ${OMPL_LIBRARIES} ${PAGMO_LIBS})
+
+add_executable(fg_rrt_server src/fg_rrt_server.cpp)
+target_link_libraries(fg_rrt_server ${catkin_LIBRARIES} rrt_finger_gait ${PAGMO_LIBS})

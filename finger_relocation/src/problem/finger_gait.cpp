@@ -273,7 +273,8 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
       vel_const[(i)*robot_kdl_->dof+j]=std::abs(x[(i)*robot_kdl_->dof+j]-x[(i-1)*robot_kdl_->dof+j])-vel_lim;
     }
   }
-  
+
+  //return vel_const;
   // collision const:
   // Check collision between object and links:
   double collision_err=0.0;
@@ -321,6 +322,7 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
 
     for(int i=0;i<3;++i)
     {
+      /*
       // For all timesteps except first and last
       if(!(t==timesteps_-1) && i<3)
       {
@@ -331,6 +333,7 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
         }
         
       }
+      */
       if(t==(timesteps_-1) && i<2)
       {
         double s_d=contact_data[j*3+i].distance;
@@ -339,6 +342,7 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
           collision_err+=std::abs(s_d);
         } 
       }
+      /*
       if(t==(timesteps_-1) && i==2)
       {
         double s_d=contact_data[j*3+i].distance;
@@ -348,6 +352,7 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
         } 
 
       }
+      */
     }
     
     vel_const[robot_kdl_->dof*timesteps_+t]=collision_err;
@@ -661,7 +666,7 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
     for(int i=0;i<3;++i)
     {
       int n_js=hand_J[j*3+i].cols();
-      
+      /*
       if(!(t==timesteps_-1) && i<3)
       {
         Map<Eigen::VectorXd> link_pose(&link_poses[j*3+i][0],3);
@@ -677,7 +682,7 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
         gradient.segment(j*4,4)+=finger_gradient;
         finger_gradient.setZero();
       }
-
+      */
       if(t==timesteps_-1 && i<2)
       {
         Map<Eigen::VectorXd> link_pose(&link_poses[j*3+i][0],3);
@@ -686,12 +691,15 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
           
         if(s_d<dist_thresh_)
         {
-          finger_gradient.segment(0,n_js)+=1.0*s_d*delta_p.transpose()*hand_J[j*3+i].block(0,0,3,n_js);
+          cerr<<i<<" "<<s_d<<endl;
+          finger_gradient.segment(0,n_js)+=1.0*copysign(1.0,s_d)*delta_p.transpose()*hand_J[j*3+i].block(0,0,3,n_js);
+          //cerr<<finger_gradient.segment(0,n_js).transpose()<<endl;
         }
         
         gradient.segment(j*4,4)+=finger_gradient;
         
       }
+      /*
       if(t==timesteps_-1 && i==2)
       {
         Map<Eigen::VectorXd> link_pose(&link_poses[j*3+i][0],3);
@@ -707,7 +715,7 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
         //gradient.segment(j*4,4)+=finger_gradient;
         
       }
-      
+      */
     }
     
     // add robot collision gradient to main

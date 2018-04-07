@@ -72,6 +72,7 @@
   <exec_depend>rospy</exec_depend>
   <exec_depend> in_hand_collision_lib </exec_depend>
   <exec_depend> in_hand_manipulation </exec_depend>
+  <depend> ompl_wrapper </depend>
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->

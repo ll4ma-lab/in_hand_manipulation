@@ -1,0 +1,15 @@
+* Pagmo:
+- Reorder constraints to have non-linear first
+
+* Fingertip relocation
+** Finger gaiting
+- Test with no collision checking.
+- Test with collision checking.
+** Finger sliding
+- Test with no collision checking.
+- Test with collision checking.
+
+* In-grasp manipulation
+- test trajectory generation
+- test collision checking
+- relaxed rigidity as constraints
