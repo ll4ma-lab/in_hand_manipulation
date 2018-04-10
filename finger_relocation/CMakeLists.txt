@@ -56,11 +56,18 @@ add_library(finger_gait STATIC src/problem/finger_gait.cpp)
 
 target_link_libraries(finger_gait ccd ${PAGMO_LIBS} ${catkin_LIBRARIES} fcl )
 
+add_library(finger_slide STATIC src/problem/finger_slide.cpp)
+
+target_link_libraries(finger_slide ccd ${PAGMO_LIBS} ${catkin_LIBRARIES} fcl )
+
 add_executable(fg_server src/fg_server.cpp)
-target_link_libraries(fg_server ${catkin_LIBRARIES} finger_gait)
+target_link_libraries(fg_server ${catkin_LIBRARIES} finger_slide)
 
 add_library(rrt_finger_gait src/problem/rrt_finger_gait.cpp)
 target_link_libraries(rrt_finger_gait ccd ${catkin_LIBRARIES} fcl ${OMPL_LIBRARIES} ${PAGMO_LIBS})
 
 add_executable(fg_rrt_server src/fg_rrt_server.cpp)
 target_link_libraries(fg_rrt_server ${catkin_LIBRARIES} rrt_finger_gait ${PAGMO_LIBS})
+
+add_executable(fs_server src/fs_server.cpp)
+target_link_libraries(fs_server ${catkin_LIBRARIES} finger_slide)

@@ -41,6 +41,8 @@ namespace opt_problems
     vector<double> collisionGradient(vector<double> x) const;
     vector<double> collisionGradientFD(vector<double> x) const;
 
+    Eigen::MatrixXd compute_jacobian(int l_idx, Eigen::VectorXd q_state, Eigen::VectorXd c_pt) const;
+
     vector<vector<double>> bounds() const;
     //#if SPARSE_GRADIENT==true
     vector<double> sparse_gradient(vector<double> x) const;

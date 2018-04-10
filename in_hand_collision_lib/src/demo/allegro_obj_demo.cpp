@@ -38,7 +38,7 @@ public:
     
     vector<double> g_vec={0.0,0.0,-9.8};
 
-    vector<string> hand_link_names={"index_link_1","index_link_2","index_tip", "middle_link_1","middle_link_2","middle_tip","ring_link_1","ring_link_2","ring_tip", "thumb_link_2","thumb_link_3","thumb_tip"};
+    vector<string> hand_link_names={"index_link_1","index_link_2","index_tip", "middle_link_1","middle_tip","middle_tip","ring_link_1","ring_link_2","ring_tip", "thumb_link_2","thumb_link_3","thumb_tip"};
 
     // initialize collision environment:
     std::string robot_desc_string;

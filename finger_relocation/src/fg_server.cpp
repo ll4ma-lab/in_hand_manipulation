@@ -134,7 +134,6 @@ public:
     else
     {
       vel_limits.resize(16,0.2);
-
     }
    
     cerr<<"reading joint angles"<<endl;
@@ -237,11 +236,12 @@ public:
     else if(req.init_jtraj.points.size()>1 && req.init_jtraj.points.size()<t_steps)
     {
       cerr<<"Initializing from traj"<<endl;
-      for(int i=0;i<t_steps;++i)
+      for(int i=1;i<t_steps;++i)
       {
         for(int j=0;j<req.init_jtraj.points[1].positions.size();++j)
         {
           x_in[(i)*16+j]=joint_init[j]+(req.init_jtraj.points[1].positions[j]-joint_init[j])*double(i)/t_steps;
+          //x_in[(i)*16+j]=req.init_jtraj.points[1].positions[j];
         }
       }
               

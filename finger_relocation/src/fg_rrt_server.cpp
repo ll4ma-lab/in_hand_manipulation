@@ -199,7 +199,7 @@ public:
     
     //return -1;
     cerr<<"Solving"<<endl;  
-    bool solution=fg_problem.solve(10.0,f_j0);
+    bool solution=fg_problem.solve(4.0,f_j0);
 
 
 
@@ -280,7 +280,7 @@ int main(int argc,char** argv)
   fgPlanner fg_planner;
   fg_planner.init(n);
 
-  ros::ServiceServer service=n.advertiseService("/in_hand/finger_gait",&fgPlanner::fg_call,&fg_planner);
-  ros::ServiceServer obj_service=n.advertiseService("/in_hand/finger_gait/update_obj",&fgPlanner::update_obj,&fg_planner);
+  ros::ServiceServer service=n.advertiseService("/in_hand/rrt/finger_gait",&fgPlanner::fg_call,&fg_planner);
+  ros::ServiceServer obj_service=n.advertiseService("/in_hand/rrt/finger_gait/update_obj",&fgPlanner::update_obj,&fg_planner);
   ros::spin();// Loop rate?
 }
