@@ -10,7 +10,6 @@ class fgClient:
         pt.positions=final_js.position
         traj.points.append(pt)
         #traj.points[0].positions=final_js.position
-
         rospy.wait_for_service('in_hand/rrt/finger_gait')
         fg=rospy.ServiceProxy('in_hand/rrt/finger_gait',RelocateFingerKin)
         resp=fg(finger,des_contact_pt,init_js,T,Pose(),Point(),traj,Point(),JointState())
@@ -26,7 +25,7 @@ class fgClient:
             rospy.wait_for_service('in_hand/finger_slide')
             fg=rospy.ServiceProxy('in_hand/finger_slide',RelocateFingerKin)
         resp=fg(finger,des_contact_pt,init_js,T,Pose(),Point(),traj,Point(),JointState())
-            
+        #rrt_traj=resp.joint_traj
         return resp.joint_traj,resp.next_contact_pt,rrt_traj
     def update_obj(self,obj_pose,mesh):
 
@@ -37,11 +36,10 @@ class fgClient:
         rospy.wait_for_service('in_hand/finger_gait/update_obj')
         obj=rospy.ServiceProxy('in_hand/finger_gait/update_obj',UpdateObj)
         obj(obj_pose,mesh)
-        '''
         rospy.wait_for_service('in_hand/finger_slide/update_obj')
         obj_1=rospy.ServiceProxy('in_hand/finger_slide/update_obj',UpdateObj)
         obj_1(obj_pose,mesh)
-
+        '''
         rospy.wait_for_service('in_hand/finger_gait_nc/update_obj')
         obj_1=rospy.ServiceProxy('in_hand/finger_gait_nc/update_obj',UpdateObj)
         obj_1(obj_pose,mesh)

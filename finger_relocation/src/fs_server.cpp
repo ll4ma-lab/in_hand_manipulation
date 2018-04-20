@@ -202,7 +202,7 @@ public:
     //sn_v.set_integer_option("Major Iteration limit",100);
     //sn_v.set_integer_option("Iteration limit",100);
 
-    //sn_v.set_numeric_option("Major optimality tolerance",1e-3); 
+    sn_v.set_numeric_option("Major optimality tolerance",1e-4); 
     //sn_v.set_numeric_option("Linesearch tolerance",0.3); 
     
     algorithm algo{sn_v};

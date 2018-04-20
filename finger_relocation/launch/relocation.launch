@@ -1,0 +1,6 @@
+<launch>
+  <node name="rrt_finger" pkg="finger_relocation" type="fg_rrt_server"/>
+  <node name="finger_gait_node" pkg="finger_relocation" type="fg_server" output="screen"/>
+  <node name="finger_slide_node" pkg="finger_relocation" type="fs_server" output="screen"/>
+  
+</launch>

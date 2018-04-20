@@ -21,6 +21,10 @@ path_allegro=rp.get_path('allegro_driver')+'/scripts'
 sys.path.insert(0,path_allegro)
 from allegro_ros_api import handAPI
 
+path_hand_services=rp.get_path('hand_services')+'/scripts'
+sys.path.insert(0,path_hand_services)
+
+from hand_client import handClient
 if __name__=='__main__':
 
     obj_name='mustard_0'
@@ -34,13 +38,31 @@ if __name__=='__main__':
     viz_client=VizInHand(t_name='in_hand/jtraj')
     rrt_viz_client=VizInHand(t_name='in_hand/rrt/jtraj')
     smooth_viz_client=VizInHand(t_name='in_hand/smooth/jtraj')
+    hand_srv=handClient()
+    allegro_drv=handAPI(init_node=False)
 
-    allegro_drv=handAPI(init_node=False,publish_prefix='',listen_prefix='')
+    #raw_input("initial grasp?")
+    #print allegro_drv.get_joint_state()
 
+    # move to initial grasp:
+    init_grasp=np.array([0.18515369800878298, 0.680156441664917, 0.9638185855530761, 1.4512640354129331, 0.129528500647815, 0.8766460803681153, 0.6737415294890076, 1.7115512938381905, -0.012829824351818855, 0.7482599613406677, 1.0364916317102963, 1.2926487412003786, 1.6792131064308655, 0.07232154412018432, 0.019771989583282478, 1.6049583011069821])
+    
+    hand_srv.send_pos_cmd(init_grasp)
+    raw_input("placed object?")
+    
+    
+    # increase stiffness on other fingers:
+    _,stiff_js=hand_srv.increase_stiffness(f_idx=[1,2,3],q_des=allegro_drv.get_joint_state().position)
+    
+
+    
     int_marker=intMarker(init_node=False)
     cpt_marker=intMarker(init_node=False)
     mesh_f=prev_data['obj_name']
     int_marker.create_marker(use_mesh=True, mesh=mesh_f, m_name='obj_marker', s_name='obj_marker')
+
+
+
     
 
     # initialize object at a pose
@@ -70,12 +92,11 @@ if __name__=='__main__':
     # give a desired contact point for index finger
     
     # use interactive marker to get desired contact point?
-    #raw_input("got des_contact pt?")
-    #pt,_=cpt_marker.get_marker_pose()
+    raw_input("got des_contact pt?")
+    pt,_=cpt_marker.get_marker_pose()
     #print pt
     
     des_contact_pt=Point()
-    '''
     des_contact_pt.x=pt.x
     des_contact_pt.y=pt.y
     des_contact_pt.z=pt.z
@@ -84,17 +105,16 @@ if __name__=='__main__':
     des_contact_pt.x=0.066#pt.x
     des_contact_pt.y=0.086#pt.y
     des_contact_pt.z=-0.0237#pt.z
-
+    '''
     cpt_marker.clear_marker()
-    finger=3
+    finger=0
 
     viz_client.viz_cpts([des_contact_pt])
 
     # read state from robot:
     init_js=allegro_drv.get_joint_state()
-
-    
-    
+    #print js
+    init_js.position=stiff_js
     # generate trajectory
     jtraj,cpt,rrt_traj=fg_client.call(des_contact_pt,finger,init_js,T=10,slide=False)
 
@@ -107,10 +127,19 @@ if __name__=='__main__':
     max_acc=np.ones(16)*0.25
     max_vel=np.ones(16)*0.4
     # call service for smoothing:
-    rospy.wait_for_service('/get_smooth_trajectory')
-    traj_call=rospy.ServiceProxy('/get_smooth_trajectory',GetSmoothTraj)
-    resp=traj_call(jtraj,max_acc,max_vel,0.1,0.01)
+    rospy.wait_for_service('allegro/get_smooth_trajectory')
+    traj_call=rospy.ServiceProxy('allegro/get_smooth_trajectory',GetSmoothTraj)
+    resp=traj_call(jtraj,max_acc,max_vel,0.2,0.001)
     #print resp.smooth_traj
     smooth_traj=resp.smooth_traj
     
     smooth_viz_client.viz_jtraj(smooth_traj)
+
+    #
+    raw_input("send smooth traj to robot?")
+    
+    hand_srv.send_jtraj(smooth_traj)
+
+    # increase stiffness on finger:
+
+    

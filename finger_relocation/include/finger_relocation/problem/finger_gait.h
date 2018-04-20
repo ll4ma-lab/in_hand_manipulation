@@ -2,7 +2,6 @@
 #include <iostream>
 
 #include <ll4ma_kdl/manipulator_kdl/robot_kdl.h>
-//#include <ll4ma_collision_wrapper/collision_checker/convex_collision_checker.h>
 
 // Eigen library for vectors and matrices:
 #include <Eigen/Dense>

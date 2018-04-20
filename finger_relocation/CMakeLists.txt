@@ -52,16 +52,16 @@ include_directories(
 
 set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRARIES}  ${CMAKE_DL_LIBS})
 
-add_library(finger_gait STATIC src/problem/finger_gait.cpp)
+add_library(finger_gait STATIC src/problem/finger_gait.cpp src/problem/point_jacobian.cpp)
 
 target_link_libraries(finger_gait ccd ${PAGMO_LIBS} ${catkin_LIBRARIES} fcl )
 
-add_library(finger_slide STATIC src/problem/finger_slide.cpp)
+add_library(finger_slide STATIC src/problem/finger_slide.cpp src/problem/point_jacobian.cpp)
 
 target_link_libraries(finger_slide ccd ${PAGMO_LIBS} ${catkin_LIBRARIES} fcl )
 
 add_executable(fg_server src/fg_server.cpp)
-target_link_libraries(fg_server ${catkin_LIBRARIES} finger_slide)
+target_link_libraries(fg_server ${catkin_LIBRARIES} finger_gait)
 
 add_library(rrt_finger_gait src/problem/rrt_finger_gait.cpp)
 target_link_libraries(rrt_finger_gait ccd ${catkin_LIBRARIES} fcl ${OMPL_LIBRARIES} ${PAGMO_LIBS})

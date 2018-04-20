@@ -30,7 +30,7 @@ optProblem::optProblem(int &time_steps, manipulator_kdl::robotKDL &robot_kdl, Ei
   Map<Eigen::VectorXd> j0(&joints_0[0],joints_0.size());
   init_joints=j0;
   robot_kdl_->getFK(finger_,j0.segment(finger_*4,4),initial_pose_,true);
-  
+  //n_links_=robot_kdl_-
 }
 
 double optProblem::objFunction(const vector<double> x) const
@@ -323,7 +323,7 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
     {
       
       // For all timesteps except first and last
-      if(t<timesteps_-1 && i<3 && t>1)
+      if(t<timesteps_-2 && i<3 && t>2)
       {
         double s_d=contact_data[j*3+i].distance;
         if(s_d<dist_thresh_)
@@ -379,45 +379,6 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
   return vel_const;
 }
 
-Eigen::MatrixXd optProblem::compute_jacobian(int l_idx, Eigen::VectorXd q_state, Eigen::VectorXd c_pt) const
-{
-  Eigen::MatrixXd grad;
-  grad.resize(q_state.size(),3);
-
-  Eigen::MatrixXd cpt_mat(4,4);
-  cpt_mat.setIdentity();
-  cpt_mat(0,3)=c_pt[0];
-  cpt_mat(1,3)=c_pt[1];
-  cpt_mat(2,3)=c_pt[2];
-  
-  
-  Eigen::MatrixXd l_mat;
-  robot_kdl_->getLinkPose(l_idx,q_state,l_mat);
-
-  // build t mat
-  Eigen::MatrixXd l_T_p=l_mat.inverse()*cpt_mat;
-
-  double eps=0.1;
-  Eigen::VectorXd p_delta(q_state.size());
-  //Eigen::VectorXd n_delta(q_state.size());
-
-  // Compute gradient using fd:
-  for(int i=0;i<q_state.size();++i)
-  {
-    p_delta.setZero();
-    p_delta[i]=eps;
-    // +ve change:    
-    robot_kdl_->getLinkPose(l_idx,q_state+p_delta,l_mat);
-    Eigen::VectorXd p_pose=(l_mat*l_T_p).col(3).head(3);
-    // Transform link pose to point pose:
-
-    // -ve change:
-    robot_kdl_->getLinkPose(l_idx,q_state-p_delta,l_mat);
-    Eigen::VectorXd n_pose=(l_mat*l_T_p).col(3).head(3);
-    grad.row(i)=(p_pose-n_pose)/(2*eps);
-  }
-  return grad;
-}
 
 vector<double> optProblem::inEqGradient(vector<double> x) const
 {
@@ -541,7 +502,7 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
       int n_js=hand_J[j*3+i].cols();
 
       
-      if(t<timesteps_-1 && t>1 && i<3)
+      if(t<timesteps_-2 && t>2 && i<3)
       {
         Map<Eigen::VectorXd> link_pose(&link_poses[j*3+i][0],3);
         
@@ -550,13 +511,9 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
           
         if(s_d<dist_thresh_)
         {
-          //cerr<<i<<" t "<<s_d<<endl;
-
-          //finger_gradient.segment(0,n_js)+=1.0*copysign(1.0, s_d)*delta_p.transpose()*hand_J[j*3+i].block(0,0,3,n_js);
           Eigen::MatrixXd j_mat;
           j_mat=compute_jacobian(j*3+i,finger_q,contact_data[j*3+i].p1);
-          finger_gradient.segment(0,n_js)+=1.0*copysign(1.0, s_d)*(j_mat*delta_p).segment(0,n_js);//.transpose()*hand_J[j*3+i].block(0,0,3,n_js);
-          //cerr<<(j_mat*delta_p).segment(0,n_js).transpose()<<endl;
+          finger_gradient.segment(0,n_js)+=1.0*copysign(1.0, s_d)*(j_mat*delta_p).segment(0,n_js);
 
         }
         
@@ -572,17 +529,10 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
 
         if(s_d<dist_thresh_)
         {
-          //cerr<<i<<" "<<s_d<<endl;
           
-          // We have the translation of the contact point on the link computed that would move the link away from collision, instead of directly transferring the translation to the link position, we will use FD to compute the jacobian for 6D pose change of the link:
-          
-          // Get contact point frame w.r.t link:
           Eigen::MatrixXd j_mat;
           j_mat=compute_jacobian(j*3+i,finger_q,contact_data[j*3+i].p1);
-          // compute jacobian w.r.t to this point
-          // compute_jacobian(f_idx,theta,contact_pt)
           finger_gradient.segment(0,n_js)+=1.0*copysign(1.0, s_d)*(j_mat*delta_p).segment(0,n_js);
-          //cerr<<finger_gradient.segment(0,n_js).transpose()<<endl;
         }
         
         gradient.segment(j*4,4)+=finger_gradient;
@@ -600,8 +550,6 @@ vector<double> optProblem::collisionGradient(vector<double> x) const
         {
           Eigen::MatrixXd j_mat;
           j_mat=compute_jacobian(j*3+i,finger_q,contact_data[j*3+i].p1);
-          // compute jacobian w.r.t to this point
-          // compute_jacobian(f_idx,theta,contact_pt)
           finger_gradient.segment(0,n_js)+=-1.0*copysign(1.0, s_d)*(j_mat*delta_p).segment(0,n_js);
         }
         
