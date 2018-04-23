@@ -187,14 +187,15 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
   opt_problems::optProblem opt_problem(t_steps_,allegro_kdl,data_arr,data_mat,vel_limits,j0);
 
   problem prob{trajectory_optimization{opt_problem}};
-  vector<double> tol(16*(t_steps_),1e-3);
+  // set tolerances for inequality constraints:
+  vector<double> tol(opt_problem.m_nic+opt_problem.m_nec,1e-4);
  
   prob.set_c_tol(tol);
   pagmo::snopt7 sn_v(false,"/usr/local/lib/");
-  sn_v.set_numeric_option("Major optimality tolerance",1e-3); 
+  sn_v.set_numeric_option("Major optimality tolerance",1e-5); 
 
   algorithm algo{sn_v};
-  algo.set_verbosity(1000);
+  algo.set_verbosity(500);
   //algorithm algo{cmaes(500)};
   cerr<<"Creating pop"<<endl;
   population pop{prob,1u};
@@ -223,6 +224,18 @@ bool in_grasp_call(in_grasp_manipulation::InGraspManipulation::Request &req,in_g
       }
     }
   }
+  if(req.final_joints.position.size()>0)
+  {
+    cerr<<"Using final js for initialization"<<endl;
+    for(int i=1;i<t_steps_;++i)
+    {
+      for (int j=0;j<16;++j)
+      {
+        x_in[i*16+j]=req.final_joints.position[j];
+      }
+    }
+  }
+
   cerr<<"checking initial cost"<<endl;
   vector<double> f_in=prob.fitness(x_in);
   cerr<<"Initial fitness: "<<f_in[0]<<endl;

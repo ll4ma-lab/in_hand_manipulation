@@ -56,5 +56,7 @@ namespace opt_problems
     vector<vector<double>> data_arr_;// data array for optimization
 
     double vel_lim;
+    vector<double> rrGradient(vector<double> x) const;
+
   };
 }

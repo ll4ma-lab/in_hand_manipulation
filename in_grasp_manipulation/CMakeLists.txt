@@ -71,14 +71,14 @@ set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRA
 add_library(in_grasp_min_acc_joint STATIC src/problems/in_grasp_joint_smooth.cpp)
 target_link_libraries(in_grasp_min_acc_joint ${catkin_LIBRARIES})
 
-#add_library(in_grasp_sim STATIC src/in_grasp_manipulation/in_grasp_sim.cc)
-#target_link_libraries(in_grasp_sim ${catkin_LIBRARIES})
+add_library(in_grasp_rr STATIC src/problems/in_grasp_rr_const.cpp)
+target_link_libraries(in_grasp_rr ${catkin_LIBRARIES})
 
 #add_library(in_grasp_collision STATIC src/problems/in_grasp_collision.cpp)
 #target_link_libraries(in_grasp_collision ${catkin_LIBRARIES})
 
 add_executable(in_grasp_server src/in_grasp_server.cpp)
-target_link_libraries(in_grasp_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_min_acc_joint)
+target_link_libraries(in_grasp_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_rr)
 
 
 #add_executable(simulation src/in_grasp_simulation.cpp)

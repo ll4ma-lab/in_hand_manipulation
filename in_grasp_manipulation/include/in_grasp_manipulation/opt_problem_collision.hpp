@@ -56,5 +56,6 @@ namespace opt_problems
     vector<vector<double>> data_arr_;// data array for optimization
     vector<double> joints_0;
     double vel_lim;
+
   };
 }
