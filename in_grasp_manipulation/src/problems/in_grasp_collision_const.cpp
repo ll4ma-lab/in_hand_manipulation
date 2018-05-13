@@ -1,5 +1,5 @@
 #define SPARSE_GRADIENT true
-#include <in_grasp_manipulation/opt_problem_collision.hpp>
+#include <in_grasp_manipulation/problems/opt_problem_collision.hpp>
 #include <geometry_msgs/Pose.h>
 using namespace opt_problems;
 
