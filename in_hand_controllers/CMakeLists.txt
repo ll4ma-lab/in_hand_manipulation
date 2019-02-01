@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(in_hand_task_controllers)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+project(in_hand_controllers)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -16,10 +15,12 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   tf
   trajectory_msgs
-  hand_task_controllers
+  #hand_task_controllers
   in_hand_manipulation_msgs
   roslib
   tf_conversions
+  hand_services
+  grasp_utils
 )
 
 ## System dependencies are found with CMake's conventions
@@ -120,7 +121,7 @@ catkin_package(
 )
 #add_library(mpc_framework src/in_grasp/mpc_framework.cpp)
 #add_library(fg src/finger_gait/fg.cpp)
-add_library(grasp_contact src/grasp/contact_controller.cpp)
+#add_library(grasp_contact src/grasp/contact_controller.cpp)
 ###########
 ## Build ##
 ###########
@@ -140,5 +141,11 @@ include_directories(
 #add_executable(in_grasp_mpc_server src/in_grasp/fb_obj_server.cpp)
 #target_link_libraries(in_grasp_mpc_server mpc_framework ${catkin_LIBRARIES})
 
-add_executable(grasp_tactile_controller src/grasp/tactile_contact_controller.cpp)
-target_link_libraries(grasp_tactile_controller grasp_contact ${catkin_LIBRARIES})
+#add_executable(grasp_tactile_controller src/grasp/tactile_contact_controller.cpp)
+#target_link_libraries(grasp_tactile_controller grasp_contact ${catkin_LIBRARIES})
+
+add_library(eigen_control_interface src/hand_services/eigen_control_interface.cpp)
+target_link_libraries(eigen_control_interface ${catkin_LIBRARIES})
+
+add_executable(hand_services_node src/node/hand_services_node.cpp)
+target_link_libraries(hand_services_node eigen_control_interface ${catkin_LIBRARIES})

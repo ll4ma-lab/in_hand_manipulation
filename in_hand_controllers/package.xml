@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="1">
-  <name>in_hand_task_controllers</name>
+  <name>in_hand_controllers</name>
   <version>0.0.0</version>
   <description>The task_controllers package</description>
 
@@ -56,12 +56,14 @@
   <build_depend>sensor_msgs</build_depend>
   <build_depend>tf</build_depend>
   <build_depend>trajectory_msgs</build_depend>
-  <build_depend> hand_task_controllers</build_depend>
   <build_depend> in_hand_manipulation_msgs</build_depend>
   <build_depend> roslib </build_depend>
   <build_depend> tf_conversions </build_depend>
+  <build_depend> grasp_utils </build_depend>
+  <build_depend> hand_service </build_depend>
   
-  
+  <run_depend> grasp_utils </run_depend>
+  <run_depend> hand_services </run_depend>
   <run_depend> roslib </run_depend>
   <run_depend>geometry_msgs</run_depend>
   <run_depend>ll4ma_kdl</run_depend>
@@ -70,7 +72,6 @@
   <run_depend>sensor_msgs</run_depend>
   <run_depend>tf</run_depend>
   <run_depend>trajectory_msgs</run_depend>
-  <run_depend> hand_task_controllers </run_depend>
   <run_depend> in_hand_manipulation_msgs</run_depend>
   <run_depend> tf_conversions </run_depend>
   <!-- The export tag contains other, unspecified, tags -->

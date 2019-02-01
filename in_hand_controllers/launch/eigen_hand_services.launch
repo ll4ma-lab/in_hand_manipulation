@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="URDF_PARAM" default="true"/>
+  <group if="$(arg URDF_PARAM)">
+   <arg name="biotac" default="true"/>
+   <param name="allegro/robot_description"
+        command="$(find xacro)/xacro.py '$(find ll4ma_robots_description)/robots/allegro.robot.xacro' biotac:=$(arg biotac) --inorder"/>
+  </group>
+
+  <rosparam file="$(find in_hand_controllers)/config/hand_services.yaml" command="load"/>
+  <node name="hand_services_node" pkg="in_hand_controllers" type="hand_services_node" output="screen"/>
+  <node name="allegro_trajectory_smoothing" pkg="trajectory_smoothing" type="service" output="screen" ns="allegro"/>
+</launch>
