@@ -51,16 +51,16 @@ if __name__=='__main__':
 
     raw_input("Move to eigen joint position?")
     eigen_ampl=np.zeros(5)
-    eigen_ampl[0]=0.3*0.5
-    eigen_ampl[1]=0.5*0.5
+    eigen_ampl[1]=0.3*0.5
+    eigen_ampl[4]=0.5*0.5
 
     des_js=hand_client.send_eigen_pos_cmd(eigen_ampl)
     
     # test approach contact:
     raw_input("Approach contact?")
     eigen_ampl=np.zeros(5)
-    eigen_ampl[0]=0.3#0.3/0.5
-    eigen_ampl[3]=0.5
+    eigen_ampl[1]=0.6#0.3/0.5
+    eigen_ampl[4]=0.5
 
     hand_client.approach_contact(home_js,[0,1,2,3],eigen_ampl)
     
@@ -69,6 +69,10 @@ if __name__=='__main__':
     raw_input("Increase stiffness?")
     js=hand_client.joint_state
     _,js=hand_client.eigen_increase_stiffness(eigen_ampl,js)
+        
+    raw_input("Test JPos cmd?")
+    reached=hand_client.send_pos_cmd(home_js)
+
     raw_input("Increase stiffness more?")
     _,js=hand_client.eigen_increase_stiffness(eigen_ampl,js)
 

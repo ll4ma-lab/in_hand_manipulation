@@ -408,8 +408,12 @@ bool eigenControlInterface::increaseStiffnessEigen(const vector<int> &fingers,co
     // threshold approach velocity by scaling
     Eigen::VectorXd q_dot_f=theta_dot.segment(4*fingers[i],4);
     q_dot_f=stiffness_delta_*q_dot_f/q_dot_f.lpNorm<Eigen::Infinity>();
-    
+    if(i<3)
+    {
+      q_dot_f=0.3*q_dot_f;
+    }
     q_dot_cmd.segment(4*fingers[i],4)=q_dot_f;
+    
     
   }
   for(int i=0;i<100;++i)
