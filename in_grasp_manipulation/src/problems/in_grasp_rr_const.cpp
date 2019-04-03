@@ -10,7 +10,7 @@ bool optProblem::updateData( vector<double> vel_limits,vector<vector<double>> da
 {
   m_dim=robot_kdl_->dof*timesteps_;
   m_nec=0;//robot_kdl.dof;
-  m_nic=robot_kdl_->dof*(timesteps_)+timesteps_*2;// velocity constraints, rr constraints
+  m_nic=robot_kdl_->dof*(timesteps_)+(timesteps_*2)*data_arr[3].size();// velocity constraints, rr constraints
   
   des_poses.resize(timesteps_);
   vel_lim=vel_limits[0];
@@ -32,7 +32,7 @@ bool optProblem::updateData( vector<double> vel_limits,vector<vector<double>> da
 vector<double> optProblem::debugFunction(const vector<double> x) const
 {
   double cost_val=0.0;
-    // relaxed rigidity constraints:
+  // relaxed rigidity constraints:
   Eigen::VectorXd q;
   Eigen::VectorXd obj_pos_err;
   Eigen::VectorXd pos_err,orient_err;
@@ -79,8 +79,8 @@ vector<double> optProblem::debugFunction(const vector<double> x) const
   }
   // Following Marc's KOMO paper, adding -2,-1, T+1,T+2 poses
   //cerr<<r_f_poses.size()<<endl;
-  j_poses.push_back(j_poses[timesteps_+1]);
-  j_poses.push_back(j_poses[timesteps_+1]);
+  j_poses.push_back(q);
+  j_poses.push_back(q);
    
   Eigen::VectorXd acc_cost(16),ee_pose;
   
@@ -196,8 +196,8 @@ double optProblem::objFunction(const vector<double> x) const
     j_poses.push_back(q);
   }
   // Following Marc's KOMO paper, adding -2,-1, T+1,T+2 poses
-  j_poses.push_back(j_poses[timesteps_+1]);
-  j_poses.push_back(j_poses[timesteps_+1]);
+  j_poses.push_back(q);
+  j_poses.push_back(q);
 
   
   Eigen::VectorXd acc_cost(16),ee_pose;
@@ -288,8 +288,8 @@ vector<double> optProblem::objGradient(vector<double> x) const
 
     j_poses.push_back(q);
   }
-  j_poses.push_back(j_poses[timesteps_+1]);
-  j_poses.push_back(j_poses[timesteps_+1]);
+  j_poses.push_back(q);
+  j_poses.push_back(q);
 
   Eigen::VectorXd ee_pose;
   Eigen::MatrixXd thumb_mat,f_mat,J;
@@ -327,7 +327,6 @@ vector<double> optProblem::objGradient(vector<double> x) const
       for (int k=0;k<4;++k) 
       {
         gradient[rigid_f*4+k]+=finger_gradient[k];
-        //cerr<<gradient[rigid_f*4+k]<<" ";
         
       }
       //cerr<<endl;
@@ -409,7 +408,7 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
   {
     for(int j=0;j<robot_kdl_->dof;++j)
     {
-      double vel=x[(i)*robot_kdl_->dof+j]-joints_0[j];
+      double vel=x[(i)*robot_kdl_->dof+j]-x[(i-1)*robot_kdl_->dof+j];
       vel_const[(i)*robot_kdl_->dof+j]=pow((max(abs(vel),vel_lim)-vel_lim),2);
     }
   }
@@ -455,11 +454,6 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
     for(int j=0; j<robot_kdl_->dof;++j)
     {
       q[j]=x[(i)*robot_kdl_->dof+j];
-    }
-    if(i==0)
-    {
-      //j_poses.push_back(j_pose);
-      //j_poses.push_back(j_pose);
     }
     j_poses.push_back(q);
   }
@@ -518,13 +512,16 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
         orient_err[1]=o_err[1];
         orient_err[0]=0.0;
         orient_err[2]=0.0;
-        position_cost+=(max(pos_err.squaredNorm(),wr)-wr);
-        orientation_cost+=orient_err.squaredNorm();
+        position_cost=wr*pos_err.squaredNorm();//(max(pos_err.squaredNorm(),wr)-wr);
+        
+        orientation_cost=wo*orient_err.squaredNorm();
+        vel_const[robot_kdl_->dof*timesteps_+k*timesteps_*2+i]=position_cost;//pow(position_cost,2);
+        vel_const[robot_kdl_->dof*timesteps_+k*timesteps_*2+timesteps_+i]=orientation_cost;//pow(position_cost,2);
       }
       
     }
     
-    vel_const[robot_kdl_->dof*timesteps_+i]+=pow(position_cost,2);
+    //vel_const[robot_kdl_->dof*timesteps_+i]+=pow(position_cost,2);
     //vel_const[robot_kdl_->dof*timesteps_+timesteps_+i]=max(orientation_cost,wo)-wo;
   }
 
@@ -665,20 +662,25 @@ vector<double> optProblem::sparse_gradient(const vector<double> x) const
     }
   }
 
-  // position gradient:
-  for(int i=0;i<timesteps_;++i)
-  {
-    for(int j=0;j<robot_kdl_->dof;++j)
-    {
-      grad.emplace_back(rr_grad[robot_kdl_->dof*i+j]);
+  // rr_gradient:
 
-    }
-  }
-  for(int i=0;i<timesteps_;++i)
+  for (int k=0;k<data_arr_[3].size();++k)
   {
-    for(int j=0;j<robot_kdl_->dof;++j)
+    
+    for(int i=0;i<timesteps_;++i)
     {
-      grad.emplace_back(rr_grad[robot_kdl_->dof*timesteps_+robot_kdl_->dof*i+j]);
+      for(int j=0;j<robot_kdl_->dof;++j)
+      {
+        grad.emplace_back(rr_grad[2*k*timesteps_*robot_kdl_->dof+robot_kdl_->dof*i+j]);
+        
+      }
+    }
+    for(int i=0;i<timesteps_;++i)
+    {
+      for(int j=0;j<robot_kdl_->dof;++j)
+      {
+        grad.emplace_back(rr_grad[2*k*timesteps_*robot_kdl_->dof+robot_kdl_->dof*timesteps_+robot_kdl_->dof*i+j]);
+      }
     }
   }
 
@@ -686,7 +688,7 @@ vector<double> optProblem::sparse_gradient(const vector<double> x) const
 }
 vector<double> optProblem::rrGradient(vector<double> x) const
 {
-  vector<double> retval(robot_kdl_->dof*2*timesteps_);
+  vector<double> retval(robot_kdl_->dof*2*timesteps_*data_arr_[3].size(),0.0);
   double wo,wr,wd,wi;
   wo=data_arr_[1][0];
   wr=data_arr_[1][1];
@@ -780,16 +782,14 @@ vector<double> optProblem::rrGradient(vector<double> x) const
 
 
         or_cost+=pos_err.tail(3).squaredNorm();
-        Eigen::VectorXd p_grad=-2.0*(max(pos_err.head(3).squaredNorm(),wr)-wr)*pos_err.head(3).transpose()*J.block(0,0,3,J.cols());
+        Eigen::VectorXd p_grad=-2.0*pos_err.head(3).transpose()*J.block(0,0,3,J.cols());
         Eigen::VectorXd o_grad=-2.0*pos_err.tail(3).transpose()*J.block(3,0,3,J.cols());
                 
         for (int l=0;l<4;++l)
         {
-          p_gradient[f*4+l]+=p_grad[l];
-          o_gradient[f*4+l]+=o_grad[l];
+          p_gradient[f*4+l]=p_grad[l];
+          o_gradient[f*4+l]=o_grad[l];
         }
-
-
         
         // compute gradient for rigid finger:
 
@@ -811,25 +811,30 @@ vector<double> optProblem::rrGradient(vector<double> x) const
         pos_err[3]=0.0;
         pos_err[4]=o_err[1];
         pos_err[5]=0.0;
-        
                 
         // rigid finger gradient:
-        p_grad=-2.0*(max(pos_err.head(3).squaredNorm(),wr)-wr)*pos_err.head(3).transpose()*rigid_J.block(0,0,3,J.cols());
+        p_grad=-2.0*pos_err.head(3).transpose()*rigid_J.block(0,0,3,J.cols());
         o_grad=-2.0*pos_err.tail(3).transpose()*rigid_J.block(3,0,3,J.cols());
         for (int l=0;l<4;++l)
         {
-          p_gradient[rigid_f*4+l]+=p_grad[l];
-          o_gradient[rigid_f*4+l]+=o_grad[l];
+          p_gradient[rigid_f*4+l]=p_grad[l];
+          o_gradient[rigid_f*4+l]=o_grad[l];
+        }
+        for(int l=0;l<robot_kdl_->dof;++l)
+        {
+          retval[2*k*timesteps_*robot_kdl_->dof+robot_kdl_->dof*(i)+l]=wr*p_gradient[l];//p_gradient[j]*pos_cost*2.0;
+retval[2*k*timesteps_*robot_kdl_->dof+robot_kdl_->dof*(timesteps_)+robot_kdl_->dof*(i)+l]=wo*o_gradient[l];//p_gradient[j]*pos_cost*2.0;
+      
         }
       }
     }
     // get fd grad:
-    vector<double> state(q.data(),q.data()+q.size());
-    vector<double> grad_fd=debugGrad(state);
+    //vector<double> state(q.data(),q.data()+q.size());
+    //vector<double> grad_fd=debugGrad(state);
     
     for (int j=0;j<robot_kdl_->dof;++j)
     {
-      retval[robot_kdl_->dof*(i)+j]+=grad_fd[j];//p_gradient[j]*pos_cost*2.0;
+      //retval[robot_kdl_->dof*(i)+j]+=grad_fd[j];//p_gradient[j]*pos_cost*2.0;
       //retval[robot_kdl_->dof*timesteps_+robot_kdl_->dof*(i)+j]+=(max(or_cost,wo)-wo)*o_gradient[j];//*or_cost*2.0;
 
     }
@@ -889,22 +894,26 @@ std::vector<std::pair<vector<double>::size_type, vector<double>::size_type>> opt
 
   // RR inequality constraints:
   // position constraint
-  for(int i=0;i<timesteps_;++i)
+  for (int k=0;k<data_arr_[3].size();++k)
   {
-    for(int j=0;j<robot_kdl_->dof;++j)
+    for(int i=0;i<timesteps_;++i)
     {
-      retval.emplace_back(1+m_nec+robot_kdl_->dof*(timesteps_)+i,i*robot_kdl_->dof+j);
+      for(int j=0;j<robot_kdl_->dof;++j)
+      {
+        retval.emplace_back(1+m_nec+robot_kdl_->dof*(timesteps_)+2*k*timesteps_+i,i*robot_kdl_->dof+j);
+      }
+    }
+    //for (int k=0;k<data_arr_[3].size();++k)
+    // orientation constraint
+    for(int i=0;i<timesteps_;++i)
+    {
+      for(int j=0;j<robot_kdl_->dof;++j)
+      {
+        retval.emplace_back(1+m_nec+robot_kdl_->dof*timesteps_+2*k*timesteps_+timesteps_+i,i*robot_kdl_->dof+j);
+      }
     }
   }
-
-  // orientation constraint
-  for(int i=0;i<timesteps_;++i)
-  {
-    for(int j=0;j<robot_kdl_->dof;++j)
-    {
-      retval.emplace_back(1+m_nec+robot_kdl_->dof*timesteps_+timesteps_+i,i*robot_kdl_->dof+j);
-    }
-  }
+  
   /*
   for(int i=0;i<retval.size();++i)
   {

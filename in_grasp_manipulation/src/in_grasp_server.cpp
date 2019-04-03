@@ -433,7 +433,7 @@ public:
   cerr<<"setting tol"<<endl;
 
   // set tolerances for inequality constraints:
-  vector<double> tol(opt_problem.m_nic+opt_problem.m_nec,1e-6);
+  vector<double> tol(opt_problem.m_nic+opt_problem.m_nec,1e-4);
 
   // set larger tolerance for rr constraints:
   cerr<<"RR thresholds, position: "<<weights[1]<<" orientation: "<<weights[0]<<endl;
@@ -447,18 +447,19 @@ public:
   
   prob.set_c_tol(tol);
   pagmo::snopt7 sn_v(false,"/usr/local/lib/");
-  //sn_v.set_numeric_option("Major optimality tolerance",1e-5); 
+  //sn_v.set_numeric_option("Major optimality tolerance",1e-5);
+  sn_v.set_integer_option("Scale option",1);
 
   sn_v.set_integer_option("Verify level",-1);
   sn_v.set_numeric_option("Time limit",5);
     
-  sn_v.set_numeric_option("Function precision",1e-10);
+  sn_v.set_numeric_option("Function precision",1e-14);
 
   algorithm algo{sn_v};
-  algo.set_verbosity(1);
+  algo.set_verbosity(100);
   //algorithm algo{cmaes(500)};
   cerr<<"Creating pop"<<endl;
-  population pop{prob,1u};
+  population pop{prob,3u};
   
   vector<double> x_in(16*t_steps_,0.0);
   // seed using final joint angles IK:

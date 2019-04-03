@@ -66,7 +66,7 @@ class pdData:
         df_.to_csv(f_name,index=False)
         
 class inGraspPipeline:
-    def __init__(self,publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right', init_node=False, node_name='in_grasp_pipeline',weights=[10000.0,0.0001,1.0,0.001,0.8]):
+    def __init__(self,publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right', init_node=False, node_name='in_grasp_pipeline',weights=[0.00,0.0,100.0,1.1,0.8]):
         if(init_node):
             rospy.init_node(node_name)
         self.viz_obj=viz_markers.VizInHand(init_node=False)
@@ -95,7 +95,6 @@ class inGraspPipeline:
         self.obj_list=obj_list
 
     def generate_traj(self,idx,folder=path_in_hand_data+"/trajectories/journal/collision/",WRITE_TO_FILE=True):
-        start=time.time()
         obj_=self.obj_list.arr[idx]
         j0=obj_.grasp
         js_j0=JointState()
@@ -139,13 +138,14 @@ class inGraspPipeline:
         j_traj_rr,n_pose,obj_traj_rr=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=f_j)
         '''
         print "Calling min acc"
+        start=time.time()
 
         f_j=[]#j_traj.points[-1].positions
         #weights=[0.0,0.001,0.1,0.0,1.5]
         weights=copy.deepcopy(self.weights)
-        weights[3]=0.0 # smooth acc
-        weights[4]=10.5 # vel limits
-        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=1, final_joints=f_j,srv_topic="/in_grasp_planner/get_plan")
+        #weights[3]=0.0 # smooth acc
+        #weights[4]=10.5 # vel limits
+        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=30, final_joints=f_j,srv_topic="/in_grasp_planner/get_plan")
         weights=copy.deepcopy(self.weights)
 
         #j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=j_traj.points[-1].positions,srv_topic="/in_grasp_planner/get_plan")
