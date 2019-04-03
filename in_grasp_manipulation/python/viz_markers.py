@@ -7,7 +7,7 @@ from rospkg import RosPack
 rp=RosPack()
 rp.list()
 import sys
-path_=rp.get_path('optimization_pkg')+'/scripts'
+path_=rp.get_path('trajectory_smoothing')+'/scripts'
 sys.path.insert(0,path_)
 from trajectory_pub import *
 import time

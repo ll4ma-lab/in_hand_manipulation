@@ -14,14 +14,14 @@ Visit my website for more information: https://balakumar-s.github.io
 Contains collision checking classes.
 ** Motion Planning
 *** in_grasp_manipulation
-Reposes object with respect to the palm without breaking/making new contact.
+Plans joint space motion for reposing object with respect to the palm without breaking/making new contact.
 *** finger_relocation
-Relocates fingertip on the object surface.
+Plans joint space motion to relocate fingertip on the object surface by finger gaiting and fingertip sliding.
 *** regrasp_planner
 Generates plans for regrasping the object using in-hand manipulation primitives.
 ** Control
-*** in_hand_feedback_controller
-Contains code to run generated motion plans on the robot(open-loop/feedback/MPC).
+*** in_hand_controllers
+Contains code to run generated motion plans on the robot(open-loop/feedback/MPC). This package wraps around hand_services to enable task specific controllers.
 ** Util
 *** in_hand_manipulation_msgs
 Contains custom messages and services used by other sub-packages.
@@ -30,11 +30,17 @@ Contains custom messages and services used by other sub-packages.
 Contains scripts to evaluate various experiments.
 
 *** in_hand_manipulation_data
-Contains data files collected/used in various experiments.
+Contains data files collected for motion planning and experiments.
 *** in_hand_manipulation
-Contains optimization pkg
+Contains launch files for various in-hand manipulation skills. This package also contain demos.
+
+
 * External Dependencies
-- ll4ma_collision_wrapper
-- ll4ma_kdl
-- allegro_driver
-- optimization_pkg
+- [[https://bitbucket.org/robot-learning/ll4ma_robots_description][ll4ma_robots_description]]
+- [[https://bitbucket.org/robot-learning/ll4ma_collision_wrapper][ll4ma_collision_wrapper]]
+- [[https://bitbucket.org/robot-learning/ll4ma_kdl][ll4ma_kdl]]
+- [[https://bitbucket.org/robot-learning/ll4ma_opt_wrapper][ll4ma_opt_wrapper]]
+** Harwdare specific packages
+- [[https://bitbucket.org/robot-learning/allegro_driver][allegro_driver]]
+- [[https://bitbucket.org/robot-learning/hand_services][hand_services]]
+- [[https://bitbucket.org/robot-learning/biotac_sensors][biotac_sensors]]

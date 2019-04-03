@@ -1,0 +1,19 @@
+<launch>
+  <rosparam file="$(find in_grasp_manipulation)/config/robot/allegro_bt.yaml" command="load"/>
+  <!--rosparam file="$(find grasp_planner)/config/scene/table_obj.yaml" command="load"/-->
+
+  <group ns="in_grasp_planner">
+  
+    <!--node name="ik" pkg="ll4ma_planner" type="lbr4_ik_server"/-->
+
+    <node name="ingrasp_plan_node" pkg="in_grasp_manipulation" type="in_grasp_server" output="screen" />
+    <!--node name="hand_grasp_plan_node" pkg="grasp_planner" type="hand_c_grasp_planner" output="screen" /-->
+
+      <!--node name="grasp_traj_node" pkg="grasp_planner" type="grasp_traj_planner" output="screen" /-->
+
+   <!--node name="grasp_plan_node" pkg="grasp_planner" type="cpt_grasp_planner" output="screen"         launch-prefix="gdb -exec run - -args"/-->
+ 
+  <node name="tj_smoothing_service" pkg="trajectory_smoothing" type="service"/>
+
+  </group>
+</launch>

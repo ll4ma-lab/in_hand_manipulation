@@ -31,7 +31,7 @@ path_in_grasp=rp.get_path('in_grasp_manipulation')+'/python'
 sys.path.insert(0,path_in_grasp)
 import viz_markers
 from object_list import *
-path_=rp.get_path('optimization_pkg')+'/scripts'
+path_=rp.get_path('trajectory_smoothing')+'/scripts'
 sys.path.insert(0,path_)
 from trajectory_pub import *
 
@@ -66,7 +66,7 @@ class pdData:
         df_.to_csv(f_name,index=False)
         
 class inGraspPipeline:
-    def __init__(self,publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right', init_node=False, node_name='in_grasp_pipeline',weights=[0.0,0.0001,0.1,0.01,0.8]):
+    def __init__(self,publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right', init_node=False, node_name='in_grasp_pipeline',weights=[10000.0,0.0001,1.0,0.001,0.8]):
         if(init_node):
             rospy.init_node(node_name)
         self.viz_obj=viz_markers.VizInHand(init_node=False)
@@ -143,12 +143,12 @@ class inGraspPipeline:
         f_j=[]#j_traj.points[-1].positions
         #weights=[0.0,0.001,0.1,0.0,1.5]
         weights=copy.deepcopy(self.weights)
-        weights[3]=0.0
-        weights[4]=1.5
-        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=1, final_joints=f_j,srv_topic="/in_hand/primitive/in_grasp_manipulation")
+        weights[3]=0.0 # smooth acc
+        weights[4]=10.5 # vel limits
+        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=1, final_joints=f_j,srv_topic="/in_grasp_planner/get_plan")
         weights=copy.deepcopy(self.weights)
 
-        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=j_traj.points[-1].positions,srv_topic="/in_hand/primitive/in_grasp_manipulation")
+        #j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=j_traj.points[-1].positions,srv_topic="/in_grasp_planner/get_plan")
         '''
         #j_traj_rr=j_traj
         #obj_traj_rr=obj_traj
@@ -166,7 +166,7 @@ class inGraspPipeline:
         plan_time=time.time()-start
         print 'time:'+str(time.time()-start)
         self.traj_server.viz_joint_traj(j_traj,base_link='allegro_mount')
-        self.traj_server.viz_joint_traj(j_traj,base_link='allegro_mount')
+        #self.traj_server.viz_joint_traj(j_traj,base_link='allegro_mount')
 
         #return j_traj,obj_traj,obj_traj_rr,j_tra
         exit()
@@ -898,7 +898,6 @@ def vis_traj(FROM_FILE=True):
         in_grasp_pip.pub.publish(obj_traj)
         in_grasp_pip.pub_rr.publish(obj_traj_rr)
         # publish desired and initial object pose as tf?
-        print 'hi'
         print j_traj
         in_grasp_pip.traj_server.viz_joint_traj(j_traj,base_link='allegro_mount')
         

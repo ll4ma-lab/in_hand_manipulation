@@ -68,8 +68,8 @@ set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRA
 #add_library(rolling STATIC src/problems/in_grasp_rolling.cpp)
 #target_link_libraries(rolling ${catkin_LIBRARIES})
 
-add_library(in_grasp_min_acc_joint STATIC src/problems/in_grasp_joint_smooth.cpp)
-target_link_libraries(in_grasp_min_acc_joint ${catkin_LIBRARIES})
+#add_library(in_grasp_min_acc_joint STATIC src/problems/in_grasp_joint_smooth.cpp)
+#target_link_libraries(in_grasp_min_acc_joint ${catkin_LIBRARIES})
 
 add_library(in_grasp_rr STATIC src/problems/in_grasp_rr_const.cpp)
 target_link_libraries(in_grasp_rr ${catkin_LIBRARIES})

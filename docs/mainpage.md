@@ -1,23 +1,24 @@
 
 # Table of Contents
 
-1.  [Sub Packages](#orgf1238ab)
-    1.  [Perception](#org27c7b9a)
-    2.  [Motion Planning](#org2967a4e)
-    3.  [Control](#org4368fea)
-    4.  [Util](#org014aa37)
-2.  [External Dependencies](#orgac3b415)
+1.  [Sub Packages](#orge548763)
+    1.  [Perception](#orgba39b19)
+    2.  [Motion Planning](#org555615a)
+    3.  [Control](#org041082e)
+    4.  [Util](#org8f49511)
+2.  [External Dependencies](#org82081d9)
+    1.  [Harwdare specific packages](#org52b0314)
 
 This package contains research code that I am working on as part of my PhD program at the University of Utah.
 Visit my website for more information: <https://balakumar-s.github.io>
 
 
-<a id="orgf1238ab"></a>
+<a id="orge548763"></a>
 
 # Sub Packages
 
 
-<a id="org27c7b9a"></a>
+<a id="orgba39b19"></a>
 
 ## Perception
 
@@ -27,19 +28,19 @@ Visit my website for more information: <https://balakumar-s.github.io>
 Contains collision checking classes.
 
 
-<a id="org2967a4e"></a>
+<a id="org555615a"></a>
 
 ## Motion Planning
 
 
 ### in\_grasp\_manipulation
 
-Reposes object with respect to the palm without breaking/making new contact.
+Plans joint space motion for reposing object with respect to the palm without breaking/making new contact.
 
 
 ### finger\_relocation
 
-Relocates fingertip on the object surface.
+Plans joint space motion to relocate fingertip on the object surface by finger gaiting and fingertip sliding.
 
 
 ### regrasp\_planner
@@ -47,17 +48,17 @@ Relocates fingertip on the object surface.
 Generates plans for regrasping the object using in-hand manipulation primitives.
 
 
-<a id="org4368fea"></a>
+<a id="org041082e"></a>
 
 ## Control
 
 
-### in\_hand\_feedback\_controller
+### in\_hand\_controllers
 
-Contains code to run generated motion plans on the robot(open-loop/feedback/MPC).
+Contains code to run generated motion plans on the robot(open-loop/feedback/MPC). This package wraps around hand\_services to enable task specific controllers.
 
 
-<a id="org014aa37"></a>
+<a id="org8f49511"></a>
 
 ## Util
 
@@ -74,15 +75,29 @@ Contains scripts to evaluate various experiments.
 
 ### in\_hand\_manipulation\_data
 
-Contains data files collected/used in various experiments.
+Contains data files collected for motion planning and experiments.
 
 
-<a id="orgac3b415"></a>
+### in\_hand\_manipulation
+
+Contains launch files for various in-hand manipulation skills. This package also contain demos.
+
+
+<a id="org82081d9"></a>
 
 # External Dependencies
 
--   pcl\_mesh\_tools
--   ll4ma\_kdl
--   allegro\_driver
--   optimization\_pkg
+-   [ll4ma\_robots\_description](https://bitbucket.org/robot-learning/ll4ma_robots_description)
+-   [ll4ma\_collision\_wrapper](https://bitbucket.org/robot-learning/ll4ma_collision_wrapper)
+-   [ll4ma\_kdl](https://bitbucket.org/robot-learning/ll4ma_kdl)
+-   [ll4ma\_opt\_wrapper](https://bitbucket.org/robot-learning/ll4ma_opt_wrapper)
+
+
+<a id="org52b0314"></a>
+
+## Harwdare specific packages
+
+-   [allegro\_driver](https://bitbucket.org/robot-learning/allegro_driver)
+-   [hand\_services](https://bitbucket.org/robot-learning/hand_services)
+-   [biotac\_sensors](https://bitbucket.org/robot-learning/biotac_sensors)
 
