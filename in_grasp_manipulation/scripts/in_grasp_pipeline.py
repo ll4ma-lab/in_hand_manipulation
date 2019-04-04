@@ -66,7 +66,7 @@ class pdData:
         df_.to_csv(f_name,index=False)
         
 class inGraspPipeline:
-    def __init__(self,publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right', init_node=False, node_name='in_grasp_pipeline',weights=[0.00,0.0,100.0,1.1,0.8]):
+    def __init__(self,publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right', init_node=False, node_name='in_grasp_pipeline',weights=[0.001,0.1,1000.0,1.0,0.4]):
         if(init_node):
             rospy.init_node(node_name)
         self.viz_obj=viz_markers.VizInHand(init_node=False)
@@ -143,12 +143,12 @@ class inGraspPipeline:
         f_j=[]#j_traj.points[-1].positions
         #weights=[0.0,0.001,0.1,0.0,1.5]
         weights=copy.deepcopy(self.weights)
-        #weights[3]=0.0 # smooth acc
-        #weights[4]=10.5 # vel limits
-        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=30, final_joints=f_j,srv_topic="/in_grasp_planner/get_plan")
+        weights[3]=0.0 # smooth acc
+        weights[4]=10.5 # vel limits
+        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=1, final_joints=f_j,srv_topic="/in_grasp_planner/get_plan")
         weights=copy.deepcopy(self.weights)
 
-        #j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=j_traj.points[-1].positions,srv_topic="/in_grasp_planner/get_plan")
+        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=j_traj.points[-1].positions,srv_topic="/in_grasp_planner/get_plan")
         '''
         #j_traj_rr=j_traj
         #obj_traj_rr=obj_traj
@@ -166,7 +166,10 @@ class inGraspPipeline:
         plan_time=time.time()-start
         print 'time:'+str(time.time()-start)
         self.traj_server.viz_joint_traj(j_traj,base_link='allegro_mount')
+        # plot
+        self.traj_server.plot_j_acc_profile(j_traj,[12,13,14,15])
         #self.traj_server.viz_joint_traj(j_traj,base_link='allegro_mount')
+        #self.pose_api.plot_acc_profiles([j_traj],['min_acc'])
 
         #return j_traj,obj_traj,obj_traj_rr,j_tra
         exit()

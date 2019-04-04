@@ -344,13 +344,14 @@ vector<double> optProblem::objGradient(vector<double> x) const
       cerr<<endl;
 
       */
+      for (int j=0;j<robot_kdl_->dof;++j)
+      {
+        retval[j+robot_kdl_->dof*(i)]+=gradient[j];
+      }
+      fill(gradient.begin(), gradient.end(), 0.0);
+
     }
     
-    for (int j=0;j<robot_kdl_->dof;++j)
-    {
-      retval[j+robot_kdl_->dof*(i)]+=gradient[j];
-    }
-    fill(gradient.begin(), gradient.end(), 0.0);
     if(timesteps_>1)
     {
       // min_acceleration gradient:
@@ -521,8 +522,6 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
       
     }
     
-    //vel_const[robot_kdl_->dof*timesteps_+i]+=pow(position_cost,2);
-    //vel_const[robot_kdl_->dof*timesteps_+timesteps_+i]=max(orientation_cost,wo)-wo;
   }
 
   
@@ -536,7 +535,7 @@ vector<double> optProblem::inEqGradient(vector<double> x) const
   {
     double vel=x[j]-joints_0[j];
     double delta=2*(max(abs(vel),vel_lim)-vel_lim);
-    retval[j]=1.0*copysign(delta,vel);
+    retval[j]+=1.0*copysign(delta,vel);
   }
  
   for(int i=1;i<timesteps_;++i)
@@ -545,8 +544,8 @@ vector<double> optProblem::inEqGradient(vector<double> x) const
       {
         double vel=x[(i)*robot_kdl_->dof+j]-x[(i-1)*robot_kdl_->dof+j];
         double delta=2*(max(abs(vel),vel_lim)-vel_lim);
-        retval[1*robot_kdl_->dof+2*(i-1)*robot_kdl_->dof+robot_kdl_->dof+j]=1.0*copysign(delta,vel);
-        retval[1*robot_kdl_->dof+2*(i-1)*robot_kdl_->dof+j]= -1.0*copysign(delta,vel);
+        retval[1*robot_kdl_->dof+2*(i-1)*robot_kdl_->dof+robot_kdl_->dof+j]+=1.0*copysign(delta,vel);
+        retval[1*robot_kdl_->dof+2*(i-1)*robot_kdl_->dof+j]+= -1.0*copysign(delta,vel);
       }
   }
   return retval;
@@ -565,55 +564,9 @@ vector<double> optProblem::EqConstraints(vector<double> x) const
 vector<double> optProblem::eqGradient(vector<double> x) const
 {
   vector<double> retval(m_dim*m_nec,0.0);
-  // gradient:
-  /*
-  for(int i=0;i<robot_kdl_.dof;++i)
-  {
-    if(std::abs(joints_0[i]-x[i])>1e-4)
-    {
-      if(joints_0[i]-x[i]>0.0)
-      {
-        retval[i*m_dim+i]=1.0;
-      }
-      else
-      {
-        retval[i*m_dim+i]=-1.0;
-      }
-    }
-  }
-  */
+
   return retval;
 }
-/*
-vector<double> optProblem::gradient(const vector<double> x) const
-{
-  vector<double> grad;
-  vector<double> obj_grad=objGradient(x);
-  vector<double> eq_grad=eqGradient(x);
-  vector<double> ineq_grad=inEqGradient(x);
-  
-  grad.resize(m_dim+m_dim*m_nec+m_dim*m_nic,0.0);
-  for(int i=0;i<m_dim;i++)
-  {
-    grad[i]=obj_grad[i];
-
-  }
-
-  for(int i=m_dim;i<m_dim+m_dim*m_nec;i++)
-  {
-    grad[i]=eq_grad[i-m_dim];
-  }
-
-
-  for(int i=m_dim+m_dim*m_nec;i<m_dim+m_dim*m_nec+m_dim*m_nic;i++)
-  {
-    
-    grad[i]=ineq_grad[i-m_dim-m_dim*m_nec];
-  }
-
-  return grad;
-}
-*/
 vector<vector<double>> optProblem::bounds() const
 {
   vector<vector<double>> bound;
@@ -787,9 +740,12 @@ vector<double> optProblem::rrGradient(vector<double> x) const
                 
         for (int l=0;l<4;++l)
         {
-          p_gradient[f*4+l]=p_grad[l];
-          o_gradient[f*4+l]=o_grad[l];
+          p_gradient[f*4+l]+=p_grad[l];
+          o_gradient[f*4+l]+=o_grad[l];
         }
+        //p_grad=2.0*pos_err.head(3).transpose()*rigid_J.block(0,0,3,J.cols());
+        //o_grad=2.0*pos_err.tail(3).transpose()*rigid_J.block(3,0,3,J.cols());
+
         
         // compute gradient for rigid finger:
 
@@ -817,45 +773,18 @@ vector<double> optProblem::rrGradient(vector<double> x) const
         o_grad=-2.0*pos_err.tail(3).transpose()*rigid_J.block(3,0,3,J.cols());
         for (int l=0;l<4;++l)
         {
-          p_gradient[rigid_f*4+l]=p_grad[l];
-          o_gradient[rigid_f*4+l]=o_grad[l];
+          p_gradient[rigid_f*4+l]+=p_grad[l];
+          o_gradient[rigid_f*4+l]+=o_grad[l];
         }
         for(int l=0;l<robot_kdl_->dof;++l)
         {
-          retval[2*k*timesteps_*robot_kdl_->dof+robot_kdl_->dof*(i)+l]=wr*p_gradient[l];//p_gradient[j]*pos_cost*2.0;
-retval[2*k*timesteps_*robot_kdl_->dof+robot_kdl_->dof*(timesteps_)+robot_kdl_->dof*(i)+l]=wo*o_gradient[l];//p_gradient[j]*pos_cost*2.0;
+          retval[2*k*timesteps_*robot_kdl_->dof+robot_kdl_->dof*(i)+l]+=wr*p_gradient[l];
+retval[2*k*timesteps_*robot_kdl_->dof+robot_kdl_->dof*(timesteps_)+robot_kdl_->dof*(i)+l]+=wo*o_gradient[l];
       
         }
       }
     }
-    // get fd grad:
-    //vector<double> state(q.data(),q.data()+q.size());
-    //vector<double> grad_fd=debugGrad(state);
     
-    for (int j=0;j<robot_kdl_->dof;++j)
-    {
-      //retval[robot_kdl_->dof*(i)+j]+=grad_fd[j];//p_gradient[j]*pos_cost*2.0;
-      //retval[robot_kdl_->dof*timesteps_+robot_kdl_->dof*(i)+j]+=(max(or_cost,wo)-wo)*o_gradient[j];//*or_cost*2.0;
-
-    }
-    /*
-
-    // print gradients:
-    cerr<<"AG: ";
-    for( int j=0;j<robot_kdl_->dof;++j)
-    {
-      //if(j<rigid_f*4)
-      cerr<<1.0*p_gradient[j]<<" ";
-      //cerr<<p_gradient[j]<<" ";
-    }
-    cerr<<endl;
-    cerr<<"FD: ";
-    for( int j=0;j<robot_kdl_->dof;++j)
-    {
-      cerr<<grad_fd[j]<<" ";
-    }
-    cerr<<endl;
-    */
     fill(p_gradient.begin(), p_gradient.end(), 0.0);
     fill(o_gradient.begin(), o_gradient.end(), 0.0);
         

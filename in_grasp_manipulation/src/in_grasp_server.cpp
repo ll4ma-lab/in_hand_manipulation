@@ -436,30 +436,24 @@ public:
   vector<double> tol(opt_problem.m_nic+opt_problem.m_nec,1e-4);
 
   // set larger tolerance for rr constraints:
-  cerr<<"RR thresholds, position: "<<weights[1]<<" orientation: "<<weights[0]<<endl;
+  //cerr<<"RR thresholds, position: "<<weights[1]<<" orientation: "<<weights[0]<<endl;
   
-  for(int i=0;i<t_steps_;++i)
-  {
-    //tol[robot_kdl_.dof*t_steps_+i]=weights[1];// wr
-    //tol[robot_kdl_.dof*t_steps_+t_steps_+i]=weights[0];// wo
 
-  }
-  
   prob.set_c_tol(tol);
   pagmo::snopt7 sn_v(false,"/usr/local/lib/");
   //sn_v.set_numeric_option("Major optimality tolerance",1e-5);
-  sn_v.set_integer_option("Scale option",1);
+  sn_v.set_integer_option("Scale option",0);
 
   sn_v.set_integer_option("Verify level",-1);
   sn_v.set_numeric_option("Time limit",5);
     
-  sn_v.set_numeric_option("Function precision",1e-14);
+  sn_v.set_numeric_option("Function precision",1e-10);
 
   algorithm algo{sn_v};
   algo.set_verbosity(100);
   //algorithm algo{cmaes(500)};
   cerr<<"Creating pop"<<endl;
-  population pop{prob,3u};
+  population pop{prob,1u};
   
   vector<double> x_in(16*t_steps_,0.0);
   // seed using final joint angles IK:
@@ -486,12 +480,12 @@ public:
   }
   if(req.final_joints.position.size()>0)
   {
-    cerr<<"Using final js for initialization"<<endl;
+    cerr<<"Using final js for initialization using linear interpolation"<<endl;
     for(int i=1;i<t_steps_;++i)
     {
       for (int j=0;j<16;++j)
       {
-        x_in[i*16+j]=req.final_joints.position[j];
+        x_in[i*16+j]=joints_0[j]+(req.final_joints.position[j]-joints_0[j])*double(i+1)/double(t_steps_);
       }
     }
   }
