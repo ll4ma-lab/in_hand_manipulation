@@ -3,9 +3,12 @@ from gait_client import *
 from grasp_client import *
 import sys
 from read_data import *
-
+import trimesh
 from rospkg import RosPack
 rp=RosPack()
+path_=rp.get_path('ll4ma_planner')+'/scripts'
+sys.path.insert(0,path_)
+from tf_helper import *
 path_=rp.get_path('optimization_pkg')+'/scripts'
 sys.path.insert(0,path_)
 from trajectory_pub import *
@@ -13,8 +16,8 @@ from trajectory_pub import *
 path_=rp.get_path('grasp_gaits')+'/python'
 sys.path.insert(0,path_)
 from viz_markers import VizInHand
-from geometry_msgs.msg import PoseStamped
-
+from geometry_msgs.msg import PoseStamped,PointStamped
+import grasp_class
 import pickle
 import PyKDL
 from numpy.linalg import inv
@@ -37,9 +40,14 @@ class graspGait:
         self.allegro_drv=handAPI(init_node=False,publish_prefix=hand_prefix,listen_prefix=hand_prefix)
                 
         self.viz=VizInHand(o_mesh,init_node=False)
-        
-    def fg_finger(self,finger,js,des_cpt,final_js,TRAJ=False,T=1,slide=False):
-        j_traj,cpt=self.fg_client.call(des_cpt,finger,js,final_js,T=T,slide=slide)
+        self.obj=grasp_class.object(o_mesh[7:])
+
+    def get_normal(self,contact_pt):
+        dat=trimesh.proximity.nearby_faces(self.obj.mesh,[contact_pt])
+        norm=self.obj.mesh.face_normals[dat[0][0]]
+        return norm
+    def fg_finger(self,finger,js,des_cpt,final_js,TRAJ=False,T=1,slide=False,normal=Point()):
+        j_traj,cpt=self.fg_client.call(des_cpt,finger,js,final_js,T=T,slide=slide,contact_norm=normal)
         # get full trajectory?
         if(TRAJ):
             print 'Getting full trajectory'
@@ -196,14 +204,14 @@ class gaitHelper:
 
 if __name__=='__main__':
     gait_help=gaitHelper()
-    obj_file='mustard_2.p'
+    obj_file='mustard_0.p'
     gF=gaitFile()
     g_f=gF.read_file(obj_file)
     mesh_f=g_f[0].mesh_f
     mesh_stl=g_f[0].mesh_stl
-
     
     obj_pose=g_f[0].init_o_pose
+    print obj_pose
     cpt=g_f[0].cpt
     d_pts=g_f[0].des_cpt
     
@@ -223,11 +231,14 @@ if __name__=='__main__':
     
     
     init_js=g_f[0].i_js
+    
     # move to initial grasp
     #j_initial=init_js.position
     js=init_js
-    
+    mesh_f='/home/bala/object_models/mustard_bottle/google_16k/nontextured.binvox'
+
     gg.fg_client.update_obj(obj_pose.pose,mesh_f)
+    
     # visualize initial grasp:
     js=g_f[0].i_js
     
@@ -237,10 +248,10 @@ if __name__=='__main__':
     jtraj.joint_names=js.name
     jtraj.points.append(j_pt)
     gg.traj_server.viz_joint_traj(jtraj,base_link='allegro_mount')
-
-    
     raw_input("updated mesh")
-    for i in range(len(g_f)):
+
+    f_order=[3,0,1,2]
+    for i in f_order:
         if(g_f[i].ig==True):
             # perform ingrasp
             print "performing in-grasp"
@@ -268,11 +279,34 @@ if __name__=='__main__':
             #print js.position
             #print des_js.position
             des_contact_pt=d_pts[g_f[i].f].point
+
+            # transform contact point to object frame:
+            home_pose=PoseStamped()
+            home_pose.pose.orientation.w=1.0
+            
+            o_pt=gait_help.get_cpt(home_pose,[copy.deepcopy(d_pts[g_f[i].f])],obj_pose)[0].point
+            # get normal at contact point:
+            pt=[o_pt.x,o_pt.y,o_pt.z]
+            pt_n=gg.get_normal(pt)
+            normal=Point()
+            normal.x=pt_n[0]
+            normal.y=pt_n[1]
+            normal.z=pt_n[2]
+            n_pts=PointStamped()
+            n_pts.point=normal
+            print normal
+            # transform normal to object pose:
+            n_pt=gait_help.get_cpt(obj_pose,[n_pts],home_pose)[0].point
+            print n_pt
+            # visualize contact point and normal:
+            gg.viz.viz_contact_normal(des_contact_pt,n_pt)
             slide=False
             if(g_f[i].f==3):
                 slide=True
-        
-            jtraj,cpt[i]=gg.fg_finger(i,js,des_contact_pt,des_js,T=10,slide=slide)
+            slide=False
+            #print des_contact_pt
+            jtraj,cpt[i]=gg.fg_finger(i,js,des_contact_pt,des_js,T=1,slide=slide,normal=normal)
+            #print cpt[i]
             gg.viz.viz_cpts(cpt)
             g_f[i].traj=jtraj
             # save pickle file:
@@ -282,6 +316,7 @@ if __name__=='__main__':
             #jtraj.points[0]=jtraj.points[-1]
             gg.traj_server.viz_joint_traj(jtraj,base_link='allegro_mount')
             js.position=jtraj.points[-1].positions
+            #print jtraj.points[-1].positions
             raw_input('Next finger?')
 
         '''

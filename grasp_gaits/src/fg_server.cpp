@@ -22,7 +22,6 @@ public:
     // initialize collision checker
     c_check=allegroEnv(0.01,0.01);
     // setup optimization:
-    string urdf_file="/home/bala/catkin_ws/src/in_hand_manipulation/in_grasp_manipulation/urdf/allegro.urdf";
     
     // Load allegro kdl object:
     vector<string> ee_names={"index_tip","middle_tip","ring_tip","thumb_tip"};

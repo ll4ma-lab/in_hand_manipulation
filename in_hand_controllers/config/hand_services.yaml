@@ -1,0 +1,91 @@
+allegro:
+# robot_interface parameters:
+  root_links:
+    - palm_link
+    - palm_link
+    - palm_link
+    - palm_link
+
+  tip_links:
+    - index_tip
+    - middle_tip
+    - ring_tip
+    - thumb_tip
+
+  jnt_cmd_topic: /allegro_hand_right/joint_cmd
+
+# controller parameters:
+  compensate_gravity: false
+  jnt_state_topic: /allegro_hand_right/joint_states
+  torque_limits:
+    # these are artificially high values for sim, can change to be realistic if you want
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+
+# control_interaface parameters:
+  tactile_enabled: true
+  hand_command_srv: hand_service
+  goal_threshold: 0.1 # radians
+  cmd_timeout: 2 # seconds
+  grasp_timesteps: 1500
+  link_contact_thresh: 1.0e-2 #  
+  grasp_delta_v: 0.003 # 
+  stiffness_delta: 0.015 #
+  approach_vel: 0.001 # radians per second
+  
+# Biotac parameters:
+  
+  tactile_sub_topic: /biotac/force_data
+  tactile_tare_srv: /biotac/update_tare
+  tactile_contact_probability: 0.2
+  
+  stiffness:
+    p_gains:
+      - 10.0
+      - 10.0
+      - 0.0
+      - 50.0
+      
+    d_gains:
+      - 0.01
+      - 0.01
+      - 0.0
+      - 0.02
+      
+    
+  # eigen parameters:
+
+  eigen_preshape: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.6, 0.0, 0.0, 0.0]  # eigen grasp preshape
+  
+  eigen_grasps: [1, 2, 3, 4, 5] # eigen grasps to use for grasp planning
+  
+  eigen_grasp_1: [-0.29702970297029707, 0.831683168316832, 0.8217821782178221, -0.06930693069306929, 0.0, 1.227722772277228, 0.8217821782178221, -0.16831683168316833, 0.29702970297029707, 0.831683168316832, 0.8217821782178221, -0.06930693069306929, 0.0, 0.29702970297029707, 0.49504950495049516, -0.09900990099009904]
+  
+  eigen_grasp_2: [0.39603960396039617, 0.831683168316832, 0.8217821782178221, -0.06930693069306929, 0.0, 0.831683168316832, 0.8217821782178221, -0.06930693069306929, -0.39603960396039617, 0.831683168316832, 0.8217821782178221, -0.06930693069306929, 0.0, -0.09702970297029707, 0.49504950495049516, -0.09900990099009904]
+
+  eigen_grasp_3: [0.0, 0.8, 0.6, 0.0, 0.0, 0.8, 0.6, 0.0, 0.0, 0.8, 0.6, 0.0, 0.0, 0.3,
+  0.5, 0.0]
+  
+  eigen_grasp_4: [-0.4, 0.8, 0.8, -0.1, -0.4, 1.2, 0.8, -0.2, -0.4, 0.8, 0.8, -0.1,
+  0.0, -0.2, 0.5, -0.1]
+  
+  eigen_grasp_5: [0.4, 0.8, 0.8, -0.1, 0.4, 0.8, 0.8, -0.1, 0.4, 0.8, 0.8, -0.1, 0.0,
+  -0.03, 0.5, -0.1]
+
+  eigen_amplitude: [0.0,0.5]  # amplitude:[min, max]
+
+  eigen_space: true

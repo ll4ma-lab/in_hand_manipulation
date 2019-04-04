@@ -1,0 +1,4 @@
+in_hand_manipulation_msgs/Grasp init_grasp
+std_msgs/Int64[] f_index
+---
+in_hand_manipulation_msgs/Grasp updated_grasp

@@ -20,9 +20,8 @@ find_package(catkin REQUIRED COMPONENTS
   roslib
   sensor_msgs
   std_msgs
-  optimization_pkg
+  ll4ma_opt_utils
   in_hand_manipulation_msgs
-  ll4ma_kdl
   )
 find_package(Eigen3 REQUIRED)
 
@@ -48,8 +47,8 @@ find_package(Eigen3 REQUIRED)
 
 catkin_package(
    INCLUDE_DIRS include
-  # LIBRARIES in_hand_manipulation
-  CATKIN_DEPENDS std_msgs roscpp sensor_msgs optimization_pkg ll4ma_kdl
+   #LIBRARIES opt_problem_base
+  CATKIN_DEPENDS std_msgs roscpp sensor_msgs ll4ma_opt_utils
   #DEPENDS system_lib
 )
 
@@ -57,11 +56,11 @@ catkin_package(
 include_directories(
   ${catkin_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}/include
-  /home/bala/pkgs/pagmo_plugins_nonfree/include
-  ${Boost_INCLUDE_DIRS}
+  #/home/bala/pkgs/pagmo_plugins_nonfree/include
+  #${Boost_INCLUDE_DIRS}
   )
 
-set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRARIES}  ${CMAKE_DL_LIBS})
+#set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRARIES}  ${CMAKE_DL_LIBS})
 
 #add_library(finger_gaiting_planner STATIC src/problems/finger_gaiting_fns.cpp)
 #add_library(finger_gaiting_sd_planner STATIC src/problems/finger_gaiting_fns_sd.cpp)
@@ -69,7 +68,7 @@ set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRA
 
 #add_library(grasp_planner STATIC src/problems/grasp_fns.cpp)
 
-add_library(hand_ik_fns STATIC src/problems/hand_ik_fns.cpp)
+#add_library(hand_ik_fns STATIC src/problems/hand_ik_fns.cpp)
 
 #add_library(finger_gaiting_traj STATIC src/problems/finger_gaiting_traj.cpp)
 
@@ -78,7 +77,7 @@ add_library(hand_ik_fns STATIC src/problems/hand_ik_fns.cpp)
 #target_link_libraries(finger_gaiting_planner ${catkin_LIBRARIES} ccd )
 #target_link_libraries(finger_gaiting_sd_planner ${catkin_LIBRARIES} ccd )
 #target_link_libraries(finger_gaiting_gd_planner ${catkin_LIBRARIES} ccd )
-target_link_libraries(hand_ik_fns ${catkin_LIBRARIES})
+#target_link_libraries(hand_ik_fns ${catkin_LIBRARIES})
 #target_link_libraries(grasp_planner ${catkin_LIBRARIES} ccd )
 #target_link_libraries(finger_gaiting_traj ${catkin_LIBRARIES} ccd )
 
@@ -95,8 +94,8 @@ target_link_libraries(hand_ik_fns ${catkin_LIBRARIES})
 #add_executable(finger_gaiting_traj_server src/finger_gaiting_traj_server.cpp)
 #target_link_libraries(finger_gaiting_traj_server ${PAGMO_LIBS}  ${catkin_LIBRARIES} finger_gaiting_traj)
   
-add_executable(hand_ik_server src/hand_ik_server.cpp)
-target_link_libraries(hand_ik_server  ${PAGMO_LIBS}  ${catkin_LIBRARIES} hand_ik_fns)
+#add_executable(hand_ik_server src/hand_ik_server.cpp)
+#target_link_libraries(hand_ik_server  ${PAGMO_LIBS}  ${catkin_LIBRARIES} hand_ik_fns)
 
 #add_executable(grasp_server src/grasping_server.cpp)
 #target_link_libraries(grasp_server   ${PAGMO_LIBS}  ${catkin_LIBRARIES} grasp_planner)

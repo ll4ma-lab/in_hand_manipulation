@@ -1,0 +1,46 @@
+#+TITLE: In-Hand Manipulation
+#+SUBTITLE: Motion Planning and Feedback Control 
+#+OPTIONS: toc:2
+#+OPTIONS: _:nil
+
+#+AUTHOR: Balakumar Sundaralingam, LL4MA Lab, University of Utah
+
+This package contains research code that I am working on as part of my PhD program at the University of Utah.
+Visit my website for more information: https://balakumar-s.github.io
+
+* Sub Packages
+** Perception
+*** in_hand_collision_lib
+Contains collision checking classes.
+** Motion Planning
+*** in_grasp_manipulation
+Plans joint space motion for reposing object with respect to the palm without breaking/making new contact.
+*** finger_relocation
+Plans joint space motion to relocate fingertip on the object surface by finger gaiting and fingertip sliding.
+*** regrasp_planner
+Generates plans for regrasping the object using in-hand manipulation primitives.
+** Control
+*** in_hand_controllers
+Contains code to run generated motion plans on the robot(open-loop/feedback/MPC). This package wraps around hand_services to enable task specific controllers.
+** Util
+*** in_hand_manipulation_msgs
+Contains custom messages and services used by other sub-packages.
+
+*** in_hand_manipulation_pipeline
+Contains scripts to evaluate various experiments.
+
+*** in_hand_manipulation_data
+Contains data files collected for motion planning and experiments.
+*** in_hand_manipulation
+Contains launch files for various in-hand manipulation skills. This package also contain demos.
+
+
+* External Dependencies
+- [[https://bitbucket.org/robot-learning/ll4ma_robots_description][ll4ma_robots_description]]
+- [[https://bitbucket.org/robot-learning/ll4ma_collision_wrapper][ll4ma_collision_wrapper]]
+- [[https://bitbucket.org/robot-learning/ll4ma_kdl][ll4ma_kdl]]
+- [[https://bitbucket.org/robot-learning/ll4ma_opt_wrapper][ll4ma_opt_wrapper]]
+** Harwdare specific packages
+- [[https://bitbucket.org/robot-learning/allegro_driver][allegro_driver]]
+- [[https://bitbucket.org/robot-learning/hand_services][hand_services]]
+- [[https://bitbucket.org/robot-learning/biotac_sensors][biotac_sensors]]

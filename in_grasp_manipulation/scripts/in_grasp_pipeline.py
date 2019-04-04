@@ -31,7 +31,7 @@ path_in_grasp=rp.get_path('in_grasp_manipulation')+'/python'
 sys.path.insert(0,path_in_grasp)
 import viz_markers
 from object_list import *
-path_=rp.get_path('optimization_pkg')+'/scripts'
+path_=rp.get_path('trajectory_smoothing')+'/scripts'
 sys.path.insert(0,path_)
 from trajectory_pub import *
 
@@ -66,7 +66,7 @@ class pdData:
         df_.to_csv(f_name,index=False)
         
 class inGraspPipeline:
-    def __init__(self,publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right', init_node=False, node_name='in_grasp_pipeline',weights=[1.0,0.0,0.0,0.0,0.8]):
+    def __init__(self,publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right', init_node=False, node_name='in_grasp_pipeline',weights=[0.001,0.5,100.0,1.0,0.4]):
         if(init_node):
             rospy.init_node(node_name)
         self.viz_obj=viz_markers.VizInHand(init_node=False)
@@ -95,7 +95,6 @@ class inGraspPipeline:
         self.obj_list=obj_list
 
     def generate_traj(self,idx,folder=path_in_hand_data+"/trajectories/journal/collision/",WRITE_TO_FILE=True):
-        start=time.time()
         obj_=self.obj_list.arr[idx]
         j0=obj_.grasp
         js_j0=JointState()
@@ -139,14 +138,17 @@ class inGraspPipeline:
         j_traj_rr,n_pose,obj_traj_rr=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=f_j)
         '''
         print "Calling min acc"
+        start=time.time()
 
         f_j=[]#j_traj.points[-1].positions
+        #weights=[0.0,0.001,0.1,0.0,1.5]
         weights=copy.deepcopy(self.weights)
-        #weights[1]=0.0
-        #weights[0]=0.0
-        #weights[3]=0.01
-        #weights[2]=10.0
-        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=f_j,srv_topic="/in_hand/primitive/in_grasp_rolling")
+        weights[3]=0.0 # smooth acc
+        weights[4]=10.5 # vel limits
+        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=1, final_joints=f_j,srv_topic="/in_grasp_planner/get_plan")
+        weights=copy.deepcopy(self.weights)
+
+        j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=j_traj.points[-1].positions,srv_topic="/in_grasp_planner/get_plan")
         '''
         #j_traj_rr=j_traj
         #obj_traj_rr=obj_traj
@@ -163,8 +165,12 @@ class inGraspPipeline:
 
         plan_time=time.time()-start
         print 'time:'+str(time.time()-start)
-        #print j_traj
         self.traj_server.viz_joint_traj(j_traj,base_link='allegro_mount')
+        # plot
+        #self.traj_server.plot_j_acc_profile(j_traj,[12,13,14,15])
+        #self.traj_server.viz_joint_traj(j_traj,base_link='allegro_mount')
+        #self.pose_api.plot_acc_profiles([j_traj],['min_acc'])
+
         #return j_traj,obj_traj,obj_traj_rr,j_tra
         exit()
         weights=copy.deepcopy(self.weights)
@@ -862,7 +868,8 @@ def vis_traj(FROM_FILE=True):
         _,obj_traj_rr=in_grasp_pip.get_traj_from_file(int(sys.argv[1]),folder=folder_rr)
     else:
         j_traj,obj_traj,obj_pose=in_grasp_pip.generate_traj(int(sys.argv[1]),WRITE_TO_FILE=False)
-        
+
+    
     in_grasp_pip.pose_api.plot_acc_profiles([obj_traj_rr,obj_traj],['Waypoint-interp','Joint-acc'])
 
     r = rospy.Rate(1.0)
@@ -894,7 +901,7 @@ def vis_traj(FROM_FILE=True):
         in_grasp_pip.pub.publish(obj_traj)
         in_grasp_pip.pub_rr.publish(obj_traj_rr)
         # publish desired and initial object pose as tf?
-        
+        print j_traj
         in_grasp_pip.traj_server.viz_joint_traj(j_traj,base_link='allegro_mount')
         
         in_grasp_pip.j_pub.publish(j_traj)
@@ -948,7 +955,10 @@ def run_open_loop(n_trials=5):
 def run_open_loop_test():
     in_grasp_pip=inGraspPipeline(init_node=True)
     in_grasp_pip.read_objects()
-    in_grasp_pip.run_traj(int(sys.argv[1]),OBJ_TRACKING=False,FROM_FILE=True,RECORD_DATA=False, DBOT_TRACKING=False,RECORD_BAG_=False)
+    method='j'
+    folder=path_in_hand_data+'/interpolation/'+method+'/'
+
+    in_grasp_pip.run_traj(int(sys.argv[1]),OBJ_TRACKING=False,FROM_FILE=True,RECORD_DATA=False, DBOT_TRACKING=False,RECORD_BAG_=False,folder=folder)
 
 def fb_exp(n_trials=1):
     in_grasp_pip=inGraspPipeline(init_node=True)

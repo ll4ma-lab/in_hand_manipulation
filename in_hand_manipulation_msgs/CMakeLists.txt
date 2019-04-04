@@ -18,12 +18,32 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
+add_message_files(
+   FILES
+   Ellipse.msg
+   Grasp.msg
+   GaitNode.msg
+   GaitPlan.msg
+ )
+
 add_service_files(
   FILES
   RunMPC.srv
   GetHandIK.srv
   PrecisionGrasp.srv
   FingerGaitServo.srv
+  GetEllipse.srv
+  RelocateFinger.srv
+  RelocateFingerKin.srv
+  MoveObj.srv
+  GetGaitPlan.srv
+  RelocateObj.srv
+  RelocateObjSd.srv
+  ComputeGD.srv
+  ComputeGDRaw.srv
+  UpdateObj.srv
+  GraspObj.srv
+
   )
 
 generate_messages(
@@ -32,6 +52,7 @@ generate_messages(
    geometry_msgs
    sensor_msgs
    trajectory_msgs
+   in_hand_manipulation_msgs
  )
 
 ###################################

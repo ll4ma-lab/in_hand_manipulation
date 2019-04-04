@@ -1,0 +1,34 @@
+<launch>
+
+
+ <arg name="biotac" default="false"/>
+
+   
+ <param name="allegro_planning/robot_description"
+        command="$(find xacro)/xacro.py '$(find ll4ma_robots_description)/robots/allegro.robot.xacro' biotac:=$(arg biotac) --inorder"/>
+ 
+ <param name="robot_description"
+        command="$(find xacro)/xacro.py '$(find ll4ma_robots_description)/robots/allegro.robot.xacro' biotac:=$(arg biotac) --inorder"/>
+ <node name="rviz_0"
+        pkg="rviz" type="rviz"
+        args="-d $(find allegro_driver)/allegro_biotac_config.rviz" >
+ </node>
+
+ <!--node name="rviz_0"
+        pkg="rviz" type="rviz"
+        args="-d $(find allegro_driver)/allegro_hand_config.rviz" >
+ </node-->
+ <!-- Joint States (angles) to Joint Transforms -->
+ 
+   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+  
+  <node pkg="joint_state_publisher" type="joint_state_publisher" output="screen"
+        name="joint_state_publisher">
+    <param name="use_gui" value="true"/>
+    <param name="publish_default_velocities" value="true"/>
+    <param name="publish_default_efforts" value="true"/>
+    <param name="rate" value="100"/>
+
+  </node> 
+ 
+</launch>

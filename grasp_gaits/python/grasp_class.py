@@ -3,7 +3,7 @@ import trimesh
 import numpy as np
 #import pcl
 from collections import Iterable
-import gdist
+#import gdist
 from scipy.sparse import csc_matrix
 import splocs
 def flatten(lis):
@@ -14,7 +14,7 @@ def flatten(lis):
          else:        
              yield item
 
-from pathos.multiprocessing import ProcessingPool as Pool
+#from pathos.multiprocessing import ProcessingPool as Pool
 
 class object:
     def __init__(self,mesh,build_g_mat=False):
@@ -84,9 +84,9 @@ class grasp:
         
         contact_surfaces=[[] for i in range(max(self.fingers)+1)]
         cs=[prefix_path+'f0.stl',prefix_path+'f1.stl',prefix_path+'f2.stl',prefix_path+'f3.stl']
-
+        
         if(not load_from_file):
-            self.map=Pool().map
+           #self.map=Pool().map
 
             # Find intersection surfaces:
             data=[]

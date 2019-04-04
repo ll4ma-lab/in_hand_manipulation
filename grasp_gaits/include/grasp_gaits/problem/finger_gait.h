@@ -2,7 +2,7 @@
 #include <iostream>
 
 #include <ll4ma_kdl/manipulator_kdl/robot_kdl.h>
-//#include <pcl_mesh_tools/collision_checker/convex_collision_checker.h>
+//#include <ll4ma_collision_wrapper/collision_checker/convex_collision_checker.h>
 
 // Eigen library for vectors and matrices:
 #include <Eigen/Dense>
@@ -10,10 +10,10 @@
 
 #include <vector>
 
-#include <grasp_gaits/scene/allegro_env.h>
+#include <grasp_gaits/scene/fcl_allegro_env.h>
 
 using namespace std;
-
+using namespace fcl_ccheck;
 namespace opt_problems
 {
   class optProblem

@@ -1,4 +1,3 @@
-
 #define SPARSE_GRADIENT true
 #include <in_grasp_manipulation/problems/opt_problem.hpp>
 
@@ -554,6 +553,11 @@ vector<double> optProblem::sparse_gradient(const vector<double> x) const
 
   return grad;
 }
+vector<double> optProblem::rrGradient(vector<double> x) const
+{
+  vector<double> temp;
+  return temp;
+}
 std::vector<std::pair<vector<double>::size_type, vector<double>::size_type>> optProblem::gradient_sparsity() const
 {
   std::vector<std::pair<vector<double>::size_type, vector<double>::size_type>> retval;
@@ -584,4 +588,5 @@ std::vector<std::pair<vector<double>::size_type, vector<double>::size_type>> opt
 
   return retval;
 }
+
 

@@ -5,13 +5,15 @@ from geometry_msgs.msg import Pose
 from trajectory_msgs.msg import JointTrajectory,JointTrajectoryPoint
 import numpy as np
 import tf
+import copy
+
 class inGraspClient:
     def __init__(self,weights=[1.0,1.0,1.0,1.0]):
         # Initialize variables:
         self.weights=weights
 
         
-    def call_server(self,js,obj_pose,des_obj_pose,T=1,fingers=[0,1,2,3],rig_finger=3):
+    def call_server(self,js,obj_pose,des_obj_pose,T=1,fingers=[1,3],rig_finger=3):
         #j0=JointState()
         #j0.position=j_arr
 
@@ -93,7 +95,8 @@ if __name__=='__main__':
     obj_pose.orientation.w=1.0
 
     des_obj_pose=Pose()
-    des_obj_pose=obj_pose
+    des_obj_pose=copy.deepcopy(obj_pose)
+    des_obj_pose.position.x=-0.1
     in_grasp=inGraspClient()
     j_traj=in_grasp.call_server(j0,obj_pose,des_obj_pose)
     print j_traj
