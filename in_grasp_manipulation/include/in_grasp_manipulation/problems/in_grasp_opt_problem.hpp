@@ -1,8 +1,13 @@
 #ifndef SPARSE_GRADIENT
 #define SPARSE_GRADIENT true
 #endif
+#ifndef LL4MA_COLLISION_MODEL
+#define LL4MA_COLLISION_MODEL true
+#include <ll4ma_collision_wrapper/scene/kris_ccd/manipulation.h>
+namespace coll_ns=kris_ccd_ccheck;
+#endif
 
-#include <in_hand_manipulation/problems/opt_problem_base.hpp>
+#include <ll4ma_opt_utils/problems/opt_problem_base.hpp>
 
 using namespace std;
 namespace opt_problems

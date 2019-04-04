@@ -54,16 +54,40 @@ generate_messages(
    trajectory_msgs
  )
 
+
+
 catkin_package(
   CATKIN_DEPENDS std_msgs roscpp sensor_msgs in_hand_manipulation message_generation
 )
+
 include_directories(
   ${catkin_INCLUDE_DIRS}
   /home/bala/pkgs/pagmo_plugins_nonfree/include
   ${Boost_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   )
+
+# collision checking:
+
+set(ccd_DIR $ENV{HOME}/local/lib/ccd/)
+set(fcl_DIR $ENV{HOME}/local/lib/cmake/fcl/)
+
+find_package(fcl REQUIRED)
+find_package(ccd 2.0 EXACT REQUIRED)
+
+set(ccd_INCLUDE_DIRS $ENV{HOME}/local/include)
+set(ccd_LIBRARY_DIRS $ENV{HOME}/local/lib)
+
+message("fcl found!")
+set(fcl_INCLUDE_DIRS $ENV{HOME}/local/include)
+set(fcl_LIBRARY_DIRS $ENV{HOME}/local/lib)
+include_directories(${fcl_INCLUDE_DIRS})
+set(COLLISION_LIBS ccd fcl)
+
+# optimization
+
 set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRARIES}  ${CMAKE_DL_LIBS})
+
 
 #add_library(rolling STATIC src/problems/in_grasp_rolling.cpp)
 #target_link_libraries(rolling ${catkin_LIBRARIES})
@@ -72,7 +96,7 @@ set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRA
 #target_link_libraries(in_grasp_min_acc_joint ${catkin_LIBRARIES})
 
 add_library(in_grasp_rr STATIC src/problems/in_grasp_rr_const.cpp)
-target_link_libraries(in_grasp_rr ${catkin_LIBRARIES})
+target_link_libraries(in_grasp_rr ${catkin_LIBRARIES} ${COLLISION_LIBS})
 
 #add_library(in_grasp_collision STATIC src/problems/in_grasp_collision.cpp)
 #target_link_libraries(in_grasp_collision ${catkin_LIBRARIES})

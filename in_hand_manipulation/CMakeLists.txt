@@ -20,9 +20,8 @@ find_package(catkin REQUIRED COMPONENTS
   roslib
   sensor_msgs
   std_msgs
-  ll4ma_opt_wrapper
+  ll4ma_opt_utils
   in_hand_manipulation_msgs
-  ll4ma_kdl
   )
 find_package(Eigen3 REQUIRED)
 
@@ -48,8 +47,8 @@ find_package(Eigen3 REQUIRED)
 
 catkin_package(
    INCLUDE_DIRS include
-   LIBRARIES in_hand_opt
-  CATKIN_DEPENDS std_msgs roscpp sensor_msgs ll4ma_opt_wrapper ll4ma_kdl
+   #LIBRARIES opt_problem_base
+  CATKIN_DEPENDS std_msgs roscpp sensor_msgs ll4ma_opt_utils
   #DEPENDS system_lib
 )
 
@@ -57,14 +56,12 @@ catkin_package(
 include_directories(
   ${catkin_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}/include
-  /home/bala/pkgs/pagmo_plugins_nonfree/include
-  ${Boost_INCLUDE_DIRS}
+  #/home/bala/pkgs/pagmo_plugins_nonfree/include
+  #${Boost_INCLUDE_DIRS}
   )
 
-set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRARIES}  ${CMAKE_DL_LIBS})
+#set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRARIES}  ${CMAKE_DL_LIBS})
 
-add_library(in_hand_opt STATIC src/problems/in_hand_opt.cpp)
-target_link_libraries(in_hand_opt ${PAGMO_LIBS} ${catkin_LIBRARIES})
 #add_library(finger_gaiting_planner STATIC src/problems/finger_gaiting_fns.cpp)
 #add_library(finger_gaiting_sd_planner STATIC src/problems/finger_gaiting_fns_sd.cpp)
 #add_library(finger_gaiting_gd_planner STATIC src/problems/finger_gaiting_fns_gd.cpp)

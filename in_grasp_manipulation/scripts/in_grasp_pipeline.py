@@ -66,7 +66,7 @@ class pdData:
         df_.to_csv(f_name,index=False)
         
 class inGraspPipeline:
-    def __init__(self,publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right', init_node=False, node_name='in_grasp_pipeline',weights=[0.001,0.1,1000.0,1.0,0.4]):
+    def __init__(self,publish_prefix='/allegro_hand_right',listen_prefix='/allegro_hand_right', init_node=False, node_name='in_grasp_pipeline',weights=[0.001,0.5,100.0,1.0,0.4]):
         if(init_node):
             rospy.init_node(node_name)
         self.viz_obj=viz_markers.VizInHand(init_node=False)
@@ -167,7 +167,7 @@ class inGraspPipeline:
         print 'time:'+str(time.time()-start)
         self.traj_server.viz_joint_traj(j_traj,base_link='allegro_mount')
         # plot
-        self.traj_server.plot_j_acc_profile(j_traj,[12,13,14,15])
+        #self.traj_server.plot_j_acc_profile(j_traj,[12,13,14,15])
         #self.traj_server.viz_joint_traj(j_traj,base_link='allegro_mount')
         #self.pose_api.plot_acc_profiles([j_traj],['min_acc'])
 
