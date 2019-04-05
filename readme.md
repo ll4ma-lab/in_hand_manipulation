@@ -1,24 +1,24 @@
 
 # Table of Contents
 
-1.  [Sub Packages](#org797d91f)
-    1.  [Perception](#org285689f)
-    2.  [Motion Planning](#org9497823)
-    3.  [Control](#org6cd7ac6)
-    4.  [Util](#org8b96254)
-2.  [External Dependencies](#orgb909271)
-    1.  [Harwdare specific packages](#orgb085465)
+1.  [Sub Packages](#orgf340f2d)
+    1.  [Perception](#org3f90b6a)
+    2.  [Motion Planning](#org19abb85)
+    3.  [Control](#org3fbe3b4)
+    4.  [Util](#orge67abb6)
+2.  [External Dependencies](#org36b0761)
+    1.  [Harwdare specific packages](#org3a391af)
 
 This package contains research code that I am working on as part of my PhD program at the University of Utah.
 Visit my website for more information: <https://balakumar-s.github.io>
 
 
-<a id="org797d91f"></a>
+<a id="orgf340f2d"></a>
 
 # Sub Packages
 
 
-<a id="org285689f"></a>
+<a id="org3f90b6a"></a>
 
 ## Perception
 
@@ -28,7 +28,7 @@ Visit my website for more information: <https://balakumar-s.github.io>
 Contains collision checking classes.
 
 
-<a id="org9497823"></a>
+<a id="org19abb85"></a>
 
 ## Motion Planning
 
@@ -48,7 +48,7 @@ Plans joint space motion to relocate fingertip on the object surface by finger g
 Generates plans for regrasping the object using in-hand manipulation primitives.
 
 
-<a id="org6cd7ac6"></a>
+<a id="org3fbe3b4"></a>
 
 ## Control
 
@@ -58,7 +58,7 @@ Generates plans for regrasping the object using in-hand manipulation primitives.
 Contains code to run generated motion plans on the robot(open-loop/feedback/MPC). This package wraps around hand\_services to enable task specific controllers.
 
 
-<a id="org8b96254"></a>
+<a id="orge67abb6"></a>
 
 ## Util
 
@@ -83,7 +83,7 @@ Contains data files collected for motion planning and experiments.
 Contains launch files for various in-hand manipulation skills. This package also contain demos.
 
 
-<a id="orgb909271"></a>
+<a id="org36b0761"></a>
 
 # External Dependencies
 
@@ -93,7 +93,7 @@ Contains launch files for various in-hand manipulation skills. This package also
 -   [ll4ma\_opt\_wrapper](https://bitbucket.org/robot-learning/ll4ma_opt_wrapper)
 
 
-<a id="orgb085465"></a>
+<a id="org3a391af"></a>
 
 ## Harwdare specific packages
 
