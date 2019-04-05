@@ -1,6 +1,5 @@
 #define SPARSE_GRADIENT true
 #include <in_grasp_manipulation/problems/in_grasp_opt_problem.hpp>
-//#define COLL_CHECK false
 namespace opt_problems
 {
 bool optProblem::updateData( vector<double> vel_limits,vector<vector<double>> data_arr, vector<Eigen::MatrixXd> data_mats)
@@ -399,6 +398,8 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
 
   
   // add collision constraints:
+  #if LL4MA_COLLISION_MODEL==true
+  
   if(collision_checking_)
   {
     for(int i=0;i<timesteps_;++i)
@@ -406,10 +407,11 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
       // get current state:
       
       // get collision constraint:
-      vector<double> coll_const=collisionConstraints(x);
+      vector<double> coll_const=collisionConstraint(x);
       
     }
   }
+  #endif
   return vel_const;
 }
 
@@ -479,6 +481,7 @@ vector<double> optProblem::sparse_gradient(const vector<double> x) const
   //vector<double> eq_grad=eqGradient(x);
   vector<double> ineq_grad=inEqGradient(x);
   vector<double> rr_grad=rrGradient(x);
+  
   grad.resize(m_dim,0.0);
 
   for(int i=0;i<m_dim;i++)
@@ -521,7 +524,10 @@ vector<double> optProblem::sparse_gradient(const vector<double> x) const
       }
     }
   }
-
+  // get collision gradient:
+  #if LL4MA_COLLISION_MODEL==true
+  vector<double> coll_grad=collisionGradient(x);
+  #endif
   return grad;
 }
 vector<double> optProblem::rrGradient(vector<double> x) const
@@ -736,21 +742,6 @@ std::vector<std::pair<vector<double>::size_type, vector<double>::size_type>> opt
   */
   return retval;
 }
-#if LL4MA_COLLISION_MODEL==true
-
-vector<double> optProblem::collisionConstraints(vector<double> x) const
-{
-  vector<double> retval;
-  return retval;  
-}
-
-vector<double> optProblem::collisionGradient(vector<double> x) const
-{
-  vector<double> retval;
-  
-  return retval;
-}
-#endif
 vector<double> optProblem::debugFunction(const vector<double> x) const
 {
   double cost_val=0.0;

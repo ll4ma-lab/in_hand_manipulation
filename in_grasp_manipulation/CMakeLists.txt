@@ -3,11 +3,16 @@ project(in_grasp_manipulation)
 
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++11 -Wfatal-errors)
 
-# define if you want to disable build with collision checking:
-# comment below line if you want to enable collision checking, DON'T set this to true, that will break the program as there are additional definitions required to enable collision checking which are handled in the header files. See include/problems/in_grasp_opt_problem.hpp for more details
-#add_definitions(-DLL4MA_COLLISION_MODEL=false)
+OPTION(ENABLE_COLLISION_LIB "Build with COLLISION CHECKING feature" ON)
+
+if(ENABLE_COLLISION_LIB)
+  message("Building with collision checking enhancement")
+else()
+  #DON'T set this to true, that will break the program as there are additional definitions required to enable   collision checking which are handled in the header files. See include/problems/in_grasp_opt_problem.hpp for more details
+  add_definitions(-DLL4MA_COLLISION_MODEL=false)
+endif(ENABLE_COLLISION_LIB)
 
 ## System dependencies are found with CMake's conventions
 
@@ -94,13 +99,23 @@ set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRA
 #target_link_libraries(in_grasp_min_acc_joint ${catkin_LIBRARIES})
 
 add_library(in_grasp_rr src/problems/in_grasp_rr_const.cpp)
-target_link_libraries(in_grasp_rr ${catkin_LIBRARIES} ${COLLISION_LIBS})
+target_link_libraries(in_grasp_rr ${catkin_LIBRARIES})
 
-#add_library(in_grasp_collision STATIC src/problems/in_grasp_collision.cpp)
-#target_link_libraries(in_grasp_collision ${catkin_LIBRARIES})
+if(ENABLE_COLLISION_LIB)
+
+add_library(collision_constraints src/problems/collision_constraints.cpp)
+target_link_libraries(collision_constraints ${catkin_LIBRARIES} ${COLLISION_LIBS})
+endif(ENABLE_COLLISION_LIB)
 
 add_executable(in_grasp_server src/in_grasp_server.cpp)
 target_link_libraries(in_grasp_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_rr)
+
+if(ENABLE_COLLISION_LIB)
+  target_link_libraries(in_grasp_server collision_constraints)
+endif(ENABLE_COLLISION_LIB)
+
+#add_library(in_grasp_collision STATIC src/problems/in_grasp_collision.cpp)
+#target_link_libraries(in_grasp_collision ${catkin_LIBRARIES})
 
 
 #add_executable(simulation src/in_grasp_simulation.cpp)

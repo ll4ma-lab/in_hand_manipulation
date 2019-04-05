@@ -1,6 +1,11 @@
 #ifndef SPARSE_GRADIENT
 #define SPARSE_GRADIENT true
 #endif
+//#ifndef LL4MA_COLLISION_MODEL
+//#define LL4MA_COLLISION_MODEL false
+//#endif
+
+
 #ifndef LL4MA_COLLISION_MODEL
 #define LL4MA_COLLISION_MODEL true
 #include <ll4ma_collision_wrapper/scene/kris_ccd/manipulation.h>
@@ -45,7 +50,7 @@ class optProblem: public optProblemBase
 
     // collision functions:
     #if LL4MA_COLLISION_MODEL==true
-    vector<double> collisionConstraints(vector<double> x) const;
+    vector<double> collisionConstraint(vector<double> x) const;
     vector<double> collisionGradient(vector<double> x) const;
     #endif
   private:
