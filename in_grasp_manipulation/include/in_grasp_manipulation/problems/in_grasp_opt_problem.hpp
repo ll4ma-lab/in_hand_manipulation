@@ -43,6 +43,11 @@ class optProblem: public optProblemBase
     vector<double> debugGrad(vector<double> state) const;
     vector<double>debugFunction(const vector<double> x) const;
 
+    // collision functions:
+    #if LL4MA_COLLISION_MODEL==true
+    vector<double> collisionConstraints(vector<double> x) const;
+    vector<double> collisionGradient(vector<double> x) const;
+    #endif
   private:
     
     // Collision checking: TODO

@@ -4,16 +4,15 @@ project(in_grasp_manipulation)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
+
+# define if you want to disable build with collision checking:
+# comment below line if you want to enable collision checking, DON'T set this to true, that will break the program as there are additional definitions required to enable collision checking which are handled in the header files. See include/problems/in_grasp_opt_problem.hpp for more details
+#add_definitions(-DLL4MA_COLLISION_MODEL=false)
+
 ## System dependencies are found with CMake's conventions
 
 find_package(Pagmo REQUIRED)
-#find_package(ccd REQUIRED)
-#set(CCD_INCLUDE_DIRS /home/bala/local/include)
-#set(CCD_LIBRARY_DIRS /home/bala/local/lib)
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   roslib
@@ -30,7 +29,6 @@ find_package(catkin REQUIRED COMPONENTS
   ll4ma_collision_wrapper
 )
 
-#find_package(Eigen REQUIRED)
 find_package(PCL 1.7 REQUIRED)
 
 find_package(Eigen3 REQUIRED)
@@ -95,7 +93,7 @@ set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRA
 #add_library(in_grasp_min_acc_joint STATIC src/problems/in_grasp_joint_smooth.cpp)
 #target_link_libraries(in_grasp_min_acc_joint ${catkin_LIBRARIES})
 
-add_library(in_grasp_rr STATIC src/problems/in_grasp_rr_const.cpp)
+add_library(in_grasp_rr src/problems/in_grasp_rr_const.cpp)
 target_link_libraries(in_grasp_rr ${catkin_LIBRARIES} ${COLLISION_LIBS})
 
 #add_library(in_grasp_collision STATIC src/problems/in_grasp_collision.cpp)
