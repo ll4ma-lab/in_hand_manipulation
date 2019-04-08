@@ -65,7 +65,7 @@ catkin_package(
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
-  /home/bala/pkgs/pagmo_plugins_nonfree/include
+  $ENV{HOME}/pkgs/pagmo_plugins_nonfree/include
   ${Boost_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   )
