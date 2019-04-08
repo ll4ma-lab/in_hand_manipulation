@@ -1,24 +1,20 @@
+- [Sub Packages](#orgb12ef74)
+  - [Perception](#org6cb2c1a)
+  - [Motion Planning](#org988ca2a)
+  - [Control](#orge4df3a6)
+  - [Util](#org99f4e7b)
+- [External Dependencies](#org525b6ce)
+  - [Harwdare specific packages](#org08321da)
 
-# Table of Contents
-
-1.  [Sub Packages](#orge548763)
-    1.  [Perception](#orgba39b19)
-    2.  [Motion Planning](#org555615a)
-    3.  [Control](#org041082e)
-    4.  [Util](#org8f49511)
-2.  [External Dependencies](#org82081d9)
-    1.  [Harwdare specific packages](#org52b0314)
-
-This package contains research code that I am working on as part of my PhD program at the University of Utah.
-Visit my website for more information: <https://balakumar-s.github.io>
+This package contains research code that I am working on as part of my PhD program at the University of Utah. Visit my website for more information: <https://balakumar-s.github.io>
 
 
-<a id="orge548763"></a>
+<a id="orgb12ef74"></a>
 
 # Sub Packages
 
 
-<a id="orgba39b19"></a>
+<a id="org6cb2c1a"></a>
 
 ## Perception
 
@@ -28,7 +24,7 @@ Visit my website for more information: <https://balakumar-s.github.io>
 Contains collision checking classes.
 
 
-<a id="org555615a"></a>
+<a id="org988ca2a"></a>
 
 ## Motion Planning
 
@@ -48,7 +44,7 @@ Plans joint space motion to relocate fingertip on the object surface by finger g
 Generates plans for regrasping the object using in-hand manipulation primitives.
 
 
-<a id="org041082e"></a>
+<a id="orge4df3a6"></a>
 
 ## Control
 
@@ -58,7 +54,7 @@ Generates plans for regrasping the object using in-hand manipulation primitives.
 Contains code to run generated motion plans on the robot(open-loop/feedback/MPC). This package wraps around hand\_services to enable task specific controllers.
 
 
-<a id="org8f49511"></a>
+<a id="org99f4e7b"></a>
 
 ## Util
 
@@ -83,7 +79,7 @@ Contains data files collected for motion planning and experiments.
 Contains launch files for various in-hand manipulation skills. This package also contain demos.
 
 
-<a id="org82081d9"></a>
+<a id="org525b6ce"></a>
 
 # External Dependencies
 
@@ -93,11 +89,10 @@ Contains launch files for various in-hand manipulation skills. This package also
 -   [ll4ma\_opt\_wrapper](https://bitbucket.org/robot-learning/ll4ma_opt_wrapper)
 
 
-<a id="org52b0314"></a>
+<a id="org08321da"></a>
 
 ## Harwdare specific packages
 
 -   [allegro\_driver](https://bitbucket.org/robot-learning/allegro_driver)
 -   [hand\_services](https://bitbucket.org/robot-learning/hand_services)
 -   [biotac\_sensors](https://bitbucket.org/robot-learning/biotac_sensors)
-

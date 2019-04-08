@@ -1,9 +1,5 @@
 #define SPARSE_GRADIENT true
 #include <in_grasp_manipulation/problems/in_grasp_opt_problem.hpp>
-
-//#include "optimization_pkg/problems/opt_problem_full.hpp"
-//#include <tf/transform_datatypes.h>
-//#define COLL_CHECK false
 namespace opt_problems
 {
 bool optProblem::updateData( vector<double> vel_limits,vector<vector<double>> data_arr, vector<Eigen::MatrixXd> data_mats)
@@ -11,6 +7,12 @@ bool optProblem::updateData( vector<double> vel_limits,vector<vector<double>> da
   m_dim=robot_kdl_->dof*timesteps_;
   m_nec=0;//robot_kdl.dof;
   m_nic=robot_kdl_->dof*(timesteps_)+(timesteps_*2)*data_arr[3].size();// velocity constraints, rr constraints
+
+  // if collision checking is enabled, add collision constraints:
+  if(collision_checking_)
+  {
+    m_nic+=timesteps_; // we check if object is in collision with the hand at every timestep
+  }
   
   des_poses.resize(timesteps_);
   vel_lim=vel_limits[0];
@@ -28,136 +30,6 @@ bool optProblem::updateData( vector<double> vel_limits,vector<vector<double>> da
 
 
   return true;
-}
-vector<double> optProblem::debugFunction(const vector<double> x) const
-{
-  double cost_val=0.0;
-  // relaxed rigidity constraints:
-  Eigen::VectorXd q;
-  Eigen::VectorXd obj_pos_err;
-  Eigen::VectorXd pos_err,orient_err;
-  pos_err.resize(3);
-  orient_err.resize(3);
-  int rigid_f=int(data_arr_[2][0]);// rigid_finger
-
-  // position offsets:
-  vector<Eigen::VectorXd> pos_offsets;
-  
-  for(int k=0;k<data_arr_[3].size();++k)
-  {
-    vector<double> p_off=data_arr_[4+k];
-    Eigen::Map<Eigen::VectorXd> pos_offset(&p_off[0],p_off.size());
-    pos_offsets.emplace_back(pos_offset);
-  }
-  double wo,wr,wd,wi;
-  wo=data_arr_[1][0];
-  wr=data_arr_[1][1];
-  wd=data_arr_[1][2];
-  wi=data_arr_[1][3];
-  q.resize(robot_kdl_->dof);
-
-  vector<double> o_err;
-
-  double tot_pos_cost=0.0;
-  double debug_cost=0.0;
-  vector<Eigen::VectorXd> j_poses;
-  // store finger pose for min acceleration cost:
-  vector<double> init_joints=joints_0;
-
-
-  Eigen::Map<Eigen::VectorXd>j_0(&init_joints[0],init_joints.size());
-
-  j_poses.push_back(j_0);
-  j_poses.push_back(j_0);
-  for(int i=0;i<timesteps_;++i)
-  {
-    for(int j=0; j<robot_kdl_->dof;++j)
-    {
-      q[j]=x[(i)*robot_kdl_->dof+j];
-    }
-    j_poses.push_back(q);
-  }
-  // Following Marc's KOMO paper, adding -2,-1, T+1,T+2 poses
-  //cerr<<r_f_poses.size()<<endl;
-  j_poses.push_back(q);
-  j_poses.push_back(q);
-   
-  Eigen::VectorXd acc_cost(16),ee_pose;
-  
-
-  Eigen::MatrixXd f_mat,thumb_mat;
-  
-  for(int i=0; i<timesteps_;++i)
-  {
-    double position_cost=0.0;
-    double orientation_cost=0.0;
-
-    // Getting joint angles for current timestep:
-    for(int j=0; j<robot_kdl_->dof;++j)
-    {
-      q[j]=x[(i)*robot_kdl_->dof+j];
-    }
-    robot_kdl_->getFK(rigid_f,q.segment(rigid_f*4,4),ee_pose,true);
-    
-
-    // Relaxed-Rigidity costs:
-    // get current thumb mat:
-    robot_kdl_->getFK(rigid_f,q.segment(rigid_f*4,4),thumb_mat);
-    
-    for(int k=0;k<data_arr_[3].size();++k)
-    {
-      int f=data_arr_[3][k];
-      if(f!=rigid_f)
-      {
-        // Position:
-        robot_kdl_->getFK(f,q.segment(f*4,4),f_mat);
-        Eigen::MatrixXd des_mat=thumb_mat*data_mats_[f];
-
-
-	// compute difference between the two frames:
-        
-	
-        Eigen::VectorXd pose_diff(6);
-        
-        pose_diff[0]=des_mat(0,3)-f_mat(0,3);
-        pose_diff[1]=des_mat(1,3)-f_mat(1,3);
-        pose_diff[2]=des_mat(2,3)-f_mat(2,3);
-        
-        
-        // Compute orientation error:
-        robot_kdl_->euler_diff(f_mat,des_mat,o_err);
-        
-        pos_err=pose_diff.segment(0,3)*1.0;
-        
-        orient_err[1]=o_err[1];
-        orient_err[0]=0.0;
-        orient_err[2]=0.0;
-        position_cost+=max(pos_err.squaredNorm(),wr)-wr;
-        orientation_cost+=orient_err.squaredNorm();
-      }
-      
-    }
-    cost_val+=pow(position_cost,2);//position_cost;
-    //cerr<<position_cost<<endl;
-    //cost_val=position_cost;//pow(position_cost,2);//pow((max(position_cost,wr)-wr),2);
-    //vel_const[robot_kdl_->dof*timesteps_+timesteps_+i]=pow(orientation_cost,2);
-  }
-  vector<double> cost_grad={cost_val};
- 
-  return cost_grad;
-
-}
-vector<double> optProblem::debugGrad(vector<double> state) const
-{
-  vector<double> retval(robot_kdl_->dof,0.0);
-  using std::placeholders::_1;
-
-  std::function<vector<double>(vector<double>)> f = std::bind(&optProblem::debugFunction,this,_1);
-
-  //  retval=pagmo::estimate_gradient(std::bind(&optProblem::forceBalance,this,_1),x);
-  retval=pagmo::estimate_gradient(f,state);
-  return retval; 
-
 }
 double optProblem::objFunction(const vector<double> x) const
 {
@@ -525,6 +397,21 @@ vector<double> optProblem::inEqConstraints(vector<double> x) const
   }
 
   
+  // add collision constraints:
+  #if LL4MA_COLLISION_MODEL==true
+  
+  if(collision_checking_)
+  {
+    for(int i=0;i<timesteps_;++i)
+    {
+      // get current state:
+      
+      // get collision constraint:
+      vector<double> coll_const=collisionConstraint(x);
+      
+    }
+  }
+  #endif
   return vel_const;
 }
 
@@ -594,6 +481,7 @@ vector<double> optProblem::sparse_gradient(const vector<double> x) const
   //vector<double> eq_grad=eqGradient(x);
   vector<double> ineq_grad=inEqGradient(x);
   vector<double> rr_grad=rrGradient(x);
+  
   grad.resize(m_dim,0.0);
 
   for(int i=0;i<m_dim;i++)
@@ -636,7 +524,10 @@ vector<double> optProblem::sparse_gradient(const vector<double> x) const
       }
     }
   }
-
+  // get collision gradient:
+  #if LL4MA_COLLISION_MODEL==true
+  vector<double> coll_grad=collisionGradient(x);
+  #endif
   return grad;
 }
 vector<double> optProblem::rrGradient(vector<double> x) const
@@ -850,6 +741,136 @@ std::vector<std::pair<vector<double>::size_type, vector<double>::size_type>> opt
   }
   */
   return retval;
+}
+vector<double> optProblem::debugFunction(const vector<double> x) const
+{
+  double cost_val=0.0;
+  // relaxed rigidity constraints:
+  Eigen::VectorXd q;
+  Eigen::VectorXd obj_pos_err;
+  Eigen::VectorXd pos_err,orient_err;
+  pos_err.resize(3);
+  orient_err.resize(3);
+  int rigid_f=int(data_arr_[2][0]);// rigid_finger
+
+  // position offsets:
+  vector<Eigen::VectorXd> pos_offsets;
+  
+  for(int k=0;k<data_arr_[3].size();++k)
+  {
+    vector<double> p_off=data_arr_[4+k];
+    Eigen::Map<Eigen::VectorXd> pos_offset(&p_off[0],p_off.size());
+    pos_offsets.emplace_back(pos_offset);
+  }
+  double wo,wr,wd,wi;
+  wo=data_arr_[1][0];
+  wr=data_arr_[1][1];
+  wd=data_arr_[1][2];
+  wi=data_arr_[1][3];
+  q.resize(robot_kdl_->dof);
+
+  vector<double> o_err;
+
+  double tot_pos_cost=0.0;
+  double debug_cost=0.0;
+  vector<Eigen::VectorXd> j_poses;
+  // store finger pose for min acceleration cost:
+  vector<double> init_joints=joints_0;
+
+
+  Eigen::Map<Eigen::VectorXd>j_0(&init_joints[0],init_joints.size());
+
+  j_poses.push_back(j_0);
+  j_poses.push_back(j_0);
+  for(int i=0;i<timesteps_;++i)
+  {
+    for(int j=0; j<robot_kdl_->dof;++j)
+    {
+      q[j]=x[(i)*robot_kdl_->dof+j];
+    }
+    j_poses.push_back(q);
+  }
+  // Following Marc's KOMO paper, adding -2,-1, T+1,T+2 poses
+  //cerr<<r_f_poses.size()<<endl;
+  j_poses.push_back(q);
+  j_poses.push_back(q);
+   
+  Eigen::VectorXd acc_cost(16),ee_pose;
+  
+
+  Eigen::MatrixXd f_mat,thumb_mat;
+  
+  for(int i=0; i<timesteps_;++i)
+  {
+    double position_cost=0.0;
+    double orientation_cost=0.0;
+
+    // Getting joint angles for current timestep:
+    for(int j=0; j<robot_kdl_->dof;++j)
+    {
+      q[j]=x[(i)*robot_kdl_->dof+j];
+    }
+    robot_kdl_->getFK(rigid_f,q.segment(rigid_f*4,4),ee_pose,true);
+    
+
+    // Relaxed-Rigidity costs:
+    // get current thumb mat:
+    robot_kdl_->getFK(rigid_f,q.segment(rigid_f*4,4),thumb_mat);
+    
+    for(int k=0;k<data_arr_[3].size();++k)
+    {
+      int f=data_arr_[3][k];
+      if(f!=rigid_f)
+      {
+        // Position:
+        robot_kdl_->getFK(f,q.segment(f*4,4),f_mat);
+        Eigen::MatrixXd des_mat=thumb_mat*data_mats_[f];
+
+
+	// compute difference between the two frames:
+        
+	
+        Eigen::VectorXd pose_diff(6);
+        
+        pose_diff[0]=des_mat(0,3)-f_mat(0,3);
+        pose_diff[1]=des_mat(1,3)-f_mat(1,3);
+        pose_diff[2]=des_mat(2,3)-f_mat(2,3);
+        
+        
+        // Compute orientation error:
+        robot_kdl_->euler_diff(f_mat,des_mat,o_err);
+        
+        pos_err=pose_diff.segment(0,3)*1.0;
+        
+        orient_err[1]=o_err[1];
+        orient_err[0]=0.0;
+        orient_err[2]=0.0;
+        position_cost+=max(pos_err.squaredNorm(),wr)-wr;
+        orientation_cost+=orient_err.squaredNorm();
+      }
+      
+    }
+    cost_val+=pow(position_cost,2);//position_cost;
+    //cerr<<position_cost<<endl;
+    //cost_val=position_cost;//pow(position_cost,2);//pow((max(position_cost,wr)-wr),2);
+    //vel_const[robot_kdl_->dof*timesteps_+timesteps_+i]=pow(orientation_cost,2);
+  }
+  vector<double> cost_grad={cost_val};
+ 
+  return cost_grad;
+
+}
+vector<double> optProblem::debugGrad(vector<double> state) const
+{
+  vector<double> retval(robot_kdl_->dof,0.0);
+  using std::placeholders::_1;
+
+  std::function<vector<double>(vector<double>)> f = std::bind(&optProblem::debugFunction,this,_1);
+
+  //  retval=pagmo::estimate_gradient(std::bind(&optProblem::forceBalance,this,_1),x);
+  retval=pagmo::estimate_gradient(f,state);
+  return retval; 
+
 }
 
 }

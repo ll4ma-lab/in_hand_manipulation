@@ -1,4 +1,11 @@
 #define SPARSE_GRADIENT true
+
+#ifndef LL4MA_COLLISION_MODEL
+#define LL4MA_COLLISION_MODEL true
+#include <ll4ma_collision_wrapper/scene/kris_ccd/manipulation.h>
+namespace coll_ns=kris_ccd_ccheck;
+#endif
+
 // optimization:
 #include <in_grasp_manipulation/problems/in_grasp_opt_problem.hpp>
 #include <ll4ma_opt_wrapper/pagmo_opt/wrapper.hpp>
