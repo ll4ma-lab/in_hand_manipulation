@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<launch>
+  <rosparam file="$(find in_hand_controllers)/config/tactile_grasp_stabilization.yaml" command="load"/>
+  <node name="tactile_grasp_stabilization" pkg="in_hand_controllers" type="tactile_grasp_controller" output="screen"/>
+</launch>

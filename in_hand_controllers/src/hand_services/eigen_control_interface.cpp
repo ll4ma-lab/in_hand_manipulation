@@ -252,7 +252,9 @@ bool eigenControlInterface::handCommandEigen(hand_services::SendHandCommand::Req
     if(!req.string_data.empty())
     {
 
-      log("External controller not supported yet..");
+      //log("External controller not supported yet..");
+      external_cmd_sub_=nh_.subscribe<sensor_msgs::JointState>(req.string_data[0], 1, &eigenControlInterface::externalCmdCallback1, this);
+
       //external_cmd_sub_=nh_.subscribe<sensor_msgs::JointState>(req.string_data[0], 1, &eigenControlInterface::externalCmdCallback, this);
       external_control_=true;
     }
@@ -265,8 +267,16 @@ bool eigenControlInterface::handCommandEigen(hand_services::SendHandCommand::Req
   if(req.control_mode==6)
   {
     log("Disconnecting from external controller");
+    // get position command to send to robot
+
     external_cmd_sub_.shutdown();
     external_control_=false;
+    if(req.des_js.position.size()>0)
+    {
+      Eigen::Map<Eigen::VectorXd> q_des(&req.des_js.position[0],req.des_js.position.size());
+      resp.reached=sendDesJPos(q_des);
+    }
+
   }
 
   if(req.control_mode==7)
@@ -431,5 +441,9 @@ bool eigenControlInterface::increaseStiffnessEigen(const vector<int> &fingers,co
   return true;
 }
 
+void eigenControlInterface::externalCmdCallback1(sensor_msgs::JointState msg)
+{
+ externalCmdCallback(msg);
+}
 }
 }

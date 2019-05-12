@@ -21,6 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf_conversions
   hand_services
   grasp_utils
+  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -65,11 +66,12 @@ find_package(Eigen3 REQUIRED)
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
+add_service_files(
+   FILES
+   TactileGraspControl.srv
 #   Service1.srv
 #   Service2.srv
-# )
+ )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -79,10 +81,10 @@ find_package(Eigen3 REQUIRED)
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   geometry_msgs#   sensor_msgs#   trajectory_msgs
-# )
+ generate_messages(
+   DEPENDENCIES
+   geometry_msgs   sensor_msgs#   trajectory_msgs
+ )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -141,8 +143,12 @@ include_directories(
 #add_executable(in_grasp_mpc_server src/in_grasp/fb_obj_server.cpp)
 #target_link_libraries(in_grasp_mpc_server mpc_framework ${catkin_LIBRARIES})
 
-#add_executable(grasp_tactile_controller src/grasp/tactile_contact_controller.cpp)
-#target_link_libraries(grasp_tactile_controller grasp_contact ${catkin_LIBRARIES})
+add_library(tactile_grasp_stabilization src/external_controller/tactile_grasp_stabilization.cpp)
+target_link_libraries(tactile_grasp_stabilization ${catkin_LIBRARIES})
+add_dependencies(tactile_grasp_stabilization ${PROJECT_NAME}_generate_messages_cpp)
+
+add_executable(tactile_grasp_controller src/node/tactile_grasp_controller.cpp)
+target_link_libraries(tactile_grasp_controller tactile_grasp_stabilization ${catkin_LIBRARIES})
 
 add_library(eigen_control_interface src/hand_services/eigen_control_interface.cpp)
 target_link_libraries(eigen_control_interface ${catkin_LIBRARIES})

@@ -62,6 +62,8 @@ protected:
   bool increaseStiffnessEigen(const vector<int> &fingers,const Eigen::VectorXd &q_des,const vector<double> &eigen_amplitudes, Eigen::VectorXd &last_jcmd);
   bool eigen_space_;
   grasping::eigenGrasp eigen_grasp_;
+
+  void externalCmdCallback1(sensor_msgs::JointState msg);
 };
 }
 }

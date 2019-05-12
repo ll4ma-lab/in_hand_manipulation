@@ -16,17 +16,18 @@ import rospy
 import numpy as np
 import copy
 
-from hand_services.srv import SendHandCommand
+from hand_services.srv import *
+from in_hand_controllers.srv import *
 from sensor_msgs.msg import JointState
 from trajectory_smoothing.srv import GetSmoothTraj
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 class handClient:
-    def __init__(self,hand_srv='allegro/hand_service',init_node=False, node_name='allegro_hand_client',listen_prefix='allegro_hand_right'):
+    def __init__(self,hand_srv='allegro/hand_service',init_node=False, node_name='allegro_hand_client',listen_prefix='allegro_hand_right',grasp_control_ns='/tactile_grasp_stabilization'):
         if(init_node):
             rospy.init_node(node_name)
             
-
+        self.grasp_control_ns=grasp_control_ns
         self.srv_name=hand_srv
         self.joint_state=JointState()
         self.got_state=False
@@ -80,9 +81,26 @@ class handClient:
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
             
-    def enable_stiffness(self,f_idx=[0,3]):
-        print "currently unavailable"
-        exit()
+    def enable_grasp_control(self,f_idx=[0,1,2,3],eigen_ampl=[0],js=JointState()):
+
+        # update grasp parameters
+        rospy.wait_for_service(self.grasp_control_ns+'/update_params')
+        try:
+            req=rospy.ServiceProxy(self.grasp_control_ns+'/update_params',TactileGraspControl)
+            resp=req(f_idx,eigen_ampl,js)
+            if(not resp.success):
+                return False
+        except rospy.ServiceException, e:
+            print "Service call failed: %s"%e
+        
+        # enable external controller in hand_services
+        self.enable_external_control(self.grasp_control_ns+'/joint_cmd')
+        
+        # enable grasp controller
+        self.toggle_controller(self.grasp_control_ns+'/enable',True)
+
+        
+        return True
         '''
         rospy.wait_for_service(self.srv_name)
         try:
@@ -111,9 +129,14 @@ class handClient:
             print "Service call failed: %s"%e
         
 
-    def disable_stiffness(self,f_idx=[0,3]):
-        print "currently unavailable"
-        exit()
+    def disable_grasp_control(self,f_idx=[0,1,2,3],js=JointState()):
+        # disable external control on hand_services, send current joint position command as target
+        self.disable_external_control(js=js)
+        
+        # disable external controller
+        self.toggle_controller(self.grasp_control_ns+'/enable',False)
+        
+        return True
         '''
         rospy.wait_for_service(self.srv_name)
         try:
@@ -169,15 +192,16 @@ class handClient:
             return resp.reached
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
-    def disable_external_control(self):
+    def disable_external_control(self,js=JointState()):
         rospy.wait_for_service(self.srv_name)
         try:
             req=rospy.ServiceProxy(self.srv_name,SendHandCommand)
-            resp=req(6,[],[],JointState(),JointTrajectory(),0,False,[],[])
+            resp=req(6,[],[],js,JointTrajectory(),0,False,[],[])
             return resp.reached
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
 
+    '''
     def enable_grasp_stability(self,eigen_amplitudes,f_idx=[0,1,2,3]):
         rospy.wait_for_service(self.srv_name)
         try:
@@ -186,4 +210,13 @@ class handClient:
             return resp.reached
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
-            
+    '''
+    def toggle_controller(self,srv_name,ENABLE=True):
+        rospy.wait_for_service(srv_name)
+        try:
+            req=rospy.ServiceProxy(srv_name,ToggleController)
+            resp=req(ENABLE)
+            return resp.status
+        except rospy.ServiceException, e:
+            print "Service call failed: %s"%e
+

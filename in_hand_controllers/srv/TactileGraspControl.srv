@@ -1,0 +1,5 @@
+int16[] f_idx
+float32[] eigen_ampl
+sensor_msgs/JointState last_jcmd
+---
+bool success
