@@ -44,7 +44,7 @@ allegro:
   grasp_timesteps: 1500
   link_contact_thresh: 1.0e-2 #  
   grasp_delta_v: 0.003 # 
-  stiffness_delta: 0.015 #
+  stiffness_delta: 0.005 #
   approach_vel: 0.001 # radians per second
   
 # Biotac parameters:

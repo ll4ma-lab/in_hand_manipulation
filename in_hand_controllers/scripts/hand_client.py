@@ -205,7 +205,7 @@ class handClient:
     def enable_grasp_stability(self,eigen_amplitudes,f_idx=[0,1,2,3]):
         rospy.wait_for_service(self.srv_name)
         try:
-            req=rospy.ServiceProxy(self.srv_name,SendHandCommand)
+            req=rospy.ServiceProxy(self.srv_nameb,SendHandCommand)
             resp=req(9,f_idx,[],JointState(),JointTrajectory(),0,False,eigen_amplitudes,[])
             return resp.reached
         except rospy.ServiceException, e:

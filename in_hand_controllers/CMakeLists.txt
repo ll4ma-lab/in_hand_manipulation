@@ -69,6 +69,7 @@ find_package(Eigen3 REQUIRED)
 add_service_files(
    FILES
    TactileGraspControl.srv
+   TactileFrictionEstimation.srv
 #   Service1.srv
 #   Service2.srv
  )
@@ -155,3 +156,10 @@ target_link_libraries(eigen_control_interface ${catkin_LIBRARIES})
 
 add_executable(hand_services_node src/node/hand_services_node.cpp)
 target_link_libraries(hand_services_node eigen_control_interface ${catkin_LIBRARIES})
+
+add_library(tactile_friction src/external_controller/tactile_friction_estimation.cpp)
+target_link_libraries(tactile_friction ${catkin_LIBRARIES})
+add_dependencies(tactile_friction ${PROJECT_NAME}_generate_messages_cpp)
+
+add_executable(tactile_friction_estimator src/node/tactile_friction_estimator.cpp)
+target_link_libraries(tactile_friction_estimator tactile_friction ${catkin_LIBRARIES})

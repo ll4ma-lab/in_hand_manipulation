@@ -196,7 +196,7 @@ public:
     
   }
   */
-  void init_robot_model()
+  bool init_robot_model()
   {
     // read parameters from rosparam server:
     
@@ -209,21 +209,22 @@ public:
     vector<string> ee_names;//={"palm_link","index_tip","middle_tip","ring_tip","thumb_tip"};
     vector<string> base_names;//={"base_link","base_link","base_link","base_link","base_link"};
     vector<string> j_names;
-    assert(nh->getParam("urdf_param",urdf_param));
+    bool success=true;
+    success&=nh->getParam("urdf_param",urdf_param);
     
     while(!nh->hasParam(urdf_param) && ros::ok())
     {
     }
     
     // read parameters from rosparam server:
-    assert(nh->getParam("base_frames",base_names));
+    success &= nh->getParam("base_frames",base_names);
     base_frame_=base_names[0];
-    assert(nh->getParam("ee_frames",ee_names));
-    assert(nh->getParam("joint_names",j_names));
+    success &= nh->getParam("ee_frames",ee_names);
+    success &= nh->getParam("joint_names",j_names);
     //assert(nh->getParam("arm_coll_links",arm_link_names));
 
-    assert(nh->getParam("hand_coll_links",hand_link_names));
-    assert(nh->getParam("contact_link_index", contact_links));
+    success &= nh->getParam("hand_coll_links",hand_link_names);
+    success &= nh->getParam("contact_link_index", contact_links);
 
     // create functions for getting hand state from eigen state
     // store indexing of collision links and contact links:
@@ -251,11 +252,16 @@ public:
     vector<double> g_vec={0.0,0.0,-9.8};
     robot_kdl_=manipulator_kdl::robotKDL(urdf_param,*nh,base_names,ee_names,robot_link_names,g_vec);
 
-    
+
     robot_kdl_.getJointLimits(j_names,robot_kdl_.up_bounds,robot_kdl_.low_bounds);
 
-    
+    if(!success)
+    {
+      ROS_ERROR("Loading KDL model for robot failed");
+      return false;
+    }
     cerr<<"Created robot kdl object with dof: "<<robot_kdl_.dof<<endl;
+    return true;
     /*
     // read reachability meshes:
     vector<string> reach_meshes;
@@ -358,6 +364,11 @@ public:
   vector<int> fingers(begin(req.fingers), end(req.fingers));
   vector<double> fingers_d(fingers.begin(),fingers.end());
   vector<double> weights(begin(req.weights),end(req.weights));
+  if(weights.size()<6)
+  {
+    vector<double> pose_weights={1.0,1.0,1.0,0.1,0.1,0.1};
+    weights.insert(weights.end(),pose_weights.begin(),pose_weights.end());
+  }
   vector<double> r_fin;
   int r_f=req.rigid_finger;
   r_fin.resize(1,r_f);
@@ -457,7 +468,7 @@ public:
   sn_v.set_numeric_option("Function precision",1e-10);
 
   algorithm algo{sn_v};
-  algo.set_verbosity(100);
+  algo.set_verbosity(500);
   //algorithm algo{cmaes(500)};
   cerr<<"Creating pop"<<endl;
   population pop{prob,1u};
@@ -638,7 +649,10 @@ int main(int argc, char** argv)
   ros::NodeHandle n;
   srvClass srv_call;
   srv_call.init(n);
-  srv_call.init_robot_model();
+  if(!srv_call.init_robot_model())
+  {
+    return 1;
+  }
   //srv_call.init_env();
   //srv_call.init_obj();
   // create ros service:
