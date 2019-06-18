@@ -4,30 +4,29 @@ namespace hand_task_controller
 
 tactileController::tactileController(string ns, robot_interface::RobotInterface *robot_interface, double loop_rate): inHandController(ns,robot_interface,loop_rate)
 {
-  bool success=true;
-  
 
-  success &= nh_.getParam("force_radius",force_radius_);
-  
 }
 
 bool tactileController::configureHook()
 {
   if(!inHandController::configureHook())
     return false;
-
+  //log(''
   bool success = true;
   // read control parameters from node
   // initialize tactile data:
   string srv_name;
   success &= nh_.getParam("update_srv_name",srv_name);
-  update_control_req_=nh_.advertiseService(srv_name,&tactileController::update_params,this);
+  update_control_req_=nh_.advertiseService(srv_name,&tactileController::estimation_srv,this);
 
     // read subscriber topic for tactile force sensing
   string tactile_sub_topic;
   success &= nh_.getParam("tactile_force_topic",tactile_sub_topic);
   
 
+  success &= nh_.getParam("cmd_timeout",cmd_timeout_);
+
+  success &= nh_.getParam("kinematic_slip_thresh",kin_slip_thresh_);
   if(!success)
   {
     return false;
@@ -116,26 +115,115 @@ bool tactileController::tactileControl(Eigen::VectorXd &j_cmd)
   return false;
 
 }
-bool tactileController::get_control_cmd(Eigen::VectorXd &q_cmd, Eigen::VectorXd &qd_cmd)
+bool tactileController::kinematicSlip(const int &finger, const Eigen::Vector3d &slip_dir)
 {
-  // check for tactile message
-  if(!tactile_msg_)
+  if(old_ftip_pose_.size()!=3)
   {
-    log("Tactile data not received!");
+    Eigen::VectorXd f_pose;
+    // check fk of current fingertip pose
+    robot_interface_->kdl_->getFK(finger,q_,f_pose,true);
+    old_ftip_pose_=f_pose.head(3);
     return false;
-  }
-  bool status=tactileControl(q_cmd);
 
-  return status;
+  }
+
+  // check deviation
+  Eigen::VectorXd f_pose;
+  // check fk of current fingertip pose
+  robot_interface_->kdl_->getFK(finger,q_,f_pose,true);
+  Eigen::Vector3d diff=f_pose.head(3)-old_ftip_pose_;
+  Eigen::Matrix3d w_mat=slip_dir.asDiagonal();
+  double dt_rate=rate_.cycleTime().toSec();
+  //cerr<<sqrt(diff.transpose()*w_mat*diff)/dt_rate<<endl;
   
+  if((sqrt(diff.transpose()*w_mat*diff)/dt_rate)>kin_slip_thresh_)
+  {
+    log("Slip detected!!!");
+    old_ftip_pose_=Eigen::VectorXd();
+    return true;
+  }
+  old_ftip_pose_=f_pose.head(3);
+  return false;
 }
 
-bool tactileController::estimate_friction(const int &finger, Eigen::VectorXd &slip_force)
+bool tactileController::get_control_cmd(Eigen::VectorXd &q_cmd, Eigen::VectorXd &qd_cmd)
 {
+  // get control command:
+  cerr<<"returning false"<<endl;
+  return false;
+    
+}
+
+bool tactileController::estimate_friction(const int &finger, const Eigen::Vector3d &force_pt, const Eigen::Vector3d &force_direction, const double &force_mag, Eigen::Vector3d &slip_force)
+{
+
+  // create a timeout:
+  bool timeout=false;
+  ros::Time begin = ros::Time::now();
+  ros::Time current = ros::Time::now();
+  
+  robot_interface::ControlMode cm=robot_interface::ControlMode::POS;// 0==position
+
+  
+  // hold object rigid
+
+  // tactile force:
+
+  
+  // TODO: test with one finger and then add stability command for other fingers
+  // read force from fingertip
+  Eigen::VectorXd current_force=tac_forces[finger];
+
+  // access kdl chain for fingertip
+  Eigen::MatrixXd J;
+
+  // get jacobian to force pt
+  log("Estimating Friction");
+  Eigen::VectorXd new_cmd_pt=force_pt;//+force_direction;
+  Eigen::VectorXd old_cmd=last_jcmd_;
+  while(!kinematicSlip(finger,force_direction) && !timeout)
+  {
+    ros::spinOnce();
+    current = ros::Time::now();
+    robot_interface_->kdl_->getJacobian(finger,q_,J);
+    Eigen::VectorXd theta_dot=J.block(0,0,3,J.cols()).transpose()*new_cmd_pt;
+    //cerr<<theta_dot.transpose()<<endl;
+    Eigen::VectorXd theta_cmd=old_cmd;
+    theta_cmd.segment(finger*4,4)+=theta_dot;
+    //cerr<<theta_cmd.segment(finger*4,4).transpose()<<endl;
+    robot_interface_->publishRealRobot(theta_cmd,cm);
+    new_cmd_pt+=force_direction*force_mag;
+    rate_.sleep();
+    // check timer and update
+    if(current.toSec()-begin.toSec()>cmd_timeout_)
+    {
+      log("Timed-out");
+      
+      timeout=true;
+      slip_force.resize(3);
+      slip_force.setZero();
+      return false;
+
+    }
+    last_jcmd_=theta_cmd;
+    current_force=tac_forces[finger];
+
+
+  }
+  // change point by force direction with magnitude
+  // get jacobian and multiply by velocity vector
+
+  //
+  // transform force to palm frame:
+  Eigen::MatrixXd T;
+  robot_interface_->kdl_->getFK(finger,q_,T);
+  slip_force=T.block(0,0,3,3)*current_force;
+  //slip_force=current_force;
+
   return true;
 }
 
-bool tactileController::update_params(in_hand_controllers::TactileFrictionEstimation::Request &req, in_hand_controllers::TactileFrictionEstimation::Response &res)
+bool tactileController::estimation_srv(in_hand_controllers::TactileFrictionEstimation::Request &req, in_hand_controllers::TactileFrictionEstimation::Response &res)
 {
   // get finger to estimate friction:
   int f=req.f_idx;
@@ -148,11 +236,32 @@ bool tactileController::update_params(in_hand_controllers::TactileFrictionEstima
   }
 
   // estimate friction:
-  Eigen::VectorXd f_slip;
-  res.success=estimate_friction(f,f_slip);
-  
+  Eigen::Vector3d f_slip;
+  Eigen::Vector3d force_direction,force_pt;
+  double force_mag=req.force_mag;
+  force_direction[0]=req.force_direction[0];
+  force_direction[1]=req.force_direction[1];
+  force_direction[2]=req.force_direction[2];
+  force_direction.normalize();
+  force_pt[0]=req.force_pt[0];
+  force_pt[1]=req.force_pt[1];
+  force_pt[2]=req.force_pt[2];
+
+  res.success=estimate_friction(f,force_pt,force_direction,force_mag,f_slip);
+  res.slip_force.resize(3);
+  res.slip_force[0]=f_slip[0];
+  res.slip_force[1]=f_slip[1];
+  res.slip_force[2]=f_slip[2];
+ 
   q_servo_cmd_=last_jcmd_;
   
+  res.last_jcmd=req.last_jcmd;
+  for(int i=0;i<last_jcmd_.size();++i)
+  {
+    res.last_jcmd.position[i]=last_jcmd_[i];
+  }
+        
+  //res.last_jcmd.position=last_jcmd_;
   log("Friction estimated");
   return true;
                    
@@ -173,6 +282,7 @@ void tactileController::tactile_msg_callback(biotac_sensors::BioTacForce msg)
   {
     tac_forces.resize(msg.forces.size());
     tac_contacts.resize(msg.forces.size());
+
     for (int i=0; i<msg.forces.size();++i)
     {
       //int k=f_idx[i];
@@ -180,10 +290,10 @@ void tactileController::tactile_msg_callback(biotac_sensors::BioTacForce msg)
       tac_forces[i][0]=msg.forces[i].wrench.force.x;
       tac_forces[i][1]=msg.forces[i].wrench.force.y;
       tac_forces[i][2]=msg.forces[i].wrench.force.z;
-      tac_contacts[i]=msg.contact.data[i];
+      tac_contacts[i]=0;//msg.contact.data[i];
     }
     tactile_msg_=true;
-
+      
   }
 
   

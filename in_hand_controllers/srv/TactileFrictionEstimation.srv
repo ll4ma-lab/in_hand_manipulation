@@ -1,6 +1,9 @@
 int16 f_idx
 sensor_msgs/JointState last_jcmd
 float64 force_mag
+float64[] force_pt
+float64[] force_direction
 ---
 bool success
 float64[] slip_force
+sensor_msgs/JointState last_jcmd

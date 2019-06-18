@@ -1,0 +1,76 @@
+allegro_grasp:
+  # robot_interface parameters:
+  root_links:
+    - palm_link
+    - palm_link
+    - palm_link
+    - palm_link
+
+  tip_links:
+    - index_tip
+    - middle_tip
+    - ring_tip
+    - thumb_tip
+
+  joint_names:
+    - "index_joint_0"
+    - "index_joint_1"
+    - "index_joint_2"
+    - "index_joint_3"
+    - "middle_joint_0"
+    - "middle_joint_1"
+    - "middle_joint_2"
+    - "middle_joint_3"
+    - "ring_joint_0"
+    - "ring_joint_1"
+    - "ring_joint_2"
+    - "ring_joint_3"
+    - "thumb_joint_0"
+    - "thumb_joint_1"
+    - "thumb_joint_2"
+    - "thumb_joint_3"
+
+  jnt_cmd_topic: /tactile_friction_estimation/joint_cmd
+
+# controller parameters:
+  compensate_gravity: false
+  jnt_state_topic: /allegro_hand_right/joint_states
+  torque_limits:
+    # these are artificially high values for sim, can change to be realistic if you want
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+    - 0.6
+
+# control_interaface parameters:
+  goal_threshold: 0.1 # radians
+  cmd_timeout: 7 # seconds
+  grasp_timesteps: 1500
+  link_contact_thresh: 1.0e-2 #  
+  grasp_delta_v: 0.003 # 
+  stiffness_delta: 0.015 #
+  approach_vel: 0.001 # radians per second
+  
+
+  toggle_srv_name: "/tactile_friction_estimation/enable"
+  update_srv_name: "/tactile_friction_estimation/get_estimate"
+  grasp_control_params/stiffness_delta: 0.01 # joint angle increment
+  grasp_control_params/f_deviation: 0.3 # force deviation to increase grasp force
+  
+  tactile_force_topic: "/TacNet/bt_force" # TODO: make it generic for other sensors too. Currently works with BioTacForce msg from biotac_sensors package.
+
+  fingers: [0,1,2,3] # fingers available with the hand
+
+  kinematic_slip_thresh: 1.0 # meters/sec

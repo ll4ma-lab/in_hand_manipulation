@@ -164,7 +164,7 @@ class handClient:
             return resp.reached
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
-    def approach_contact(self,j_init,f_idx,app_vec):
+    def approach_contact(self,f_idx,app_vec,j_init=[]):
         des_js=JointState()
         des_js.position=j_init
         rospy.wait_for_service(self.srv_name)

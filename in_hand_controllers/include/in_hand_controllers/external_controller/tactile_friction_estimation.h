@@ -13,21 +13,23 @@ public:
   bool startHook(){ return 0;};
   void stopHook(){};
   void cleanupHook(){};
-
   void updateHook(){inHandController::updateHook();};
 
   
 protected:
-  bool estimate_friction(const int &finger, Eigen::VectorXd &slip_force);
+  bool estimate_friction(const int &finger, const Eigen::Vector3d &force_pt, const Eigen::Vector3d &force_direction, const double &force_mag, Eigen::Vector3d &slip_force);
   bool get_control_cmd(Eigen::VectorXd &q_cmd ,Eigen::VectorXd &qd_cmd);
   
   ros::ServiceServer update_control_req_;
-  bool update_params(in_hand_controllers::TactileFrictionEstimation::Request &req, in_hand_controllers::TactileFrictionEstimation::Response &res);
+  bool estimation_srv(in_hand_controllers::TactileFrictionEstimation::Request &req, in_hand_controllers::TactileFrictionEstimation::Response &res);
   
   // tactile data subscrition:
   ros::Subscriber tactile_sub_;
   //slip_cb(std_msgs::Int16MultiArray &msg);
 private:
+  Eigen::VectorXd old_ftip_pose_;
+  double kin_slip_thresh_;
+  double cmd_timeout_;
   bool tactileControl(Eigen::VectorXd &j_cmd);
 
   /** 
@@ -44,7 +46,7 @@ private:
    * 
    * @return true if slip is detected
    */
-  bool kinematicSlip();
+  bool kinematicSlip(const int &finger, const Eigen::Vector3d &slip_dir);
   
   /// fingers to use for grasp control
   vector<int> f_idx;
