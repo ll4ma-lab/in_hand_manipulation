@@ -1,4 +1,6 @@
+import pickle
 import rospy
+import os
 import sys
 from external_control_client import *
 from sensor_msgs.msg import JointState
@@ -10,13 +12,21 @@ path=rp.get_path('hand_services')+'/scripts'
 sys.path.insert(0,path)
 from hand_client import *
 if __name__=='__main__':
+    f_name_="friction_exp.p"
+    # check for pickle file, if missing create a new file
+    obj_name=raw_input("Type in object name")
+    if os.path.isfile(f_name_):
+        p_data = pickle.load( open( f_name_, "rb" ) )
+    else:
+        p_data={}
+    # get object name
     f_idx=[0,1,2,3]
     rospy.init_node('demo_friction')
     external_cl=externalHandControl()
-    home_js=np.array([0.0,0.4,0.4,0.0,
-                     0.0,0.4,0.4,0.0,
-                     0.0,0.4,0.4,0.0,
-                      1.6,0.0,0.4,0.0])
+    home_js=np.array([0.0,0.3,0.4,0.0,
+                     0.0,0.3,0.4,0.0,
+                     0.0,0.3,0.4,0.0,
+                      1.6,0.0,0.2,0.0])
 
     rmp_js=np.array([0.2,0.5,0.6,0.0,
                      0.2,0.5,0.6,0.9,
@@ -62,8 +72,8 @@ if __name__=='__main__':
 
     mu=[]
     # get force pt
-    force_pt=np.array([0.0,0.0,-0.4])
-    force_dir=np.array([0.0,0.1,0.0])
+    force_pt=np.array([0.0,0.0,-0.6])
+    force_dir=np.array([0.0,1.0,0.0])
     force_mag=0.03
     # create force dir in palm_frame
 
@@ -81,17 +91,18 @@ if __name__=='__main__':
         f_slip=np.ravel(f_slip)
         if(np.linalg.norm(f_slip)<0.5):
             continue
-        f_slip[0]=0.0
-        print f_slip
+        #f_slip[0]=0.0
+        #print f_slip
 
         i+=1
         f_slip=np.ravel(f_slip)/np.linalg.norm(f_slip)
         print "Friction coefficient",np.tan(np.arccos(np.dot(f_slip,s_n))),np.rad2deg(np.arccos(np.dot(f_slip,s_n)))
         
         mu.append(np.tan(np.arccos(np.dot(f_slip,s_n))))
-    print mu
-    print np.median(mu),np.mean(mu)
-    
+    #print mu
+    print np.median(mu)#,np.mean(mu)
+
+    p_data[obj_name]=np.ravel(mu)
     # disable external control
     hand_client.disable_external_control()
     
@@ -99,7 +110,10 @@ if __name__=='__main__':
     hand_client.send_pos_cmd(q_des_new.position)
     
     
-    raw_input("Test JPos cmd?")
+    raw_input("Go Home?")
     reached=hand_client.send_pos_cmd(home_js)
+    pickle.dump( p_data, open( f_name_, "wb" ) )
 
+
+    # store data in pickle
     

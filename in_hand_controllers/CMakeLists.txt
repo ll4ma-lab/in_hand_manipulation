@@ -70,6 +70,7 @@ add_service_files(
    FILES
    TactileGraspControl.srv
    TactileFrictionEstimation.srv
+   TactileImpedanceGrasp.srv
 #   Service1.srv
 #   Service2.srv
  )
@@ -144,13 +145,21 @@ include_directories(
 #add_executable(in_grasp_mpc_server src/in_grasp/fb_obj_server.cpp)
 #target_link_libraries(in_grasp_mpc_server mpc_framework ${catkin_LIBRARIES})
 
-add_library(tactile_grasp_stabilization src/external_controller/tactile_grasp_stabilization.cpp)
-target_link_libraries(tactile_grasp_stabilization ${catkin_LIBRARIES})
-add_dependencies(tactile_grasp_stabilization ${PROJECT_NAME}_generate_messages_cpp)
+#add_library(tactile_grasp_stabilization src/external_controller/tactile_grasp_stabilization.cpp)
+#target_link_libraries(tactile_grasp_stabilization ${catkin_LIBRARIES})
+#add_dependencies(tactile_grasp_stabilization ${PROJECT_NAME}_generate_messages_cpp)
 
-add_executable(tactile_grasp_controller src/node/tactile_grasp_controller.cpp)
-target_link_libraries(tactile_grasp_controller tactile_grasp_stabilization ${catkin_LIBRARIES})
+#add_executable(tactile_grasp_controller src/node/tactile_grasp_controller.cpp)
+#target_link_libraries(tactile_grasp_controller tactile_grasp_stabilization ${catkin_LIBRARIES})
 
+add_library(tactile_impedance_grasp src/external_controller/tactile_impedance_grasp.cpp)
+target_link_libraries(tactile_impedance_grasp ${catkin_LIBRARIES})
+add_dependencies(tactile_impedance_grasp ${PROJECT_NAME}_generate_messages_cpp)
+
+add_executable(tactile_impedance_grasp_node src/node/tactile_impedance_grasp_node.cpp)
+target_link_libraries(tactile_impedance_grasp_node tactile_impedance_grasp ${catkin_LIBRARIES})
+
+#add_executable
 add_library(eigen_control_interface src/hand_services/eigen_control_interface.cpp)
 target_link_libraries(eigen_control_interface ${catkin_LIBRARIES})
 

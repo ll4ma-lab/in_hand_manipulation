@@ -139,6 +139,7 @@ bool tactileController::kinematicSlip(const int &finger, const Eigen::Vector3d &
   if((sqrt(diff.transpose()*w_mat*diff)/dt_rate)>kin_slip_thresh_)
   {
     log("Slip detected!!!");
+    cerr<<sqrt(diff.transpose()*w_mat*diff)/dt_rate<<endl;
     old_ftip_pose_=Eigen::VectorXd();
     return true;
   }

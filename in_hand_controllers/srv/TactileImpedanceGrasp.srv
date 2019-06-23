@@ -1,0 +1,5 @@
+int16[] f_idx
+sensor_msgs/JointState last_jcmd
+float64 friction_coeff
+---
+bool success

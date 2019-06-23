@@ -7,10 +7,10 @@ allegro_grasp:
     - palm_link
 
   tip_links:
-    - index_tip
-    - middle_tip
-    - ring_tip
-    - thumb_tip
+    - index_biotac_origin
+    - middle_biotac_origin
+    - ring_biotac_origin
+    - thumb_biotac_origin
 
   joint_names:
     - "index_joint_0"
@@ -73,4 +73,4 @@ allegro_grasp:
 
   fingers: [0,1,2,3] # fingers available with the hand
 
-  kinematic_slip_thresh: 1.0 # meters/sec
+  kinematic_slip_thresh: 3.0 # meters/sec

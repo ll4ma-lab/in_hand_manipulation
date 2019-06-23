@@ -24,6 +24,7 @@ add_message_files(
    Grasp.msg
    GaitNode.msg
    GaitPlan.msg
+   SurfaceNormal.msg
  )
 
 add_service_files(

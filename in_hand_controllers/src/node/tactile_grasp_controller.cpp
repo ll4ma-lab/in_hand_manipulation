@@ -16,6 +16,7 @@ int main(int argc, char** argv)
   
   // configure controller:
   bool control_ready=ct.configureHook();
+  ROS_INFO("Control interface initialized");
   if(control_ready)
   {
     ct.updateHook();
