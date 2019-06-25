@@ -1,0 +1,56 @@
+in_hand_utils:
+
+  publish_topic: "in_hand_utils/obj_surface_normals"
+
+  robot_joint_state: "/allegro_hand_right/joint_states"
+  
+  object_frame: "object"
+  
+  robot_description: "robot_description"
+
+  urdf_param: "/robot_description"
+
+  ee_frames:
+    - "index_biotac_tip"
+    - "middle_biotac_tip"
+    - "ring_biotac_tip"
+    - "thumb_biotac_tip"
+
+  base_frames:
+    - "palm_link"
+    - "palm_link"
+    - "palm_link"
+    - "palm_link"
+
+  joint_names:
+    - "index_joint_0"
+    - "index_joint_1"
+    - "index_joint_2"
+    - "index_joint_3"
+    - "middle_joint_0"
+    - "middle_joint_1"
+    - "middle_joint_2"
+    - "middle_joint_3"
+    - "ring_joint_0"
+    - "ring_joint_1"
+    - "ring_joint_2"
+    - "ring_joint_3"
+    - "thumb_joint_0"
+    - "thumb_joint_1"
+    - "thumb_joint_2"
+    - "thumb_joint_3"
+  # dof
+  dof: 16
+
+  # collision checking?
+  check_collision: True
+  # workspace bound for collision checking in base_frame:
+  # collision links:
+  arm_coll_links:
+    - "palm_link"
+  hand_coll_links:
+    - "index_biotac_tip"
+    - "middle_biotac_tip"
+    - "ring_biotac_tip"
+    - "thumb_biotac_tip"
+

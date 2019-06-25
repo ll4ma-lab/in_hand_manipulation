@@ -72,19 +72,24 @@ bool tactileController::tactileControl(Eigen::VectorXd &j_cmd)
   j_cmd=last_jcmd_;
   for(int i=0;i<f_idx.size();++i)
   {
+    f_mag_[f_idx[i]]=alpha_[f_idx[i]]*f_idx[i];
     if(tactileSlip(f_idx[i]))
     {
-      // apply more force
-      Eigen::MatrixXd J;
-      robot_interface_->kdl_->getJacobian(f_idx[i],q_,J);
-
-
-      // increase force along??
-      Eigen::VectorXd theta_dot;//=J.block(0,0,3,J.cols()).transpose()*new_cmd_pt;
-      j_cmd.segment(f_idx[i],4)+=theta_dot;
-      
+      f_mag_[f_idx[i]]+=(1-alpha_[f_idx[i]]);    
     }
+    // get joint velocity command:
+    Eigen::MatrixXd J;
+    robot_interface_->kdl_->getJacobian(f_idx[i],q_,J);
+
+
+    // increase force along??
+    Eigen::VectorXd theta_dot;//=J.block(0,0,3,J.cols()).transpose()*new_cmd_pt;
+    theta_dot=f_mag_[f_idx[i]]*theta_dot;
+    j_cmd.segment(f_idx[i],4)+=theta_dot;
+
   }
+
+  
   return true;
   
 }

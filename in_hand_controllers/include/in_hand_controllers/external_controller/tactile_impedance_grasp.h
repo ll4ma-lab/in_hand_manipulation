@@ -84,6 +84,8 @@ private:
 
   vector<Eigen::Vector3d> surface_normal_;
   bool got_surface_normal_=false;
+  //
+  Eigen::VectorXd f_mag_,alpha_;
   /// coefficient of friction
   double mu_;
 };
