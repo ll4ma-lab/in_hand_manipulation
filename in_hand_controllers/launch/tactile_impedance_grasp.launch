@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<launch>
+  <rosparam file="$(find in_hand_controllers)/config/tactile_impedance.yaml" command="load"/>
+  <node name="tactile_impedance_grasp_node" pkg="in_hand_controllers" type="tactile_impedance_grasp_node" output="screen"/>
+</launch>

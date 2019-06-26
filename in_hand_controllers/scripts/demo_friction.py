@@ -11,6 +11,14 @@ rp.list()
 path=rp.get_path('hand_services')+'/scripts'
 sys.path.insert(0,path)
 from hand_client import *
+
+path=rp.get_path('in_hand_utils')+'/scripts'
+sys.path.insert(0,path)
+from utils_client import *
+
+
+
+# create perception client
 if __name__=='__main__':
     f_name_="friction_exp.p"
     # check for pickle file, if missing create a new file
@@ -39,7 +47,11 @@ if __name__=='__main__':
 
     # move to preshape
     hand_client=handClient()
-    
+
+    # get surface normal
+    in_hand_utils=inHandUtils()
+    sn=in_hand_utils.get_sn()
+    print sn
     raw_input("Test JPos cmd?")
     reached=hand_client.send_pos_cmd(home_js)
     
@@ -71,16 +83,25 @@ if __name__=='__main__':
     raw_input("Estimate friction?")
 
     mu=[]
+    sn=in_hand_utils.get_sn()
     # get force pt
-    force_pt=np.array([0.0,0.0,-0.6])
-    force_dir=np.array([0.0,1.0,0.0])
+    force_pt=np.ravel(sn[0])*0.3
+    print 'Surface normal: ',sn[0]
+    #print force_pt
+
+    control_dir=np.array([0.0,1.0,0.0])
+    
+    force_dir=control_dir-(np.dot(control_dir,sn[0])/np.linalg.norm(sn[0])**2)*sn[0]
+    print force_dir
+    #raw_input("force pt correct?")
+    #force_dir=np.array([0.0,1.0,0.0])
     force_mag=0.03
     # create force dir in palm_frame
 
     # send to friction_estimation function
 
     # get friction slip vector
-    s_n=np.array([0,0,-1])
+    s_n=np.ravel(sn[0])#np.array([0,0,-1])
 
     # enable external control:
     hand_client.enable_external_control('/tactile_friction_estimation/joint_cmd')
@@ -95,7 +116,7 @@ if __name__=='__main__':
         #print f_slip
 
         i+=1
-        f_slip=np.ravel(f_slip)/np.linalg.norm(f_slip)
+        f_slip=-1.0*np.ravel(f_slip)/np.linalg.norm(f_slip)
         print "Friction coefficient",np.tan(np.arccos(np.dot(f_slip,s_n))),np.rad2deg(np.arccos(np.dot(f_slip,s_n)))
         
         mu.append(np.tan(np.arccos(np.dot(f_slip,s_n))))

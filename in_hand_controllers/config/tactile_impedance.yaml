@@ -30,7 +30,7 @@ allegro_impedance_grasp:
     - "thumb_joint_2"
     - "thumb_joint_3"
 
-  jnt_cmd_topic: /tactile_friction_estimation/joint_cmd
+  jnt_cmd_topic: /tactile_impedance_grasp/joint_cmd
 
 # controller parameters:
   compensate_gravity: false
@@ -65,7 +65,7 @@ allegro_impedance_grasp:
   
 
   toggle_srv_name: "/tactile_impedance_control/enable"
-  update_srv_name: "/tactile_impendance_control/update_paramssu"
+  update_srv_name: "/tactile_impedance_control/update_params"
   grasp_control_params/stiffness_delta: 0.01 # joint angle increment
   grasp_control_params/f_deviation: 0.3 # force deviation to increase grasp force
   
@@ -74,3 +74,4 @@ allegro_impedance_grasp:
   fingers: [0,1,2,3] # fingers available with the hand
 
   kinematic_slip_thresh: 3.0 # meters/sec
+  surface_norm_topic: "/in_hand_utils/surface_normal"

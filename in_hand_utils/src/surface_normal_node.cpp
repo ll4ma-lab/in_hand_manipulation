@@ -63,6 +63,8 @@ int main(int argc, char** argv)
   ros::init(argc,argv,"in_hand_utils/surface_normal_node");
 
   ros::NodeHandle n;
+  vector<Eigen::Vector3d> surface_normal,raw_sn;
+  vector<Eigen::Vector3d> old_surface_normal;
 
   // subscribe to robot joint state
   std::string js_topic, obj_frame;
@@ -71,13 +73,15 @@ int main(int argc, char** argv)
   ROS_INFO("JS topic");
     
   ros::Subscriber js_sub=n.subscribe(js_topic,1,js_cb);
-  ros::Publisher m_pub=n.advertise<visualization_msgs::MarkerArray>("/surface_normal",1);
+  ros::Publisher m_pub=n.advertise<visualization_msgs::MarkerArray>("/in_hand_utils/surface_normal",1);
   // initialize environment
   ll4ma_opt_utils::envUtils env_utils;
   env_utils.init(n);
   env_utils.init_robot_meshes();
   env_utils.init_obj();
-
+  surface_normal.resize(env_utils.c_check.n_hand_links_,Eigen::Vector3d::Zero());
+  old_surface_normal.resize(env_utils.c_check.n_hand_links_,Eigen::Vector3d::Zero());
+  raw_sn.resize(env_utils.c_check.n_hand_links_,Eigen::Vector3d::Zero());
   // read object pose from tf:
   tf::TransformListener listener;
 
@@ -138,10 +142,17 @@ int main(int argc, char** argv)
       env_utils.c_check.obj_surface_normal(c_pt,s_pt,s_n);
       // get surface point
       // visualize as arrow
-      visualization_msgs::Marker m=get_marker(s_pt,s_n,env_utils.base_frame_);
+
+      raw_sn[i]=Eigen::Map<Eigen::VectorXd>(s_n.data(),s_n.size());
+      surface_normal[i]=0.6*surface_normal[i]+0.198*old_surface_normal[i]+0.198*raw_sn[i];
+      old_surface_normal[i]=raw_sn[i];
+      vector<double> s_n_filtered;
+      s_n_filtered.resize(3);
+      Eigen::Vector3d::Map(&s_n_filtered[0],3)=surface_normal[i];
+      visualization_msgs::Marker m=get_marker(s_pt,s_n_filtered,env_utils.base_frame_);
       m.id=i;
       m_arr.markers.emplace_back(m);
-        
+
     }
     m_pub.publish(m_arr);
     // publish contact point on object surface with surface normal:

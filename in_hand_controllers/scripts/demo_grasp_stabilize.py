@@ -23,6 +23,8 @@ from hand_client import *
 if __name__=='__main__':
     rospy.init_node('hand_services_demo')
 
+    # get friction estimate,
+    
     fingers=[0,1,3]
     home_js=np.array([0.0,0.0,0.0,0.0,
                      0.0,0.0,0.0,0.0,

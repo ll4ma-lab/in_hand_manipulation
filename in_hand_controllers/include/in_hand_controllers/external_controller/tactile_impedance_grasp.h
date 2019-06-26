@@ -1,6 +1,7 @@
 #include <hand_services/external_controller/in_hand_controller_template.h>
-#include <in_hand_manipulation_msgs/SurfaceNormal.h>
+//#include <in_hand_manipulation_msgs/SurfaceNormal.h>
 #include <in_hand_controllers/TactileImpedanceGrasp.h>
+#include <visualization_msgs/MarkerArray.h>
 #include <biotac_sensors/BioTacForce.h>
 namespace hand_task_controller
 {
@@ -71,7 +72,7 @@ private:
    * 
    * @param msg 
    */
-  void surface_normal_callback(in_hand_manipulation_msgs::SurfaceNormal msg);
+  void surface_normal_callback(visualization_msgs::MarkerArray msg);
   
 
   /// Flag to indicate if a tactile message has been recieved
