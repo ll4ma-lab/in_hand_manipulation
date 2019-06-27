@@ -48,14 +48,14 @@ bool tactileController::tactileSlip(const int &finger)
   // get force in robot palm frame
   Eigen::MatrixXd T;
   robot_interface_->kdl_->getFK(finger,q_,T);
-  if(tac_forces[finger].norm()<0.01)
+  if(tac_forces[finger].norm()<0.1)
   {
     return true;
   }
   Eigen::Vector3d palm_f=T.block(0,0,3,3)*tac_forces[finger];
   palm_f.normalize();
   // compare force with surface normal
-  if(acos(palm_f.dot(-1.0*surface_normal_[finger]))>atan(mu_))
+  if(acos(palm_f.dot(-1.0*surface_normal_[finger]))>atan(mu_slip_))
   {
     return true;
   }
@@ -64,9 +64,6 @@ bool tactileController::tactileSlip(const int &finger)
 }
 bool tactileController::tactileControl(Eigen::VectorXd &j_cmd)
 {
-  //  return false;
-  //cerr<<"Running controller"<<endl;
-  // get fingertip poses
   Eigen::Vector3d imp_center;
   imp_center.setZero();
   vector<Eigen::VectorXd> ftip_poses;
@@ -78,9 +75,9 @@ bool tactileController::tactileControl(Eigen::VectorXd &j_cmd)
   }
   // compute impedance centroid
   imp_center=imp_center/f_idx.size();
-
   j_cmd=last_jcmd_;
-  //cerr<<f_idx.size()<<endl;
+
+  //
   for(int i=0;i<f_idx.size();++i)
   {
     //cerr<<i<<endl;
@@ -113,26 +110,37 @@ bool tactileController::tactileControl(Eigen::VectorXd &j_cmd)
     {
       // increase force magnitude
       f_mag_[i]+=(1-alpha_[i]);
-      cerr<<"Slip detected: "<<f_idx[i]<<endl;
+      cerr<<"Slip detected: "<<f_idx[i]<<" "<<f_mag_[i]-0.1<<endl;
     }
-    
+
     // compute velocity command:
     
     // get joint velocity command:
+    // build a kdl chain with an addition link to the current contact point:
     Eigen::MatrixXd J;
-    robot_interface_->kdl_->getJacobian(f_idx[i],q_,J);
+    robot_interface_->kdl_->getEEPtJacobian(f_idx[i],q_,tac_cpts[f_idx[i]],J);
+    //robot_interface_->kdl_->getJacobian(f_idx[i],q_,J);
 
     
-    Eigen::VectorXd theta_dot=1.0*f_mag_[i]*J.block(0,0,3,J.cols()).transpose()*f_dir;
-    
+    Eigen::VectorXd theta_dot=0.01*(f_mag_[i]-0.1)*J.block(0,0,3,J.cols()).transpose()*f_dir;
     j_cmd.segment(f_idx[i]*4,4)+=theta_dot.segment(f_idx[i]*4,4);
-    //cerr<<i<<endl;
-
-
+    
+    if(i==(f_idx.size()-1))
+    {
+      //robot_interface_->kdl_->getEEPtJacobian(f_idx[f_idx.size()-1],q_,tac_cpts[f_idx[f_idx.size()-1]],J);
+      for(int j=0;j<f_idx.size()-1;++j)
+      {
+        theta_dot=1.0*0.01*(f_mag_[j]-0.1)*J.block(0,0,3,J.cols()).transpose()*f_dir;
+        j_cmd.segment(f_idx[f_idx.size()-1]*4,4)+=theta_dot.segment(f_idx[f_idx.size()-1]*4,4);
+      
+      }
+    }
+    
   }
-
+  //cerr<<f_mag_.transpose()<<endl;
+  //cerr<<j_cmd.transpose()<<endl;
   // send joint velocity as addition to joint position command (minimum force joint position command):
-  //last_jcmd_=j_cmd;
+  last_jcmd_=j_cmd;
   
   return true;
   
@@ -194,7 +202,7 @@ bool tactileController::update_control_srv(in_hand_controllers::TactileImpedance
   f_idx=vector<int>(std::begin(req.f_idx),std::end(req.f_idx));
 
   mu_=req.friction_coeff;
-  
+  mu_slip_=req.slip_coeff;
   
   // get joint position state that was last commanded
   last_jcmd_.resize(req.last_jcmd.position.size());
@@ -208,12 +216,25 @@ bool tactileController::update_control_srv(in_hand_controllers::TactileImpedance
   q_servo_cmd_=last_jcmd_;
   f_mag_.resize(f_idx.size());
   alpha_.resize(f_idx.size());
-  f_mag_.setZero();
+  f_mag_.setIdentity();
   //alpha_.setZero();
   alpha_.setIdentity();
   alpha_=alpha_*0.98;
+  f_mag_=f_mag_*0.1/0.98;
   
-        
+  des_ftip_poses_.clear();
+  des_ftip_poses_.resize(f_idx.size());
+  for(int i=0;i<f_idx.size();++i)
+  {
+    if(req.des_ftip_poses[i].orientation.w==1.0)
+    {
+      des_ftip_poses_[i]=Eigen::Vector3d(req.des_ftip_poses[i].position.x, req.des_ftip_poses[i].position.y, req.des_ftip_poses[i].position.z);
+    }
+    else
+    {
+      des_ftip_poses_[i]=Eigen::Vector3d::Zero();
+    }
+  }
   //res.last_jcmd.position=last_jcmd_;
   log("Impedance controller service updated parameters");
   return true;
@@ -235,7 +256,7 @@ void tactileController::tactile_msg_callback(biotac_sensors::BioTacForce msg)
   {
     tac_forces.resize(msg.forces.size());
     tac_contacts.resize(msg.forces.size());
-
+    tac_cpts.resize(msg.contact_pts.size());
     for (int i=0; i<msg.forces.size();++i)
     {
       //int k=f_idx[i];
@@ -243,6 +264,10 @@ void tactileController::tactile_msg_callback(biotac_sensors::BioTacForce msg)
       tac_forces[i][0]=msg.forces[i].wrench.force.x;
       tac_forces[i][1]=msg.forces[i].wrench.force.y;
       tac_forces[i][2]=msg.forces[i].wrench.force.z;
+      tac_cpts[i][0]=msg.contact_pts[i].pose.position.x;
+      tac_cpts[i][1]=msg.contact_pts[i].pose.position.y;
+      tac_cpts[i][2]=msg.contact_pts[i].pose.position.z;
+      //cerr<<tac_cpts[i]<<endl;
       tac_contacts[i]=0;//msg.contact.data[i];
     }
     tactile_msg_=true;

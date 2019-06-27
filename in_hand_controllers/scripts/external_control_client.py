@@ -2,7 +2,7 @@ import rospy
 from in_hand_controllers.srv import *
 from hand_services.srv import *
 import numpy as np
-
+from geometry_msgs.msg import Pose
 class externalHandControl:
     def __init__(self,init_node=False,node_name='external_hand_control'):
         if(init_node):
@@ -20,12 +20,15 @@ class externalHandControl:
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
         return np.zeros(3),last_jcmd
-    def update_impedance_grasp(self,last_jcmd,mu_,f_idx=[0,1,2,3]):
+    def update_impedance_grasp(self,last_jcmd,mu_,mu_slip_,f_idx=[0,1,2,3],des_poses=None):
         # enable impedancce grasp controller
+
+        if des_poses==None:
+            des_poses=[Pose() for i in range(len(f_idx))]
         rospy.wait_for_service('/tactile_impedance_control/update_params')
         try:
             req=rospy.ServiceProxy('/tactile_impedance_control/update_params',TactileImpedanceGrasp)
-            resp=req(f_idx,last_jcmd,mu_)
+            resp=req(f_idx,last_jcmd,mu_,mu_slip_,des_poses)
             return resp.success
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e

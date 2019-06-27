@@ -1,5 +1,7 @@
 int16[] f_idx
 sensor_msgs/JointState last_jcmd
 float64 friction_coeff
+float64 slip_coeff
+geometry_msgs/Pose[] des_ftip_poses
 ---
 bool success

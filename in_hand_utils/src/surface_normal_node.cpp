@@ -82,11 +82,15 @@ int main(int argc, char** argv)
   surface_normal.resize(env_utils.c_check.n_hand_links_,Eigen::Vector3d::Zero());
   old_surface_normal.resize(env_utils.c_check.n_hand_links_,Eigen::Vector3d::Zero());
   raw_sn.resize(env_utils.c_check.n_hand_links_,Eigen::Vector3d::Zero());
+  vector<vector<double>> cpts;
+  cpts.resize(env_utils.c_check.n_hand_links_);
   // read object pose from tf:
   tf::TransformListener listener;
 
-  ros::Rate rate(10);
+  ros::Rate rate(100);
 
+  vector<string> cpt_frames;
+  bool tactile_sensing=n.getParam("cpt_frames",cpt_frames);
   while(n.ok())
   {
     ros::spinOnce();
@@ -103,7 +107,7 @@ int main(int argc, char** argv)
       ros::Duration(1.0).sleep();
       continue;
     }
-
+    
     if(js.size()<1)
     {
       continue;
@@ -122,22 +126,54 @@ int main(int argc, char** argv)
     pose[6]=q.w();
     //
     env_utils.c_check.update_obj_pose(pose);
+
+        // read tactile contact points if available:
+    if(tactile_sensing)
+    {
+      for(int i=0;i<cpt_frames.size();++i)
+      {
+        tf::StampedTransform cpt_transform;
+        try{
+          //ROS_INFO("Trying..");
+          listener.lookupTransform(env_utils.base_frame_,cpt_frames[i],
+                               ros::Time(0), cpt_transform);
+        }
+        catch (tf::TransformException ex){
+          //ROS_ERROR("%s",ex.what());
+          ros::Duration(1.0).sleep();
+          continue;
+        }
+        vector<double> c_pt={cpt_transform.getOrigin().x(),cpt_transform.getOrigin().y(),cpt_transform.getOrigin().z()};// object point
+        cpts[i]=c_pt;
+        
+      }
+      
+    }
+    else
+    {
+      // get contact points between hand links and object
     
-    // get contact points between hand links and object
-    
-    vector<vector<double>> r_poses;
-    env_utils.robot_kdl_.getLinkPoses(js,r_poses);
-    //
-    env_utils.c_check.update_robot_state(r_poses);
-    vector<coll_data> c_data;
-    env_utils.c_check.hand_object_ccheck(c_data,true);
+      vector<vector<double>> r_poses;
+      env_utils.robot_kdl_.getLinkPoses(js,r_poses);
+      //
+      env_utils.c_check.update_robot_state(r_poses);
+      vector<coll_data> c_data;
+      env_utils.c_check.hand_object_ccheck(c_data,true);
+
+      for(int i=0;i<c_data.size();++i)
+      {
+        vector<double> c_pt={c_data[i].p2[0],c_data[i].p2[1],c_data[i].p2[2]};// object point
+        if(cpts[i].size()==0)
+        {
+          cpts[i]=c_pt; // we only add contact point if tactile sensor is not in contact
+        }
+      }
+    }
     visualization_msgs::MarkerArray m_arr;
 
-    for(int i=0;i<c_data.size();++i)
+    for(int i=0;i<cpts.size();++i)
     {
-      vector<double> c_pt={c_data[i].p2[0],c_data[i].p2[1],c_data[i].p2[2]};// object point
-      vector<double> c_pt1={c_data[i].p1[0],c_data[i].p1[1],c_data[i].p1[2]};// robot point
-
+      vector<double> c_pt=cpts[i];
       vector<double> s_pt,s_n;
       env_utils.c_check.obj_surface_normal(c_pt,s_pt,s_n);
       // get surface point
@@ -156,8 +192,8 @@ int main(int argc, char** argv)
     }
     m_pub.publish(m_arr);
     // publish contact point on object surface with surface normal:
-    
   }
+  
   
   
   return 0;

@@ -1,4 +1,5 @@
 allegro_impedance_grasp:
+  urdf_param: "/robot_description"
   # robot_interface parameters:
   root_links:
     - palm_link

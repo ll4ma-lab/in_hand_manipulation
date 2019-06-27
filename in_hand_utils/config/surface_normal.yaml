@@ -16,6 +16,12 @@ in_hand_utils:
     - "ring_biotac_tip"
     - "thumb_biotac_tip"
 
+  cpt_frames:
+    - "index_tip_cpt"
+    - "middle_biotac_tip"
+    - "ring_biotac_tip"
+    - "thumb_biotac_tip"
+
   base_frames:
     - "palm_link"
     - "palm_link"

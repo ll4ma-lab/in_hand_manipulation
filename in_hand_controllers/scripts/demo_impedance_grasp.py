@@ -52,21 +52,26 @@ if __name__=='__main__':
     hand_client.reset_tare(f_idx)
     
     hand_client.approach_contact(f_idx,app_vec)
+    
     q_des=hand_client.get_joint_state()
     #print q_des
     raw_input("increase stiffness")
-    j_idx=[1,2,5,6,9,10,14,15]
+    #j_idx=[1,2,5,6,9,10,14,15]
+    j_idx=[1,2,5,6,14,15]
 
     _,q_des_stiff=hand_client.increase_stiffness(j_idx,q_des)
-    
+    #_,q_des_stiff=hand_client.increase_stiffness(j_idx,q_des_stiff)
+
+    #q_des_stiff=q_des
     # enable stiffness controller:
     raw_input("Enable impedance controller?")
 
     hand_client.enable_external_control('/tactile_impedance_grasp/joint_cmd')
-
+    
     # call impedance controller
     mu=0.3
-    external_cl.update_impedance_grasp(q_des_stiff,0.6,f_idx)
+    mu_slip=0.4
+    external_cl.update_impedance_grasp(q_des_stiff,mu,mu_slip,f_idx)
     print 'updated impedance grasp'
     
     external_cl.toggle_impedance_grasp(True)
@@ -76,6 +81,8 @@ if __name__=='__main__':
     
     # disable external controller
     hand_client.disable_external_control()
+    
+    #exit()
     hand_client.send_pos_cmd(q_des.position)
 
     # move home

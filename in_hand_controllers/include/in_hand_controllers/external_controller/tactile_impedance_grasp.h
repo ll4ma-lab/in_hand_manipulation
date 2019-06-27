@@ -59,6 +59,7 @@ private:
 
   /// Contact detection from tactile sensors
   vector<int> tac_contacts;
+  vector<Eigen::Vector3d> tac_cpts;
 
   /** 
    * Tactile sensor message callback
@@ -74,7 +75,7 @@ private:
    */
   void surface_normal_callback(visualization_msgs::MarkerArray msg);
   
-
+  
   /// Flag to indicate if a tactile message has been recieved
   bool tactile_msg_=false;
   
@@ -87,8 +88,9 @@ private:
   bool got_surface_normal_=false;
   //
   Eigen::VectorXd f_mag_,alpha_;
+  vector<Eigen::VectorXd> des_ftip_poses_;
   /// coefficient of friction
-  double mu_;
+  double mu_,mu_slip_;
 };
 }
 
