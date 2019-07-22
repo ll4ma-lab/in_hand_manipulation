@@ -21,7 +21,7 @@
 
             <geometry>
 
-               <mesh filename="package://urlg_robots_description/meshes/mounts/allegro_mount.stl" />
+               <mesh filename="package://ll4ma_robots_description/meshes/mounts/allegro_mount.stl" />
 
             </geometry>
 
@@ -35,7 +35,7 @@
 
             <geometry>
 
-               <mesh filename="package://urlg_robots_description/meshes/mounts/allegro_mount.stl" />
+               <mesh filename="package://ll4ma_robots_description/meshes/mounts/allegro_mount.stl" />
 
             </geometry>
 
@@ -61,7 +61,7 @@
       </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://urlg_robots_description/meshes/allegro/base_link.STL"/>
+        <mesh filename="package://ll4ma_robots_description/meshes/allegro/base_link.stl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0 "/>
       <material name="Grey">
@@ -87,7 +87,7 @@
   <link name="index_link_0">
     <visual>
       <geometry>
-        <mesh filename="package://urlg_robots_description/meshes/allegro/link_0.0.STL"/>
+        <mesh filename="package://ll4ma_robots_description/meshes/allegro/link_0.0.stl"/>
       </geometry>
       <material name="Grey"/>
     </visual>
@@ -118,7 +118,7 @@
   <link name="index_link_1">
     <visual>
       <geometry>
-        <mesh filename="package://urlg_robots_description/meshes/allegro/link_1.0.STL"/>
+        <mesh filename="package://ll4ma_robots_description/meshes/allegro/link_1.0.stl"/>
       </geometry>
       <material name="Grey"/>
     </visual>
@@ -151,7 +151,7 @@
   <link name="index_link_2">
     <visual>
       <geometry>
-        <mesh filename="package://urlg_robots_description/meshes/allegro/link_2.0.STL"/>
+        <mesh filename="package://ll4ma_robots_description/meshes/allegro/link_2.0.stl"/>
       </geometry>
       <material name="Grey"/>
     </visual>
@@ -184,7 +184,7 @@
   <link name="index_link_3">
     <visual>
       <geometry>
-        <mesh filename="package://urlg_robots_description/meshes/allegro/link_3.0.STL"/>
+        <mesh filename="package://ll4ma_robots_description/meshes/allegro/link_3.0.stl"/>
       </geometry>
       <material name="Grey"/>
     </visual>
@@ -217,7 +217,7 @@
   <link name="index_tip">
     <visual>
       <geometry>
-        <mesh filename="package://urlg_robots_description/meshes/allegro/link_3.0_tip.STL"/>
+        <mesh filename="package://ll4ma_robots_description/meshes/allegro/link_3.0_tip.stl"/>
       </geometry>
       <material name="white">
         <color rgba=".9 .9 .9 1"/>
@@ -244,7 +244,7 @@
   <link name="middle_link_0">
     <visual>
       <geometry>
-        <mesh filename="package://urlg_robots_description/meshes/allegro/link_0.0.STL"/>
+        <mesh filename="package://ll4ma_robots_description/meshes/allegro/link_0.0.stl"/>
       </geometry>
       <material name="Grey"/>
     </visual>
@@ -276,7 +276,7 @@
   <link name="middle_link_1">
     <visual>
       <geometry>
-        <mesh filename="package://urlg_robots_description/meshes/allegro/link_1.0.STL"/>
+        <mesh filename="package://ll4ma_robots_description/meshes/allegro/link_1.0.stl"/>
       </geometry>
       <material name="Grey"/>
     </visual>
@@ -309,7 +309,7 @@
   <link name="middle_link_2">
     <visual>
       <geometry>
-        <mesh filename="package://urlg_robots_description/meshes/allegro/link_2.0.STL"/>
+        <mesh filename="package://ll4ma_robots_description/meshes/allegro/link_2.0.stl"/>
       </geometry>
       <material name="Grey"/>
     </visual>
@@ -342,7 +342,7 @@
   <link name="middle_link_3">
     <visual>
       <geometry>
-        <mesh filename="package://urlg_robots_description/meshes/allegro/link_3.0.STL"/>
+        <mesh filename="package://ll4ma_robots_description/meshes/allegro/link_3.0.stl"/>
       </geometry>
       <material name="Grey"/>
     </visual>
@@ -375,7 +375,7 @@
   <link name="middle_tip">
     <visual>
       <geometry>
-        <mesh filename="package://urlg_robots_description/meshes/allegro/link_3.0_tip.STL"/>
+        <mesh filename="package://ll4ma_robots_description/meshes/allegro/link_3.0_tip.stl"/>
       </geometry>
       <material name="white">
         <color rgba=".9 .9 .9 1"/>
@@ -402,7 +402,7 @@
   <link name="ring_link_0">
     <visual>
       <geometry>
-        <mesh filename="package://urlg_robots_description/meshes/allegro/link_0.0.STL"/>
+        <mesh filename="package://ll4ma_robots_description/meshes/allegro/link_0.0.stl"/>
       </geometry>
       <material name="Grey"/>
     </visual>
@@ -434,7 +434,7 @@
   <link name="ring_link_1">
     <visual>
       <geometry>
-        <mesh filename="package://urlg_robots_description/meshes/allegro/link_1.0.STL"/>
+        <mesh filename="package://ll4ma_robots_description/meshes/allegro/link_1.0.stl"/>
       </geometry>
       <material name="Grey"/>
     </visual>
@@ -467,7 +467,7 @@
   <link name="ring_link_2">
     <visual>
       <geometry>
-        <mesh filename="package://urlg_robots_description/meshes/allegro/link_2.0.STL"/>
+        <mesh filename="package://ll4ma_robots_description/meshes/allegro/link_2.0.stl"/>
       </geometry>
       <material name="Grey"/>
     </visual>
@@ -500,7 +500,7 @@
   <link name="ring_link_3">
     <visual>
       <geometry>
-        <mesh filename="package://urlg_robots_description/meshes/allegro/link_3.0.STL"/>
+        <mesh filename="package://ll4ma_robots_description/meshes/allegro/link_3.0.stl"/>
       </geometry>
       <material name="Grey"/>
     </visual>
@@ -534,7 +534,7 @@
   <link name="ring_tip">
     <visual>
       <geometry>
-        <mesh filename="package://urlg_robots_description/meshes/allegro/link_3.0_tip.STL"/>
+        <mesh filename="package://ll4ma_robots_description/meshes/allegro/link_3.0_tip.stl"/>
       </geometry>
       <material name="white">
         <color rgba=".9 .9 .9 1"/>
@@ -562,7 +562,7 @@
   <link name="thumb_link_0">
     <visual>
       <geometry>
-        <mesh filename="package://urlg_robots_description/meshes/allegro/link_12.0_right.STL"/>
+        <mesh filename="package://ll4ma_robots_description/meshes/allegro/link_12.0_right.stl"/>
       </geometry>
       <material name="Grey">
         <color rgba=".2 .2 .2 1"/>
@@ -598,7 +598,7 @@
   <link name="thumb_link_1">
     <visual>
       <geometry>
-        <mesh filename="package://urlg_robots_description/meshes/allegro/link_13.0.STL"/>
+        <mesh filename="package://ll4ma_robots_description/meshes/allegro/link_13.0.stl"/>
       </geometry>
       <material name="Grey">
         <color rgba=".2 .2 .2 1"/>
@@ -633,7 +633,7 @@
   <link name="thumb_link_2">
     <visual>
       <geometry>
-        <mesh filename="package://urlg_robots_description/meshes/allegro/link_14.0.STL"/>
+        <mesh filename="package://ll4ma_robots_description/meshes/allegro/link_14.0.stl"/>
       </geometry>
       <material name="Grey">
       </material>
@@ -667,7 +667,7 @@
   <link name="thumb_link_3">
     <visual>
       <geometry>
-        <mesh filename="package://urlg_robots_description/meshes/allegro/link_15.0.STL"/>
+        <mesh filename="package://ll4ma_robots_description/meshes/allegro/link_15.0.stl"/>
       </geometry>
       <material name="Grey">
       </material>
@@ -701,7 +701,7 @@
   <link name="thumb_tip">
     <visual>
       <geometry>
-        <mesh filename="package://urlg_robots_description/meshes/allegro/link_15.0_tip.STL"/>
+        <mesh filename="package://ll4ma_robots_description/meshes/allegro/link_15.0_tip.stl"/>
       </geometry>
       <material name="white">
         <color rgba=".9 .9 .9 1"/>

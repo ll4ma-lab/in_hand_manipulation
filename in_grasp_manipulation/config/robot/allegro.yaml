@@ -1,0 +1,65 @@
+in_grasp_planner:
+  #urdf rosparam:
+  urdf_param: "/robot_description"
+
+  # end-effector name:
+  ee_frames:
+    - "index_tip"
+    - "middle_tip"
+    - "ring_tip"
+    - "thumb_tip"
+  base_frames:
+    - "palm_link"
+    - "palm_link"
+    - "palm_link"
+    - "palm_link"
+
+  joint_names:
+    - "index_joint_0"
+    - "index_joint_1"
+    - "index_joint_2"
+    - "index_joint_3"
+    - "middle_joint_0"
+    - "middle_joint_1"
+    - "middle_joint_2"
+    - "middle_joint_3"
+    - "ring_joint_0"
+    - "ring_joint_1"
+    - "ring_joint_2"
+    - "ring_joint_3"
+    - "thumb_joint_0"
+    - "thumb_joint_1"
+    - "thumb_joint_2"
+    - "thumb_joint_3"
+  # dof
+  dof: 16
+
+  # collision checking?
+  check_collision: False
+
+  # workspace bound for collision checking in base_frame:
+  # collision links:
+  hand_coll_links:
+    - "index_link_0"
+    - "index_link_1"
+    - "index_link_2"
+    - "index_tip"
+    - "middle_link_0"
+    - "middle_link_1"
+    - "middle_link_2"
+    - "middle_tip"
+    - "ring_link_0"
+    - "ring_link_1"
+    - "ring_link_2"
+    - "ring_tip"
+    - "thumb_link_0"
+    - "thumb_link_1"
+    - "thumb_link_2"
+    - "thumb_tip"
+  contact_link_index:
+    - 3
+    - 7
+    - 11
+    - 15
+    
+

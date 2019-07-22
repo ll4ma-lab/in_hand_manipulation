@@ -252,11 +252,11 @@ def compute_errors(f_name_):
                      ar_db_o=dbot_ar_o)
     pd_api.write_pd_file('../data/in_grasp_manipulation/'+f_name_+'_err.csv',df_new)
 if __name__=='__main__':
-    fb_plots('waypoint_exp_t2.csv')
+    #fb_plots('waypoint_exp_t2.csv')
     #fb_plots('exp_fb.csv')
     #metrics_plots('interpolation_all.csv')
-    '''
-    file_name='waypoint'
+    
+    file_name='exp_2_relaxed-full_solution'
     compute_errors(file_name)
-    waypoint_plots(file_name)
-    '''
+    #waypoint_plots(file_name)
+    #'''

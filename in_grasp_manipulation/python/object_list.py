@@ -335,6 +335,7 @@ class ObjectList:
                 row=[obj.name,obj.f_name,','.join(map(str,obj.grasp)),','.join(map(str,obj.offset)),','.join(map(str,obj.weights))]+list(obj.initial_pose)+list(obj.des)
                 list_sol=map(str,self.arr[i].sol)
                 data=row+list_sol
+                # planning time:
                 i+=1
                 writer.writerow(data)
     def write_weights(self,file_w):

@@ -22,7 +22,7 @@ class allegroKinematics:
         self.fing=3
         rp = RosPack()
         packages = rp.list()
-        path = rp.get_path('urlg_robots_description')
+        #path = rp.get_path('ll4ma_robots_description')
         path='../urdf/allegro.urdf'
         #path= path + '/urdf/allegro_right/allegro_hand_description_right.urdf'
         self.kdlModel=handModel.HandSimpleModel(path)

@@ -1,5 +1,5 @@
 <launch>
-  <rosparam file="$(find in_grasp_manipulation)/config/robot/allegro_bt.yaml" command="load"/>
+  <rosparam file="$(find in_grasp_manipulation)/config/robot/allegro.yaml" command="load"/>
   <!--rosparam file="$(find grasp_planner)/config/scene/table_obj.yaml" command="load"/-->
 
   <group ns="in_grasp_planner">

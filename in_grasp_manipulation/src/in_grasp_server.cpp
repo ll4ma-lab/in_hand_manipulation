@@ -81,7 +81,7 @@ public:
     marker.lifetime = ros::Duration();
     
 
-  // mesh marker:
+    // mesh marker:
     uint32_t mesh_shape= visualization_msgs::Marker::MESH_RESOURCE;
     marker.type=mesh_shape;
     marker.mesh_resource=uri_file_name;

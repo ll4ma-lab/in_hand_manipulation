@@ -13,11 +13,14 @@ T=10
 def main():
     method='ik-rigid'
 
-    file="../data/goal_poses/new_goal_poses.csv"
-    folder_to_write="../data/trajectories/screw/"+method+"/"
+    file="../data/initial_data/goal_poses/relaxed-rigidity.csv"
+    folder_to_write="../data/trajectories/reachable_poses/"+method+"/"
     obj_list=ObjectList(file,folder_to_write)  
     obj_list.get_weights('../data/weights/exp_2_ik_trinkle.csv')
     print len(obj_list.arr)
+    obj_list.arr[0].sol=multi_obj(obj_list.arr[0])[0]
+
+    '''
     sc_pool=Pool()
     sta_t = time.time()
     tr=0
@@ -29,7 +32,8 @@ def main():
     
     elap=time.time()-sta_t
     print "Time to compute(seconds): "+str(elap)
-    obj_list.write_sol_from_tjo("../data/trajectories/screw_"+method+"_solution.csv")
+    '''
+    obj_list.write_sol_from_tjo("../data/trajectories/"+method+"_solution.csv")
 
 def multi_obj(obj):
 
