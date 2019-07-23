@@ -40,9 +40,9 @@ double optProblem::objFunction(const vector<double> x) const
   int rigid_f=int(data_arr_[2][0]);// rigid_finger
 
   double wo,wr,wd,wi;
-  wo=data_arr_[1][0];
-  wr=data_arr_[1][1];
-  wd=data_arr_[1][2];
+  wo=data_arr_[1][0]; // orientation
+  wr=data_arr_[1][1]; // position
+  wd=data_arr_[1][2];// desired 
   wi=data_arr_[1][3];
   q.resize(robot_kdl_->dof);
 
@@ -98,32 +98,39 @@ double optProblem::objFunction(const vector<double> x) const
     }
 
 
+    
+    robot_kdl_->getFK(rigid_f,q.segment(rigid_f*4,4),ee_pose,true);
+    
+    vector<double> o_1(ee_pose.data()+3, ee_pose.data()+6);
+    vector<double> o_d(des_poses[i].data()+3, des_poses[i].data()+6);
+      
+    // object pose error:
+    
+    obj_pos_err=des_poses[i]-ee_pose;
+    robot_kdl_->euler_diff(o_1,o_d,o_err);
+    obj_pos_err[3]=o_err[0]*0.1;
+    obj_pos_err[4]=o_err[1]*0.1;
+    obj_pos_err[5]=o_err[2]*0.1;
     if(i==timesteps_-1)
     {
-      robot_kdl_->getFK(rigid_f,q.segment(rigid_f*4,4),ee_pose,true);
-      
-      vector<double> o_1(ee_pose.data()+3, ee_pose.data()+6);
-      vector<double> o_d(des_poses[i].data()+3, des_poses[i].data()+6);
-      
-      // object pose error:
-      
-      obj_pos_err=des_poses[i]-ee_pose;
-      robot_kdl_->euler_diff(o_1,o_d,o_err);
-      obj_pos_err[3]=o_err[0]*0.1;
-      obj_pos_err[4]=o_err[1]*0.1;
-      obj_pos_err[5]=o_err[2]*0.1;
       cost_val+=wd*obj_pos_err.squaredNorm();
+    }
+    {
+      cost_val+=wi*obj_pos_err.squaredNorm();
       
     }
+      
+    
 
     // min_acceleration cost:
     if(timesteps_>1)
     {
       acc_cost=(j_poses[i-2+2]-2.0*j_poses[i+2-1]+j_poses[i+2]);
-      cost_val+=wi*acc_cost.squaredNorm();
+      cost_val+=0.0*acc_cost.squaredNorm();
       //debug_cost+=wi*acc_cost.squaredNorm();
     }
 
+    
     // rr costs:
     // get current thumb mat:
     robot_kdl_->getFK(rigid_f,q.segment(rigid_f*4,4),thumb_mat);
@@ -223,7 +230,6 @@ vector<double> optProblem::objGradient(vector<double> x) const
       q[j]=x[(i)*robot_kdl_->dof+j];
     }
 
-    if(i==timesteps_-1)
     {
       robot_kdl_->getFK(rigid_f,q.segment(rigid_f*4,4),ee_pose,true);
       
@@ -242,7 +248,14 @@ vector<double> optProblem::objGradient(vector<double> x) const
       
       robot_kdl_->getJacobian(rigid_f,q.segment(rigid_f*4,4),J);
       //cerr<<J<<endl;
-      finger_gradient=-2.0*wd*J.transpose()*obj_pose_err;
+      if(i==timesteps_-1)
+      {
+        finger_gradient=-2.0*wd*J.transpose()*obj_pose_err;
+      }
+      else
+      {
+         finger_gradient=-2.0*wi*J.transpose()*obj_pose_err;
+      }
 
       //cerr<<"AG: ";//<<finger_gradient.transpose()<<endl;
 
@@ -273,7 +286,8 @@ vector<double> optProblem::objGradient(vector<double> x) const
       fill(gradient.begin(), gradient.end(), 0.0);
 
     }
-    
+
+    /*
     if(timesteps_>1)
     {
       // min_acceleration gradient:
@@ -304,7 +318,7 @@ vector<double> optProblem::objGradient(vector<double> x) const
         }
       }
     }
-
+    */
 
   
     fill(gradient.begin(), gradient.end(), 0.0);

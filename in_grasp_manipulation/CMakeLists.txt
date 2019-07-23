@@ -76,7 +76,7 @@ set(ccd_DIR $ENV{HOME}/local/lib/ccd/)
 set(fcl_DIR $ENV{HOME}/local/lib/cmake/fcl/)
 
 find_package(fcl REQUIRED)
-find_package(ccd 2.0 EXACT REQUIRED)
+#find_package(ccd 2.0 EXACT REQUIRED)
 
 set(ccd_INCLUDE_DIRS $ENV{HOME}/local/include)
 set(ccd_LIBRARY_DIRS $ENV{HOME}/local/lib)
