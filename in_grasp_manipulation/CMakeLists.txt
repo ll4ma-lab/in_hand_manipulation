@@ -98,7 +98,7 @@ set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRA
 #add_library(in_grasp_min_acc_joint STATIC src/problems/in_grasp_joint_smooth.cpp)
 #target_link_libraries(in_grasp_min_acc_joint ${catkin_LIBRARIES})
 
-add_library(in_grasp_rr src/problems/in_grasp_rr_const.cpp)
+add_library(in_grasp_rr src/problems/old/in_grasp_rr_cost.cpp)
 target_link_libraries(in_grasp_rr ${catkin_LIBRARIES})
 
 add_library(in_grasp_sysid src/problems/in_grasp_sysid.cpp)

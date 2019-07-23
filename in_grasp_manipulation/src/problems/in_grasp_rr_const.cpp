@@ -114,6 +114,7 @@ double optProblem::objFunction(const vector<double> x) const
       //debug_cost+=wi*acc_cost.squaredNorm();
     }
 
+    
 
   }
   return cost_val;
