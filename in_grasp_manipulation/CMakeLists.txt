@@ -112,7 +112,7 @@ endif(ENABLE_COLLISION_LIB)
 
 add_executable(in_grasp_server src/in_grasp_server.cpp)
 target_link_libraries(in_grasp_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_rr)
-
+add_dependencies(in_grasp_server ${PROJECT_NAME}_generate_messages_cpp)
 if(ENABLE_COLLISION_LIB)
   target_link_libraries(in_grasp_server collision_constraints)
 endif(ENABLE_COLLISION_LIB)
