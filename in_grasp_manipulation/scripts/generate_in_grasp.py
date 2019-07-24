@@ -116,7 +116,7 @@ class inGraspData:
         j_traj,n_pose,obj_traj=self.in_grasp.call_server_list(j0, obj_pose,des_obj_pose,weights, fingers,T=10, final_joints=j_traj.points[-1].positions,srv_topic="/in_grasp_planner/get_plan")
         
         plan_time=time.time()-start
-        print 'time:'+str(time.time()-start)
+        #print 'time:'+str(time.time()-start)
         self.traj_server.viz_joint_traj(j_traj,base_link='allegro_mount')
         # plot
         #self.traj_server.plot_j_acc_profile(j_traj,[12,13,14,15])
@@ -177,18 +177,32 @@ if __name__=='__main__':
     # file for goal poses
     f_name="/initial_data/goal_poses/relaxed-rigidity.csv"
 
+    method='relaxed-position-orientation'
     # weights: ro,rp,des,waypoint,velo
-    ik=[]
+    pc=[0.0,0.05,1.0,0.0,0.4]
+    ik=[0.1,0.1,1.0,0.0,0.4]
     rp=[0.0,0.05,1.0,0.0,0.4]
     rpo=[0.001,0.05,1.0,0.0,0.4]
-    rr=[0.001,0.05,1.0,0.001,0.4]
-    in_grasp=inGraspData(data_root='../data/',weights=rp)
+    rr=[0.001,0.05,1.0,0.01,0.4]
+    in_grasp=inGraspData(data_root='../data/',weights=rpo)
     in_grasp.read_objects(f_name)
-    # read initial and goal poses
+    pd_file_name='in_grasp_bih'
+    pd_api=pdAPI()
+    df=pd_api.read_pd(pd_file_name)
+    #columns=['method','Object','Planning Time','P_err','O_err','p_dist','o_dist']
+    #df=pd_api.create_pd_frame(columns)
 
-    # generate trajectory
-    idx=0
-    _,_,metrics=in_grasp.generate_traj(idx)
+    for i in range(100):
+        
+        idx=i
+        _,_,metrics=in_grasp.generate_traj(idx)
+
+        df=pd_api.write_pd_data(df,[[method,in_grasp.obj_list.arr[i].name, metrics[0], metrics[1], metrics[2], metrics[3],metrics[4]]])
+        print metrics[1]*100.0,i
+        #exit()
+    # write metrics to file:
+    pd_api.write_pd_file(pd_file_name,df)
+        
     #print metrics
     # write to file
 

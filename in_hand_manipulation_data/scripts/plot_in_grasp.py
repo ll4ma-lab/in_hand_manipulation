@@ -1,8 +1,11 @@
 import matplotlib as mpl
+import copy
 import matplotlib.pyplot as plt
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
-safeuiall = ['#ffffff','#fef0d9','#fdcc8a','#fc8d59','#d7301f']
+#safeuiall = ['#ffffff','#fef0d9','#fdcc8a','#fc8d59','#d7301f']
+safeuiall=['#2b8cbe','#ffffff','#f0f9e8','#bae4bc','#7bccc4']
+
 safeui3 = ['#fef0d9','#fdcc8a','#fc8d59','#d7301f']
 twoui=['#fef0d9','#d7301f']
 from data_api import pdAPI
@@ -174,12 +177,56 @@ def metrics_plots(f_name):
     handles, labels = ax.get_legend_handles_labels()
     labels=['Waypoint-interp','Joint-acc']
     #labels=['Open-loop','Fb-ctrl']
-    ax.legend(handles, labels,title='',loc='upper center', bbox_to_anchor=(0.5, 1.11),ncol=5, fancybox=False, shadow=False)
+    ax.legend(handles, labels,title='',loc='upper center', bbox_to_anchor=(0.5, 1.11),ncol=3, fancybox=False, shadow=False)
     
     ax.set(ylabel='Orientation error %')
     plt.savefig('/home/bala/plots/'+'orient_err.eps', bbox_inches='tight')
 
+def plot_time(f_name):
+    plt.figure(figsize=(8,5))
+    pd_api=pdAPI()
+    df=pd_api.read_pd('../../in_grasp_manipulation/scripts/'+f_name)
 
+    df_all=copy.deepcopy(df)
+    df_all.Object='All objects'
+    
+    df=pd.concat([df,df_all])
+    # rename:
+    
+    # plot planning time:
+    order=['point-contact','ik-rigid','relaxed-position','relaxed-position-orientation','relaxed-rigidity']
+    #order=['ik_obj','fb_ctrl']
+    # Compute median errors:
+    
+    ax=sns.boxplot(y="Object", x="Planning Time", hue="method",hue_order=order,data=df_all, palette=safeuiall,whis=1.5,showfliers=False)
+
+    handles, labels = ax.get_legend_handles_labels()
+    ax.tick_params(axis=u'both', which=u'both',length=0)
+
+    #labels=['Waypoint-interp','Joint-acc']
+    ax.legend(handles, labels,title='',loc='lower right',ncol=1, fancybox=False, shadow=False)
+    ax.yaxis.set_ticklabels([])
+    ax.set(xlabel='Planning Time(s)')
+    ax.set(ylabel='All objects')
+    ax.xaxis.tick_top()
+    ax.xaxis.set_label_position('top') 
+
+    plt.xticks(range(0,19,2))
+    
+    #plt.ylim(0,19)
+    ax.get_xaxis().set_minor_locator(mpl.ticker.AutoMinorLocator(n=2))
+    ax.grid(b=True, which='minor', color='0.85', linewidth=0.5)
+    plt.savefig('/home/bala/plots/'+'p_time.eps', bbox_inches='tight')
+def compute_distance(f_name):
+    pd_api=pdAPI()
+    df=pd_api.read_pd('../../in_grasp_manipulation/scripts/'+f_name)
+    dist_p=df.p_dist.tolist()
+    dist_o=df.o_dist.tolist()
+
+    print np.mean(dist_p),np.median(dist_p),np.min(dist_p),np.max(dist_p)
+    print np.mean(dist_o),np.median(dist_o)*100,np.min(dist_o)*100,np.max(dist_o)*100
+    
+    
 def waypoint_plots(f_name_):
     name='p_err.eps'
     cols=['ar_p_err','ar_o_err','db_p_err','db_o_err','ar_db_p','ar_db_o']
@@ -256,7 +303,9 @@ if __name__=='__main__':
     #fb_plots('exp_fb.csv')
     #metrics_plots('interpolation_all.csv')
     
-    file_name='exp_2_relaxed-full_solution'
-    compute_errors(file_name)
+    file_name='in_grasp_bih'
+    #plot_time(file_name)
+    compute_distance(file_name)
+    #compute_errors(file_name)
     #waypoint_plots(file_name)
     #'''

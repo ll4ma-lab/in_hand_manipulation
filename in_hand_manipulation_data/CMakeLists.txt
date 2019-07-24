@@ -10,7 +10,7 @@ add_compile_options(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
-  sql_database
+#  sql_database
 )
 
 ## System dependencies are found with CMake's conventions
@@ -123,5 +123,5 @@ include_directories(
 #add_executable(in_grasp src/database/in_grasp.cpp)
 #target_link_libraries(in_grasp ${catkin_LIBRARIES})
 
-add_executable(database_node src/database/database_node.cpp)
-target_link_libraries(database_node ${catkin_LIBRARIES})
+#add_executable(database_node src/database/database_node.cpp)
+#target_link_libraries(database_node ${catkin_LIBRARIES})

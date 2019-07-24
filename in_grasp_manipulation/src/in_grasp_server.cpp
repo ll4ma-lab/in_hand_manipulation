@@ -461,7 +461,7 @@ public:
   pagmo::snopt7 sn_v(false,"/usr/local/lib/");
   
   sn_v.set_numeric_option("Major iterations limit",500);
-  //sn_v.set_numeric_option("Optimality tolerance",1e-4);
+  sn_v.set_numeric_option("Major optimality tolerance",1e-4);
 
   //sn_v.set_integer_option("Scale option",0);
 
