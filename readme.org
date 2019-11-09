@@ -39,7 +39,7 @@ Contains launch files for various in-hand manipulation skills. This package also
 - [[https://bitbucket.org/robot-learning/ll4ma_robots_description][ll4ma_robots_description]]
 - [[https://bitbucket.org/robot-learning/ll4ma_collision_wrapper][ll4ma_collision_wrapper]]
 - [[https://bitbucket.org/robot-learning/ll4ma_kdl][ll4ma_kdl]]
-- [[https://bitbucket.org/robot-learning/ll4ma_opt_wrapper][ll4ma_opt_wrapper]]
+- [[https://bitbucket.org/robot-learning/ll4ma_opt_utils][ll4ma_opt_utils]]
 ** Harwdare specific packages
 - [[https://bitbucket.org/robot-learning/allegro_driver][allegro_driver]]
 - [[https://bitbucket.org/robot-learning/hand_services][hand_services]]

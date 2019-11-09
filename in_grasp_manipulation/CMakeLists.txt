@@ -76,7 +76,7 @@ set(ccd_DIR $ENV{HOME}/local/lib/ccd/)
 set(fcl_DIR $ENV{HOME}/local/lib/cmake/fcl/)
 
 find_package(fcl REQUIRED)
-find_package(ccd 2.0 EXACT REQUIRED)
+#find_package(ccd 2.0 EXACT REQUIRED)
 
 set(ccd_INCLUDE_DIRS $ENV{HOME}/local/include)
 set(ccd_LIBRARY_DIRS $ENV{HOME}/local/lib)
@@ -98,8 +98,14 @@ set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRA
 #add_library(in_grasp_min_acc_joint STATIC src/problems/in_grasp_joint_smooth.cpp)
 #target_link_libraries(in_grasp_min_acc_joint ${catkin_LIBRARIES})
 
-add_library(in_grasp_rr src/problems/old/in_grasp_rr_cost.cpp)
+add_library(in_grasp_rr src/problems/methods/in_grasp_rr_cost.cpp)
 target_link_libraries(in_grasp_rr ${catkin_LIBRARIES})
+
+add_library(in_grasp_ik src/problems/methods/in_grasp_ik_rigid.cpp)
+target_link_libraries(in_grasp_ik ${catkin_LIBRARIES})
+
+add_library(in_grasp_pc src/problems/methods/in_grasp_point_contact.cpp)
+target_link_libraries(in_grasp_pc ${catkin_LIBRARIES})
 
 add_library(in_grasp_sysid src/problems/in_grasp_sysid.cpp)
 target_link_libraries(in_grasp_sysid ${catkin_LIBRARIES})
@@ -112,7 +118,7 @@ endif(ENABLE_COLLISION_LIB)
 
 add_executable(in_grasp_server src/in_grasp_server.cpp)
 target_link_libraries(in_grasp_server ${PAGMO_LIBS} ${catkin_LIBRARIES} in_grasp_rr)
-
+add_dependencies(in_grasp_server ${PROJECT_NAME}_generate_messages_cpp)
 if(ENABLE_COLLISION_LIB)
   target_link_libraries(in_grasp_server collision_constraints)
 endif(ENABLE_COLLISION_LIB)

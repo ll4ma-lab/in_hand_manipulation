@@ -1,0 +1,16 @@
+* In-Hand Regrasping
+ICRA 2018 paper on in-hand regrasping was setup to work in python and does not interface with the new tools that were built for efficient collision checking and trajectory optimization. Sketching out a refactoring roadmap to enable regrasping to work with new tools:
+
+- Load object mesh, initial contact mesh, desired contact mesh
+- Setup relaxed-rigidity to move to a desired pose and visualize trajectory
+- Setup finger gaiting
+- Setup finger sliding?
+- Setup visualization tools to show a plan
+
+
+** TODO
+
+- Setup plan_env for in-hand manipulation
+- Test in-grasp manipulation for different poses
+- Setup finger gaiting
+- Setup full regrasp planning and get data
