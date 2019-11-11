@@ -11,8 +11,8 @@ find_package(Eigen3 3.3 REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
-  ll4ma_kdl
-  ll4ma_collision_wrapper
+  ll4ma_opt_utils
+  #ll4ma_collision_wrapper
   roscpp
   rospy
   sensor_msgs
@@ -38,7 +38,7 @@ set(ccd_LIBRARY_DIRS $ENV{HOME}/local/lib)
 catkin_package(
 INCLUDE_DIRS include
 LIBRARIES hand_env
-CATKIN_DEPENDS geometry_msgs ll4ma_kdl ll4ma_collision_wrapper roscpp rospy sensor_msgs
+CATKIN_DEPENDS geometry_msgs ll4ma_opt_utils roscpp rospy sensor_msgs
 DEPENDS fcl ccd
 )
 

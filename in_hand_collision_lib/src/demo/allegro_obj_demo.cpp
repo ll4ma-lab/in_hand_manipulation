@@ -3,16 +3,16 @@
 #include <ros/ros.h>
 #include <ros/package.h>
 
-#include <in_hand_manipulation_msgs/UpdateObj.h>
+//#include <in_hand_manipulation_msgs/UpdateObj.h>
 #include <in_hand_collision_lib/scene/hand_env.h>
 
-#include <ll4ma_kdl/manipulator_kdl/robot_kdl.h>
+//#include <ll4ma_kdl/manipulator_kdl/robot_kdl.h>
 
 #include <sensor_msgs/JointState.h>
 
 #include <tf/transform_broadcaster.h>
 
-using namespace fcl_ccheck;
+using namespace in_hand_manipulation;
 class srvClass
 {
 public:
@@ -20,21 +20,32 @@ public:
   ros::NodeHandle* nh;
   ros::Publisher pub,m_pub,l_pub,c_pub;
   manipulator_kdl::robotKDL hand_kdl;
-  vector<coll_data> hand_c_data;
   bool collision_ready=false;
   
   void init(ros::NodeHandle &n)
   {
     nh=&n;
     
-    handEnv rob_env_checker(0.01);
+    handEnv rob_env_checker(n);
     hand_env=rob_env_checker;
-    //cerr<<"copied rob_env_scene"<<endl;
   }
-  void init_robot_meshes()
+  
+  bool add_obj_call(ll4ma_opt_utils::AddObject::Request &req, ll4ma_opt_utils::AddObject::Response &res)
   {
-    l_pub=nh->advertise<visualization_msgs::MarkerArray>("link_env", 1);
+    return hand_env.load_obj_call(req,res);
+  }
+  
+  bool init_robot_meshes()
+  {
     c_pub=nh->advertise<visualization_msgs::Marker>("contact_pt", 1);
+
+    
+    hand_env.load_robot_model();
+    hand_env.load_obj();
+    collision_ready = true;
+    return true;
+    /*
+    l_pub=nh->advertise<visualization_msgs::MarkerArray>("link_env", 1);
     
     vector<double> g_vec={0.0,0.0,-9.8};
 
@@ -54,83 +65,78 @@ public:
 manipulator_kdl::robotKDL allegro_kdl("robot_description",*nh,hand_base_names, hand_ee_names, hand_link_names,g_vec);
     hand_kdl=allegro_kdl;
     
-      
-    cerr<<"Created robot collision files"<<endl;
-  }
-  bool update_obj(in_hand_manipulation_msgs::UpdateObj::Request &req, in_hand_manipulation_msgs::UpdateObj::Response &res)
-  {
-    //pub=nh->advertise<pcl::PointCloud<PointXYZ>>("/collision_checker/env",1);
-    m_pub=nh->advertise<visualization_msgs::MarkerArray>("collision_env", 1);
-    ros::Rate l(100);
-cerr<<"Updating environment cloud"<<endl;
-    //convert sensor_msgs to normal pointcloud
-
-    hand_env.load_obj(req.mesh_file);
-    //
-    vector<double> pose(7,0.0);
-    pose[0]=req.obj_pose.position.x;
-    pose[1]=req.obj_pose.position.y;
-    pose[2]=req.obj_pose.position.z;
-    pose[3]=req.obj_pose.orientation.x;
-    pose[4]=req.obj_pose.orientation.y;
-    pose[5]=req.obj_pose.orientation.z;
-    pose[6]=req.obj_pose.orientation.w;
-    
-                       
-    hand_env.update_grasp_obj_pose(pose);
-    //cerr<<pose[0]<<endl;
-    // publish tf:
-    static tf::TransformBroadcaster br;
-
-    tf::Transform transform;
-    transform.setOrigin( tf::Vector3(pose[0],pose[1],pose[2]) );
-    tf::Quaternion q(pose[3],pose[4],pose[5],pose[6]);
-    transform.setRotation(q);
-
-    visualization_msgs::MarkerArray oc_map; 
-    hand_env.get_env_markers(oc_map,"obj_frame");
-
-    // visualize pointcloud:
-    for(int i=0;i<100;++i)
-    {
-       br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "palm_link", "obj_frame"));
-
-      // visualize octomap:
-      m_pub.publish(oc_map);
-      l.sleep();
-    }
-    collision_ready=true;
-    return true;
+    */
   }
   void jCallback(sensor_msgs::JointState j_msg)
   {
-    Eigen::VectorXd hand_js;
-    hand_js.resize(16);
-    if(j_msg.position.size()>16)
-    {
-      for(int i=7;i<16+7;++i)
-      {
-        hand_js[i-7]=j_msg.position[i];
-      }
-    }
-    else
-    {
-      for(int i=0;i<16;++i)
-      {
-        hand_js[i]=j_msg.position[i];
-      }
-    }
-        
+    vector<double> hand_js = j_msg.position;
     if(collision_ready)
     {
       check_hand_coll(hand_js);
     }
 
   }
-  void check_hand_coll(Eigen::VectorXd js)
+  void check_hand_coll(vector<double> js)
   {
-    // get link poses:
+    //cerr<<"checing collisions.."<<endl;
 
+    // get link poses:
+    vector<double> arm_js(7,0.0);
+    
+    hand_env.update_arm_state(arm_js);
+    
+    hand_env.update_robot_state(js,false);
+    // check collision between hand links
+    vector<coll_data> hand_c_data;
+    
+    hand_env.c_check.hand_object_ccheck(hand_c_data);
+
+    visualization_msgs::Marker c_pt;
+    std_msgs::ColorRGBA m_color;
+    
+    m_color.r = 1.0;
+    m_color.g = 0.0;
+    m_color.b = 0.0;
+    m_color.a = 1.0;
+    uint32_t shape = visualization_msgs::Marker::SPHERE;
+    c_pt.header.frame_id=hand_env.base_frame_;
+    c_pt.header.stamp=ros::Time();
+    c_pt.id=0;
+    c_pt.type=shape;
+    c_pt.scale.x=0.01;
+    c_pt.scale.y=0.01;
+    c_pt.scale.z=0.01;
+    c_pt.pose.orientation.w=1.0;
+
+    c_pt.pose.position.x=0.0;
+    c_pt.pose.position.y=0.0;
+    c_pt.pose.position.z=0.0;
+    c_pt.color=m_color;
+
+    if(hand_c_data.size()>0)
+    {
+      for(int i=0;i<hand_c_data.size();++i)
+      {
+        if(hand_c_data[i].distance<0.0)
+        {
+          cerr<<"hand link in collision: "<<i<<" d: "<<hand_c_data[i].distance<<endl;
+          cerr<<hand_c_data[i].p1.transpose()<<endl;
+          cerr<<hand_c_data[i].p2.transpose()<<endl;
+          c_pt.pose.position.x=hand_c_data[i].p2(0);
+          c_pt.pose.position.y=hand_c_data[i].p2(1);
+          c_pt.pose.position.z=hand_c_data[i].p2(2);
+          
+	}
+      }
+    }
+    ros::Rate l(100);
+
+    for(int i=0;i<10;++i)
+    {
+      c_pub.publish(c_pt);
+      l.sleep();
+    }
+    /*
     vector<vector<double>> r_poses;
     r_poses.resize(4*3);
     Eigen::VectorXd hand_q(4);
@@ -178,32 +184,10 @@ cerr<<"Updating environment cloud"<<endl;
       l_pub.publish(oc_map);
     }
     
-    if(hand_c_data.size()>0)
-    {
-      for(int i=0;i<hand_c_data.size();++i)
-      {
-        if(hand_c_data[i].distance<0.0)
-        {
-          cerr<<"hand link in collision: "<<i<<" d: "<<hand_c_data[i].distance<<endl;
-          cerr<<hand_c_data[i].p1.transpose()<<endl;
-          cerr<<hand_c_data[i].p2.transpose()<<endl;
-          c_pt.pose.position.x=hand_c_data[i].p2(0);
-          c_pt.pose.position.y=hand_c_data[i].p2(1);
-          c_pt.pose.position.z=hand_c_data[i].p2(2);
-          // visualize contact point on object msh:
-          
-	}
-      }
-    }
-    ros::Rate l(100);
-
-    for(int i=0;i<10;++i)
-    {
-      c_pub.publish(c_pt);
-      l.sleep();
-    }
+    
+    */
   }
-
+  
 };
 
 int main(int argc, char** argv)
@@ -213,10 +197,11 @@ int main(int argc, char** argv)
   srvClass srv_call;
   srv_call.init(n);
   srv_call.init_robot_meshes();
-  // update environment server:
-  ros::ServiceServer env_service=n.advertiseService( "/update_obj", &srvClass::update_obj, &srv_call);
+  // update object model:
+  ros::ServiceServer service_obj=n.advertiseService("/in_hand_manipulation/update_object", &srvClass::add_obj_call, &srv_call);
 
-  ros::Subscriber jsub=n.subscribe("/joint_states",1,&srvClass::jCallback,&srv_call);
+  ros::Subscriber jsub=n.subscribe("/lbr4_allegro/joint_states",1,&srvClass::jCallback,&srv_call);
+  
   ros::spin();
   
 }

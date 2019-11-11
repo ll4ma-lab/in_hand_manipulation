@@ -1,3 +1,9 @@
 <launch>
-  
+  <rosparam file="$(find ll4ma_planner)/config/robot/lbr4_allegro_bt.yaml" command="load"/>
+  <rosparam file="$(find ll4ma_scene_description)/scene/table_obj.yaml" command="load"/>
+
+  <group ns="ll4ma_planner">
+    <node name="allegro_contact" pkg="in_hand_collision_lib" type="demo_allegro_contact" output="screen" />
+
+  </group>
 </launch>

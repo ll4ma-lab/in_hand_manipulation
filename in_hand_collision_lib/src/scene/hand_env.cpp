@@ -1,110 +1,88 @@
 #include <in_hand_collision_lib/scene/hand_env.h>
 
-namespace fcl_ccheck
+namespace in_hand_manipulation
 {
-// constructor:
-handEnv::handEnv(const float &oct_resolution)
+
+bool handEnv::update_robot_state(const vector<double> &q, const bool &arm_static)
 {
-  octree_resolution_=oct_resolution;
-  octomap::OcTree* tree = new octomap::OcTree(octree_resolution_);
-  obj_tree_=tree;
-}
-
-void handEnv::load_hand_links(vector<string> &link_names, string &urdf_text)
-{
-  n_hand_links_=link_names.size();
-  readLinkShapes(urdf_text, link_names, hand_link_objs_, hand_link_offsets_);
-
-}
-
-void handEnv::update_hand_state(vector<vector<double>> &link_poses)
-{
-  vector<Transform3d> l_poses;
-  add_offsets(hand_link_offsets_,link_poses,l_poses);
-  update_pose(hand_link_objs_,l_poses);
-}
-
-void handEnv::update_link_state(vector<double> &link_pose, int l_idx)
-{
-  Transform3d l_pose;
-  add_offsets(hand_link_offsets_[l_idx],link_pose,l_pose);
-  update_pose(hand_link_objs_[l_idx],l_pose);
-}
-
-void handEnv::load_obj(const string &mesh_file_location)
-{
-  /*
-  PointCloud<pcl::PointXYZ>::Ptr obj_cloud(new PointCloud<pcl::PointXYZ>);
-  _pcl_eigen.loadPLY(mesh_file_location,obj_cloud);
-
+  vector<double> robot_q;
+  if(arm_static)
+  {
+    robot_q.insert(robot_q.end(),arm_q_.begin(),arm_q_.end());
+  }
+  robot_q.insert(robot_q.end(), q.begin(),q.end());
+  // get link poses
+  vector<vector<double>> r_poses;
   
-  _pcl_eigen.loadPCLOctree(obj_cloud,obj_tree_);
-  */
-  _pcl_eigen.loadBinvoxOctree(mesh_file_location,obj_tree_);
-  // create collision boxes from octree:
-  env_objs_=loadOctreeCollObj(obj_tree_);
-  // store offsets from collision objects:
-  store_offsets(env_objs_,obj_offsets_);
-  cout<<"Object voxel boxes size: "<<env_objs_.size()<<endl;
-  
+  Eigen::Map<Eigen::VectorXd> q_eig(robot_q.data(), robot_q.size());
+
+  robot_kdl_.getLinkPoses(q_eig,r_poses);
+  // update link poses in collision library
+  c_check.update_robot_state(r_poses);
+  return true;
 }
 
-void handEnv::update_grasp_obj_pose(vector<double> &pose)
+bool handEnv::update_arm_state(const vector<double> &q)
 {
-  vector<Transform3d> box_poses;
-  add_offsets(obj_offsets_,pose,box_poses);
-  update_pose(env_objs_,box_poses);
-  
+  arm_q_ = q;
 }
-
 
 void handEnv::get_ftip_contact_pt(vector<double> &in_pose,int ftip_idx, Vector3d &c_pt)
 {
+  /*
   Transform3d f_pose;
   add_offsets(hand_link_offsets_[ftip_idx],in_pose,f_pose);
   c_pt=f_pose.translation();
+  */
 }
 
 void handEnv::check_ftip_contact(vector<double> &pose, coll_data &c_data, int ftip_idx)
 {
+  /*
   Transform3d f_pose;
   add_offsets(hand_link_offsets_[ftip_idx],pose,f_pose);
   update_pose(hand_link_objs_[ftip_idx],f_pose);
   
   // check collision data
   signedDistance(hand_link_objs_[ftip_idx],env_objs_,c_data);
+  */
 }
 
 
 void handEnv::update_collision_links(const vector<int> &l_idx)
 {
   // we load links against which collisions have to be checked in a seperate vector for easy collision checking:
-  // thanks to pointers, we only store references, and when the link poses are updated, this list will also be updated. 
+  // thanks to pointers, we only store references, and when the link poses are updated, this list will also be updated.
+  /*
   collision_link_objs_.resize(l_idx.size());
   for(int i=0;i<l_idx.size();++i)
   {
     collision_link_objs_[i]=hand_link_objs_[l_idx[i]];
   }
+  */
   
 }
 
 void handEnv::check_link_collision(vector<vector<coll_data>> &c_data, vector<int> l_idx)
 {
   //update_hand_state(l_poses);
-  
+  /*
   c_data.resize(n_hand_links_);
   for(int i=0;i<collision_link_objs_.size();++i)
   {
     signedDistance(collision_link_objs_[i],hand_link_objs_,c_data[i]);
   }
+  */
 }
 
 void handEnv::check_link_collision( int l_idx, vector<double> &l_pose, coll_data &c_data)
 {
+  /*
   // update link state:
   update_link_state(l_pose,l_idx);
 
   signedDistance(hand_link_objs_[l_idx],env_objs_,c_data);
+  */
 }
 
 
@@ -112,7 +90,7 @@ void handEnv::check_contacts(vector<vector<double>> &l_poses, vector<vector<coll
 {
   //cerr<<"updating hand state"<<endl;
   // update robot link poses:
-  
+  /*
   update_hand_state(l_poses);
   
   c_data.resize(n_hand_links_);
@@ -122,12 +100,14 @@ void handEnv::check_contacts(vector<vector<double>> &l_poses, vector<vector<coll
   {
     signedDistance(hand_link_objs_[i], env_objs_,c_data[i]);
   }
+  */
 }
 void handEnv::check_contacts(vector<vector<double>> &l_poses, vector<coll_data> &c_data)
 {
   //cerr<<"updating hand state"<<endl;
   // update robot link poses:
-  
+
+  /*
   update_hand_state(l_poses);
   
   c_data.resize(n_hand_links_);
@@ -137,10 +117,12 @@ void handEnv::check_contacts(vector<vector<double>> &l_poses, vector<coll_data> 
   {
     signedDistance(hand_link_objs_[i], env_objs_,c_data[i]);
   }
+  */
 }
 
 void handEnv::check_contacts(vector<vector<double>> &l_poses, vector<vector<coll_data>> &c_data,vector<int> l_idx)
 {
+  /*
   //cerr<<"updating hand state"<<endl;
   // update robot link poses:
   
@@ -153,9 +135,11 @@ void handEnv::check_contacts(vector<vector<double>> &l_poses, vector<vector<coll
   {
     signedDistance(hand_link_objs_[l_idx[i]], env_objs_,c_data[l_idx[i]]);
   }
+  */
 }
 void handEnv::check_contacts(vector<vector<double>> &l_poses, vector<coll_data> &c_data,vector<int> l_idx)
 {
+  /*
   //cerr<<"updating hand state"<<endl;
   // update robot link poses:
   
@@ -168,8 +152,10 @@ void handEnv::check_contacts(vector<vector<double>> &l_poses, vector<coll_data> 
   {
     signedDistance(hand_link_objs_[l_idx[i]], env_objs_,c_data[l_idx[i]]);
   }
+  */
 }
 
+/*
 void handEnv::get_orient_contacts(vector<vector<double>> &l_poses, vector<int> l_idx, vector<Eigen::VectorXd> &or_grad,double delta)
 {
   or_grad.resize(l_poses.size());
@@ -216,7 +202,9 @@ void handEnv::get_orient_contacts(vector<vector<double>> &l_poses, vector<int> l
     }
   }
 }
+*/
 
+/*
 void handEnv::get_env_markers(visualization_msgs::MarkerArray &box_m, const string &frame_id)
 {
   _pcl_eigen.get_marker_octree(obj_tree_,box_m,frame_id);
@@ -275,5 +263,5 @@ void handEnv::get_link_markers(visualization_msgs::MarkerArray &link_markers,con
 
   }
 }
-
+*/
 }
