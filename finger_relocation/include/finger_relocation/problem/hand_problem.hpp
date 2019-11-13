@@ -51,10 +51,10 @@ public:
   vector<int> l_idx_;
   double dist_thresh_,stability_thresh_;
 private:
-  int timesteps_;
+  //int timesteps_;
   Eigen::VectorXd des_pose_,initial_pose_;
   Eigen::VectorXd init_joints;
-  double vel_lim;
+  //double vel_lim;
   int finger_;
   mutable in_hand_manipulation::handEnv *hand_env_;
   int hand_dof_;

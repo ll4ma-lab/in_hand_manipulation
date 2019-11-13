@@ -26,5 +26,13 @@ if __name__=='__main__':
 
     j_config = [0.65 for i in range(len(j_names))]
 
+    j_config[0]=0.0
+    j_config[1]=1.4
+    j_config[2]=0.0
+    j_config[3]=0.0
+    j_config[4]=0.0
+    j_config[5]=0.0
+
+
     print update_sim_state(j_config,j_names)
    

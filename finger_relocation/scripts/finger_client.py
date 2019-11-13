@@ -1,7 +1,8 @@
 import rospy
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import Pose,Point
 from sensor_msgs.msg import JointState
-from in_hand_manipulation_msgs.srv import UpdateRobotConfig
+from in_hand_manipulation_msgs.srv import UpdateRobotConfig, RelocateFingerKin
+from trajectory_msgs.msg import JointTrajectory
 from ll4ma_opt_utils.srv import AddObject
 class regraspClient(object):
     def __init__(self,mesh,init_node = False):
@@ -25,7 +26,7 @@ class regraspClient(object):
             js.name = self.j_names
             js.position = joint_config
             resp = s_call(js)
-            return resp.success
+            return resp.success,js
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
 
@@ -50,7 +51,15 @@ class regraspClient(object):
         
         
     # call fingertip relocation client
-    
-
+    def plan_finger_gait(self,finger,des_cpt,js,t_steps = 1):
+        rospy.wait_for_service('/in_hand/finger_gait/plan')
+        try:
+            s_call = rospy.ServiceProxy('/in_hand/finger_gait/plan', RelocateFingerKin)
+            resp = s_call(finger,des_cpt,js,t_steps,
+                          Pose(),Point(),JointTrajectory(),Point(),JointState())
+            return resp.joint_traj
+        except rospy.ServiceException, e:
+            print "Service call failed: %s"%e
+        
             
 

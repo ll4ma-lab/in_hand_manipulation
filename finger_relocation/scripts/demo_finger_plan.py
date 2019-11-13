@@ -34,16 +34,34 @@ if __name__=='__main__':
     regrasp_client = regraspClient(obj_mesh,init_node = True)
     
     # move hand to initial grasp:
-    j_config = [0.5 for i in range(len(regrasp_client.j_names))]
-    print regrasp_client.update_sim_state(j_config)
+    j_config =[-0.7162952000000002, 1.3607459999999998, 1.5310522, -1.4783562,
+               0.23895700000000009, 0.5382774000000001, 0.042033399999999776,
+               -0.3, 0.7413025999999998, 0.8133260000000002,
+               0.2216734999999999,
+               -0.2, 0.6,1.0, 0,
+               0,0,0, 0,
+               1.61, 0.2, 0.4,-0.1]
+
+    _,js_init= regrasp_client.update_sim_state(j_config)
 
     # update object pose:
     o_pose = Pose()
-    o_pose.orientation.w = 1.0
-    o_pose.position.x = 0.4
+    o_pose.position.x = -0.5
+    o_pose.position.y = -0.3
+    o_pose.position.z = 0.5
+
+    o_pose.orientation.x = -0.682
+    o_pose.orientation.y = 0.0
+    o_pose.orientation.z = 0.0
+    o_pose.orientation.w = 0.732
     print regrasp_client.update_obj(o_pose)
 
     # get finger gaiting plan:
-    
+    des_cpt = Point()
+    des_cpt.x = 0.1
+    des_cpt.y = 0.0
+    des_cpt.z = 0.2
+    raw_input("optimize?")
+    print regrasp_client.plan_finger_gait(1,des_cpt,js_init)
     
     

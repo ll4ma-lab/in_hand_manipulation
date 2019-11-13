@@ -41,38 +41,60 @@ public:
   bool fg_call(in_hand_manipulation_msgs::RelocateFingerKin::Request &req, in_hand_manipulation_msgs::RelocateFingerKin::Response &res)
   {
 
-    int finger;
-    // desired pose for finger
+    int finger = req.f_idx;
+    // timesteps:
+    int t_steps = req.T;
+    // desired contact point:
     
-    /*
-    // Getting parameters from service request:
-    int f=req.f_idx;
+    // TODO: setup planning arm+hand
 
-    cerr<<"Calling fg service"<<endl;
-    vector<double> joints_0=req.js.position;
-    Eigen::VectorXd des_pt;//(6);
-    if(req.des_js.position.size()>0)
+    hand_env.hand_dof_=16;
+    
+    // desired contact point+contact normal for finger:
+    Eigen::VectorXd des_pt;
+    des_pt.resize(6);
+    des_pt[0]=req.des_contact_pt.x;
+    des_pt[1]=req.des_contact_pt.y;
+    des_pt[2]=req.des_contact_pt.z;
+    
+    // contact normals:
+    
+    des_pt[3]=req.des_contact_normal.x;
+    des_pt[4]=req.des_contact_normal.y;
+    des_pt[5]=req.des_contact_normal.z;
+
+    // initial joint state:
+    // split into arm+hand:
+    // TODO: Make this generic!
+    vector<double> arm_js,hand_js;
+    for(int i=0;i<7; ++i)
     {
-      des_pt.resize(4);
-      des_pt[0]=req.des_js.position[f*4];
-      des_pt[1]=req.des_js.position[f*4+1];
-      des_pt[2]=req.des_js.position[f*4+2];
-      des_pt[3]=req.des_js.position[f*4+3];
-
+      arm_js.emplace_back(req.js.position[i]);
     }
-    else
+    for(int i=0;i<16; ++i)
     {
-      des_pt.resize(6);
-      des_pt[0]=req.des_contact_pt.x;
-      des_pt[1]=req.des_contact_pt.y;
-      des_pt[2]=req.des_contact_pt.z;
-
-      // contact normals:
-      des_pt[3]=req.des_contact_normal.x;
-      des_pt[4]=req.des_contact_normal.y;
-      des_pt[5]=req.des_contact_normal.z;
+      hand_js.emplace_back(req.js.position[7+i]);
     }
-    int t_steps=req.T;
+
+    hand_env.update_arm_state(arm_js);
+
+    cout<<"Initializing opt problem"<<endl;
+    opt_problems::optProblem opt_problem;
+    cout<<"Updating scene"<<endl;
+
+
+    opt_problem.updateTimesteps(t_steps);
+
+    opt_problem.updateScene(hand_env);
+    cout<<"Updating tstep"<<endl;
+
+    cout<<"Updating state"<<endl;
+
+    opt_problem.updateInitialState(hand_js);
+
+    
+    // update data for problem:
+    
     vector<double> vel_limits;//(16,0.2);
 
     if(t_steps<3)
@@ -83,118 +105,98 @@ public:
     {
       vel_limits.resize(16,0.2);
     }
-   
-    cerr<<"reading joint angles"<<endl;
-    // setup collision checking
-    Eigen::VectorXd hand_q(16);
-    // initialize object meshes to initial joint state:
-    for(int j=0; j<allegro_kdl.dof;++j)
-    {
-      hand_q[j]=joints_0[j];
-    }
-
-    vector<vector<double>> link_poses;
-    link_poses.resize(3*4);
-  
-    // get link pose for every link:
-    Eigen::VectorXd finger_q;
-    finger_q.resize(4);
-    Eigen::VectorXd l_pose_;
-    cerr<<"computing link poses"<<endl;
-    for (int j=0;j<4;j++)
-    {
-      //finger joints:
-      finger_q.tail(4)=hand_q.segment(4*j,4);
-      for(int i=0;i<3;++i)
-      {
-        allegro_kdl.getLinkPose(j*3+i,finger_q,l_pose_);
-        allegro_kdl.getSTDVector(l_pose_,link_poses[j*3+i]);
-      }
-    }
-    cerr<<"updating hand state"<<endl;
-    // get contact data:
-    c_check.update_hand_state(link_poses);
-    cerr<<"updated hand state"<<endl;
-    // update link collision index:
-    vector<int> f_idx;
-    for(int i=0;i<4;++i)
-    {
-      if(i!=f)
-      {
-        for(int j=0;j<3;++j)
-        {
-          f_idx.push_back(i*3+j);
-        }
-      }
-    }
-
-    c_check.update_collision_links(f_idx);
-
-    // get desired point for allegro :
-    //Eigen::VectorXd jpt;
-    //allegro_kdl.getFK(f,hand_q.segment(f*4,4),jpt);
-    cerr<<"f: "<<f<<endl;
-    //cerr<<hand_q.transpose()<<endl;
-    //cerr<<jpt.transpose()<<endl;
-    // get desired point from service call:
-    
-    opt_problems::optProblem opt_problem(t_steps,allegro_kdl,des_pt,vel_limits,joints_0,f,c_check);
-    
-    problem prob{trajectory_optimization{opt_problem}};
-    vector<double> tol(opt_problem.m_nic,1e-4);
-    
-    prob.set_c_tol(tol);
-    pagmo::snopt7 sn_v(false,"/usr/local/lib/");
-    //sn_v.set_integer_option("Iteration limit",200);
-    //sn_v.set_integer_option("Major Iteration limit",100);
-    //sn_v.set_integer_option("Iteration limit",100);
-
-    //sn_v.set_numeric_option("Major optimality tolerance",1e-3); 
-    //sn_v.set_numeric_option("Linesearch tolerance",0.3); 
-    
-    algorithm algo{sn_v};
-    algo.set_verbosity(1);
-    //algorithm algo{cmaes(500)};
-    population pop{prob,1u};
-    
-    vector<double> x_in(16*t_steps,0.0);
-    vector<double> joint_init=joints_0;
-    //joint_init[f*4+1]=0.1;
-    //joint_init[f*4+2]=0.2;
-    //joint_init[f*4+3]=0.1;
+    cout<<"Updating opt problem data"<<endl;
         
+    opt_problem.updateData(des_pt,vel_limits,finger);
+    cout<<"Updated opt problem data"<<endl;
+    //return false;
+
+    cerr<<"initializing seed.."<< opt_problem.bounds()[0].size()<<endl;
+
+    vector<double> x_in(hand_env.hand_dof_ * t_steps,0.5);
+    // get seed:
     for(int i=0;i<t_steps;++i)
     {    
-      for (int j=0;j<16;++j)
+      for (int j=0;j<hand_env.hand_dof_;++j)
       {
-        x_in[i*16+j]=joint_init[j];//+(final_joints[j]-joints_0[j])*(i+1)/(t_steps_);
+        x_in[j]=hand_js[j];
       }
     }
-    if(req.init_jtraj.points.size()==t_steps+1)
-    {
-      for(int i=1;i<req.init_jtraj.points.size();++i)
+    // cout<<"initializing seed.."<< opt_problem.bounds()[0].size()<<endl;
+
+    //cout<<"Prob initialized"<<opt_problem.bounds()[0].size()<<std::endl;
+    problem prob{con_optimization{opt_problem}};
+
+    vector<double> tol(opt_problem.m_nic,1e-4);
+    //tol[opt_problem.m_nic-1]=1e-2;
+    prob.set_c_tol(tol);
+
+    pagmo::snopt7 sn_v(false,"/usr/local/lib/");
+    
+    sn_v.set_integer_option("Verify level",-1);
+    
+    sn_v.set_integer_option("Scale option",0);
+    //sn_v.set_integer_option("Violation limit",100);
+    sn_v.set_numeric_option("Time limit",30);
+
+    
+    sn_v.set_numeric_option("Function precision",1e-10);
+    algorithm algo{sn_v};
+    algo.set_verbosity(100);
+    cout<<"Creating population"<<std::endl; 
+    unsigned int init=1u;
+    population pop{prob,init};
+    cout<<"computing initial fitness"<<endl;
+    vector<double> f_in=prob.fitness(x_in);
+    pop.set_xf(0,x_in,f_in);
+
+    cout<<"Runnnig snopt"<<std::endl;
+    population pop_res=pop;//algo.evolve(pop);
+    cout<<"Final cost:"<<pop_res.champion_f()[0]<<endl;
+
+    // get joint trajectory
+    std::vector<double> x_best;
+    std::vector<double> final_joint;
+    
+    x_best=pop_res.champion_x();
+
+    // joint trajectory?
+    // Arm also?
+    trajectory_msgs::JointTrajectory joint_traj;
+    std::vector<std::string> joint_names=req.js.name;
+    joint_traj.joint_names=joint_names;
+    
+    std::vector<double> joint_angles;
+    joint_angles.resize(hand_env.robot_kdl_.dof,0.0);
+
+    trajectory_msgs::JointTrajectoryPoint jt_pt0;
+    jt_pt0.positions=req.js.position;
+    joint_traj.points.push_back(jt_pt0);
+
+    int arm_dof = 7;
+    int hand_dof = 16;
+    int T=20;
+    for (int i=0;i<t_steps;i++)
+    { 
+      trajectory_msgs::JointTrajectoryPoint jt_pt;
+      for(int j=0;j<arm_dof;j++)
       {
-        for(int j=0;j<req.init_jtraj.points[i].positions.size();++j)
-        {
-          x_in[(i-1)*16+j]=req.init_jtraj.points[i].positions[j];
-        }
+        joint_angles[j]=jt_pt0.positions[j];
       }
-              
-    }
-    else if(req.init_jtraj.points.size()>1 && req.init_jtraj.points.size()<t_steps)
-    {
-      cerr<<"Initializing from traj"<<endl;
-      for(int i=1;i<t_steps;++i)
+      // add preshape:
+      for(int j=0;j<hand_dof;j++)
       {
-        for(int j=0;j<req.init_jtraj.points[1].positions.size();++j)
-        {
-          x_in[(i)*16+j]=joint_init[j]+(req.init_jtraj.points[1].positions[j]-joint_init[j])*double(i)/t_steps;
-          //x_in[(i)*16+j]=req.init_jtraj.points[1].positions[j];
-        }
+        joint_angles[j+arm_dof]=x_best[i*hand_dof+j];
       }
-              
+      jt_pt.positions=joint_angles;
+      joint_traj.points.push_back(jt_pt);
+      jt_pt.time_from_start=ros::Duration(float(i)*T/float(t_steps));
+
     }
 
+    res.joint_traj = joint_traj;
+    return true;
+    /*
     vector<double> f_in=prob.fitness(x_in);
     
     //vector<double> f_in_1=prob.fitness(x_in);
@@ -275,7 +277,6 @@ public:
     res.next_contact_pt=cpt;
     //cerr<<final_joints<<endl;
     */
-    return true;
   }
   
   
@@ -289,7 +290,7 @@ int main(int argc,char** argv)
   fgPlanner fg_planner;
   fg_planner.init(n);
 
-  ros::ServiceServer service=n.advertiseService("/in_hand/finger_gait",&fgPlanner::fg_call,&fg_planner);
+  ros::ServiceServer service=n.advertiseService("/in_hand/finger_gait/plan",&fgPlanner::fg_call,&fg_planner);
     ros::ServiceServer service_obj=n.advertiseService("/in_hand/finger_gait/update_obj", &fgPlanner::add_obj_call, &fg_planner);
 
   ros::spin();// Loop rate?

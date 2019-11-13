@@ -37,7 +37,8 @@ bool optProblem::updateData(const Eigen::VectorXd &des_pose, const vector<double
   // get initial pose:
   Map<Eigen::VectorXd> j0(&joints_0[0],joints_0.size());
   init_joints=j0;
-  robot_kdl_->getFK(finger_,j0.segment(finger_*4,4),initial_pose_,true);
+  cerr<<j0.transpose()<<endl;
+  robot_kdl_->getFK(finger_,j0,initial_pose_,true);
 }
 
 double optProblem::objFunction(const vector<double> x) const
@@ -731,7 +732,7 @@ std::vector<std::pair<vector<double>::size_type, vector<double>::size_type>> opt
   // inequality constraints:
   // Initial joints:
   // inequality constraints:
-  for(int i=0;i<robot_kdl_->dof;++i)
+  for(int i=0;i<hand_dof_;++i)
   {
     retval.emplace_back(1+m_nec+i,i);
   }
@@ -739,10 +740,10 @@ std::vector<std::pair<vector<double>::size_type, vector<double>::size_type>> opt
   //for(int i=0;
   for(int i=1;i<timesteps_;++i)
   {
-    for(int j=0;j<robot_kdl_->dof;++j)
+    for(int j=0;j<hand_dof_;++j)
     {
-      retval.emplace_back(1+m_nec+1*robot_kdl_->dof+(i-1)*robot_kdl_->dof+j, (i-1)*robot_kdl_->dof+j);
-      retval.emplace_back(1+m_nec+1*robot_kdl_->dof+(i-1)*robot_kdl_->dof+j,(i)*robot_kdl_->dof+j);
+      retval.emplace_back(1+m_nec+1*hand_dof_+(i-1)*hand_dof_+j, (i-1)*hand_dof_+j);
+      retval.emplace_back(1+m_nec+1*hand_dof_+(i-1)*hand_dof_+j,(i)*hand_dof_+j);
     }
   }
 
@@ -751,14 +752,14 @@ std::vector<std::pair<vector<double>::size_type, vector<double>::size_type>> opt
   {
     for(int j=finger_*4;j<finger_*4+4;++j)
     {
-      retval.emplace_back(1+m_nec+robot_kdl_->dof*timesteps_+i,i*robot_kdl_->dof+j);
+      retval.emplace_back(1+m_nec+hand_dof_*timesteps_+i,i*hand_dof_+j);
     }
   }
 
   // contact gradient
   for(int j=finger_*4;j<finger_*4+4;++j)
   {
-    retval.emplace_back(1+m_nec+robot_kdl_->dof*timesteps_+timesteps_,(timesteps_-1)*robot_kdl_->dof+j);
+    retval.emplace_back(1+m_nec+hand_dof_*timesteps_+timesteps_,(timesteps_-1)*hand_dof_+j);
   }
 
   // link collision gradient
@@ -766,14 +767,14 @@ std::vector<std::pair<vector<double>::size_type, vector<double>::size_type>> opt
   {
     for(int j=finger_*4;j<finger_*4+4;++j)
     {
-      retval.emplace_back(1+m_nec+robot_kdl_->dof*timesteps_+timesteps_+1+i,i*robot_kdl_->dof+j);
+      retval.emplace_back(1+m_nec+hand_dof_*timesteps_+timesteps_+1+i,i*hand_dof_+j);
     }
   }
   // stability constraint:
   
-  for(int j=0;j<robot_kdl_->dof;++j)
+  for(int j=0;j<hand_dof_;++j)
   {
-    retval.emplace_back(1+m_nec+robot_kdl_->dof*timesteps_+(timesteps_*2)+1,(timesteps_-1)*robot_kdl_->dof+j);
+    retval.emplace_back(1+m_nec+hand_dof_*timesteps_+(timesteps_*2)+1,(timesteps_-1)*hand_dof_+j);
   }
   for(int i=0;i<retval.size();++i)
   {
@@ -781,3 +782,32 @@ std::vector<std::pair<vector<double>::size_type, vector<double>::size_type>> opt
   }
   return retval;
 }
+vector<double> optProblem::gradient(const vector<double> x) const
+{
+  vector<double> grad;
+  vector<double> obj_grad=objGradient(x);
+  vector<double> eq_grad=eqGradient(x);
+  vector<double> ineq_grad=inEqGradient(x);
+  
+  grad.resize(m_dim+m_dim*m_nec+m_dim*m_nic,0.0);
+  for(int i=0;i<m_dim;i++)
+  {
+    grad[i]=obj_grad[i];
+
+  }
+
+  for(int i=m_dim;i<m_dim+m_dim*m_nec;i++)
+  {
+    grad[i]=eq_grad[i-m_dim];
+  }
+
+
+  for(int i=m_dim+m_dim*m_nec;i<m_dim+m_dim*m_nec+m_dim*m_nic;i++)
+  {
+    
+    grad[i]=ineq_grad[i-m_dim-m_dim*m_nec];
+  }
+
+  return grad;
+}
+
