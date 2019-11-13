@@ -19,6 +19,7 @@ bool handEnv::update_robot_state(const vector<double> &q, const bool &arm_static
   robot_kdl_.getLinkPoses(q_eig,r_poses);
   // update link poses in collision library
   c_check.update_robot_state(r_poses);
+  
   return true;
 }
 

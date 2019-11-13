@@ -50,8 +50,7 @@
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>in_hand_manipulation_msgs</build_depend>
-  <build_depend>optimization_pkg</build_depend>
-  <build_depend>ll4ma_collision_wrapper</build_depend>
+  <build_depend>ll4ma_opt_utils</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend> in_hand_collision_lib </build_depend>
@@ -61,18 +60,16 @@
   <build_export_depend> in_hand_collision_lib </build_export_depend>
 
   <build_export_depend>in_hand_manipulation_msgs</build_export_depend>
-  <build_export_depend>optimization_pkg</build_export_depend>
+  <build_export_depend>ll4ma_opt_utils</build_export_depend>
   <build_export_depend>ll4ma_collision_wrapper</build_export_depend>
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>rospy</build_export_depend>
   <exec_depend>in_hand_manipulation_msgs</exec_depend>
-  <exec_depend>optimization_pkg</exec_depend>
-  <exec_depend>ll4ma_collision_wrapper</exec_depend>
+  <exec_depend>ll4ma_opt_utils</exec_depend>
   <exec_depend>roscpp</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend> in_hand_collision_lib </exec_depend>
   <exec_depend> in_hand_manipulation </exec_depend>
-  <depend> ompl_wrapper </depend>
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->

@@ -1,7 +1,7 @@
 //#include "ll4ma_planner/debug.h"
 #include <iostream>
 
-#include <ll4ma_kdl/manipulator_kdl/robot_kdl.h>
+//#include <ll4ma_kdl/manipulator_kdl/robot_kdl.h>
 
 // Eigen library for vectors and matrices:
 #include <Eigen/Dense>
@@ -12,7 +12,7 @@
 #include <in_hand_collision_lib/scene/hand_env.h>
 
 using namespace std;
-using namespace fcl_ccheck;
+//using namespace fcl_cchec;
 namespace opt_problems
 {
   class optProblem
@@ -21,7 +21,7 @@ namespace opt_problems
     // constructor
     optProblem(int dummy);// dummy since pagmo requires default values for variables
 
-    optProblem(int &time_steps, manipulator_kdl::robotKDL &robot_kdl, Eigen::VectorXd &des_pose, vector<double> &vel_limits, vector<double> &init_joint_angles,int &finger, handEnv &collision_checker);
+    optProblem(int &time_steps, manipulator_kdl::robotKDL &robot_kdl, Eigen::VectorXd &des_pose, vector<double> &vel_limits, vector<double> &init_joint_angles,int &finger, in_hand_manipulation::handEnv &collision_checker);
     
     //optProblem(int time_steps,manipulator_kdl::robotKDL robot_kdl, vector<vector<double>> data_arr,vector<Eigen::MatrixXd> data_mats, vector<double> vel_limits,vector<double> init_joint_angles);
 
@@ -61,6 +61,7 @@ namespace opt_problems
     Eigen::VectorXd init_joints;
     double vel_lim;
     int finger_;
-    handEnv *c_check;
+    in_hand_manipulation::handEnv *hand_env_;
+    //handEnv *c_check;
   };
 }

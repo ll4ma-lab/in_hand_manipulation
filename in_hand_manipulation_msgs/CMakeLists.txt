@@ -44,7 +44,7 @@ add_service_files(
   ComputeGDRaw.srv
   UpdateObj.srv
   GraspObj.srv
-
+  UpdateRobotConfig.srv
   )
 
 generate_messages(
