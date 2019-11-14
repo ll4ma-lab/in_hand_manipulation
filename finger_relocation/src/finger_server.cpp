@@ -152,7 +152,7 @@ public:
     pop.set_xf(0,x_in,f_in);
 
     cout<<"Runnnig snopt"<<std::endl;
-    population pop_res=pop;//algo.evolve(pop);
+    population pop_res=algo.evolve(pop);
     cout<<"Final cost:"<<pop_res.champion_f()[0]<<endl;
 
     // get joint trajectory
@@ -188,7 +188,7 @@ public:
       for(int j=0;j<hand_dof;j++)
       {
         joint_angles[j+arm_dof]=x_best[i*hand_dof+j];
-        cerr<<i*hand_dof+j<<" "<<x_best[i*hand_dof+j]<<endl;
+        //cerr<<i*hand_dof+j<<" "<<x_best[i*hand_dof+j]<<endl;
       }
       jt_pt.positions=joint_angles;
       joint_traj.points.push_back(jt_pt);

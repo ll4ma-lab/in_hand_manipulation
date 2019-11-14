@@ -56,7 +56,7 @@ public:
   //void get_env_markers(visualization_msgs::MarkerArray &box_m, const string &frame_id);
   //ll4ma_kdl::transformClass transforms;
   //vector<Transform3d> hand_link_offsets_,obj_offsets_;
-  int hand_dof_;
+  int hand_dof_,arm_dof_;
   void get_robot_state(Eigen::VectorXd  &q);
   vector<double> get_robot_state() const;
 

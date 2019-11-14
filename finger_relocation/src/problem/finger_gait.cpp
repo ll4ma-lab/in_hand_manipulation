@@ -22,7 +22,7 @@ bool optProblem::updateData(const Eigen::VectorXd &des_pose, const vector<double
 {  
   m_dim=hand_dof_*timesteps_;
   m_nec=0;
-  m_nic=hand_dof_*(timesteps_)+timesteps_+1+timesteps_+1;
+  m_nic=hand_dof_*(timesteps_);//+timesteps_+1+timesteps_+1;
   // velocity constraints, link collision(t_steps), f_tip contact at T, link collisions, stability constraint
   des_pose_=des_pose;
   
@@ -41,7 +41,7 @@ bool optProblem::updateData(const Eigen::VectorXd &des_pose, const vector<double
   //robot_kdl_->getFK(finger_,j0,initial_pose_,true);
 }
 
-double optProblem::objFunction(const vector<double> x) const
+double optProblem::objFunction(vector<double> x) const
 {
   // Cost function is on reaching a desired cartesian pose 
   double cost_val=0.0;
@@ -49,7 +49,7 @@ double optProblem::objFunction(const vector<double> x) const
   
   // get robot state:
   hand_env_->update_robot_state(x);
-  Eigen::Map<const Eigen::VectorXd> final_q(&x[(timesteps_-1)*hand_dof_],hand_dof_);
+  Eigen::Map<Eigen::VectorXd> final_q(&x[(timesteps_-1)*hand_dof_],hand_dof_);
   Eigen::VectorXd reach_pose;
   robot_kdl_->getFK(finger_,final_q,reach_pose,true);
 
@@ -163,7 +163,17 @@ vector<double> optProblem::objGradient(vector<double> x) const
 
   // get jacobian
   Eigen::MatrixXd point_J;
-  robot_kdl_->getJacobian
+  robot_kdl_->getJacobian(finger_,final_q,point_J);
+
+  Eigen::VectorXd gradient = -2.0 * point_J.transpose() * err_vec;
+
+  //cerr<<gradient.size()<<endl;
+  for(int i =0;i<hand_dof_;++i)
+  {
+    retval[i] = gradient[hand_env_->arm_dof_+i];
+  }
+
+  //robot_kdl_->getJacobian
   /*
   //return retval;
   Eigen::VectorXd q;

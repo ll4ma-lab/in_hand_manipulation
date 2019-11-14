@@ -34,6 +34,7 @@ void handEnv::get_robot_state(Eigen::VectorXd &q_eig)
 bool handEnv::update_arm_state(const vector<double> &q)
 {
   arm_q_ = q;
+  arm_dof_ = q.size();
 }
 
 
