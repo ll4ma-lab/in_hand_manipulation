@@ -57,6 +57,9 @@ public:
   //ll4ma_kdl::transformClass transforms;
   //vector<Transform3d> hand_link_offsets_,obj_offsets_;
   int hand_dof_;
+  void get_robot_state(Eigen::VectorXd  &q);
+  vector<double> get_robot_state() const;
+
 private:
   //int n_hand_links_;
 
@@ -66,5 +69,6 @@ private:
   //vector<float> ws_min_bound_;
   //vector<float> ws_max_bound_;
   vector<double> arm_q_;
+  vector<double> robot_q_;
 };
 }

@@ -5,16 +5,16 @@ namespace in_hand_manipulation
 
 bool handEnv::update_robot_state(const vector<double> &q, const bool &arm_static)
 {
-  vector<double> robot_q;
+  robot_q_.clear();
   if(arm_static)
   {
-    robot_q.insert(robot_q.end(),arm_q_.begin(),arm_q_.end());
+    robot_q_.insert(robot_q_.end(),arm_q_.begin(),arm_q_.end());
   }
-  robot_q.insert(robot_q.end(), q.begin(),q.end());
+  robot_q_.insert(robot_q_.end(), q.begin(),q.end());
   // get link poses
   vector<vector<double>> r_poses;
   
-  Eigen::Map<Eigen::VectorXd> q_eig(robot_q.data(), robot_q.size());
+  Eigen::Map<Eigen::VectorXd> q_eig(robot_q_.data(), robot_q_.size());
 
   robot_kdl_.getLinkPoses(q_eig,r_poses);
   // update link poses in collision library
@@ -22,11 +22,20 @@ bool handEnv::update_robot_state(const vector<double> &q, const bool &arm_static
   
   return true;
 }
-
+vector<double> handEnv::get_robot_state() const
+{
+  return robot_q_;
+}
+void handEnv::get_robot_state(Eigen::VectorXd &q_eig)
+{
+  new (&q_eig) Eigen::Map<Eigen::VectorXd>(robot_q_.data(), robot_q_.size());
+  //Eigen::Map<Eigen::VectorXd> q (robot_q_.data(), robot_q_.size());
+}
 bool handEnv::update_arm_state(const vector<double> &q)
 {
   arm_q_ = q;
 }
+
 
 void handEnv::get_ftip_contact_pt(vector<double> &in_pose,int ftip_idx, Vector3d &c_pt)
 {
