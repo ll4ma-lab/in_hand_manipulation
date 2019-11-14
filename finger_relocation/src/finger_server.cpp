@@ -120,6 +120,7 @@ public:
       for (int j=0;j<hand_env.hand_dof_;++j)
       {
         x_in[j]=hand_js[j];
+        //cerr<<x_in[j]<<endl;
       }
     }
     // cout<<"initializing seed.."<< opt_problem.bounds()[0].size()<<endl;
@@ -187,6 +188,7 @@ public:
       for(int j=0;j<hand_dof;j++)
       {
         joint_angles[j+arm_dof]=x_best[i*hand_dof+j];
+        cerr<<i*hand_dof+j<<" "<<x_best[i*hand_dof+j]<<endl;
       }
       jt_pt.positions=joint_angles;
       joint_traj.points.push_back(jt_pt);

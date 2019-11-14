@@ -62,6 +62,7 @@ if __name__=='__main__':
     des_cpt.y = 0.0
     des_cpt.z = 0.2
     raw_input("optimize?")
-    print regrasp_client.plan_finger_gait(1,des_cpt,js_init)
-    
+    jtraj = regrasp_client.plan_finger_gait(1,des_cpt,js_init)
+
+    regrasp_client.send_traj(jtraj)
     

@@ -4,6 +4,14 @@ from sensor_msgs.msg import JointState
 from in_hand_manipulation_msgs.srv import UpdateRobotConfig, RelocateFingerKin
 from trajectory_msgs.msg import JointTrajectory
 from ll4ma_opt_utils.srv import AddObject
+from rospkg import RosPack
+rp=RosPack()
+rp.list()
+import sys
+path_=rp.get_path('trajectory_smoothing')+'/scripts'
+sys.path.insert(0,path_)
+from trajectory_pub import *
+
 class regraspClient(object):
     def __init__(self,mesh,init_node = False):
         if(init_node):
@@ -16,6 +24,8 @@ class regraspClient(object):
                          'middle_joint_0', 'middle_joint_1', 'middle_joint_2', 'middle_joint_3',
                          'ring_joint_0', 'ring_joint_1', 'ring_joint_2', 'ring_joint_3',
                          'thumb_joint_0', 'thumb_joint_1','thumb_joint_2', 'thumb_joint_3']
+        
+        self.traj_server=trajectoryServer(100,robot_name='lbr4',topic_name='/finger_gait/traj',init_node=False)
 
 
     def update_sim_state(self,joint_config):
@@ -63,3 +73,9 @@ class regraspClient(object):
         
             
 
+
+    def send_traj(self,jtraj):
+        
+        self.traj_server.viz_joint_traj(jtraj,'lbr4_base_link')
+
+        return True

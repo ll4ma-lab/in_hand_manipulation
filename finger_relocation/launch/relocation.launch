@@ -4,7 +4,8 @@
   <rosparam file="$(find ll4ma_scene_description)/scene/table_obj.yaml" command="load"/>
   <group ns="ll4ma_planner">
 
-    <node name="finger_gait_node" pkg="finger_relocation" type="fg_server" output="screen"  launch-prefix="gdb -exec run - -args"/>
+    <node name="finger_gait_node" pkg="finger_relocation" type="fg_server" output="screen"/>
+    <!--launch-prefix="gdb -exec run - -args"/-->
   </group>
   <!--node name="finger_slide_node" pkg="finger_relocation" type="fs_server" output="screen"/-->
   
