@@ -57,10 +57,10 @@ if __name__=='__main__':
     print regrasp_client.update_obj(o_pose)
 
     # get finger gaiting plan:
-    des_cpt = Point()
-    des_cpt.x = 0.1
-    des_cpt.y = 0.0
-    des_cpt.z = 0.2
+    des_cpt = Point() # -0.532, -0.318, 0.424
+    des_cpt.x = -0.532
+    des_cpt.y = -0.318
+    des_cpt.z = 0.5
     raw_input("optimize?")
     jtraj = regrasp_client.plan_finger_gait(1,des_cpt,js_init)
 

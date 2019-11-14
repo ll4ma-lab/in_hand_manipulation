@@ -37,14 +37,25 @@ bool optProblem::updateData(const Eigen::VectorXd &des_pose, const vector<double
   // get initial pose:
   Map<Eigen::VectorXd> j0(&joints_0[0],joints_0.size());
   init_joints=j0;
-  cerr<<j0.transpose()<<endl;
-  robot_kdl_->getFK(finger_,j0,initial_pose_,true);
+  //cerr<<j0.transpose()<<endl;
+  //robot_kdl_->getFK(finger_,j0,initial_pose_,true);
 }
 
 double optProblem::objFunction(const vector<double> x) const
 {
   // Cost function is on reaching a desired cartesian pose 
   double cost_val=0.0;
+
+  
+  // get robot state:
+  hand_env_->update_robot_state(x);
+  Eigen::Map<const Eigen::VectorXd> final_q(&x[(timesteps_-1)*hand_dof_],hand_dof_);
+  Eigen::VectorXd reach_pose;
+  robot_kdl_->getFK(finger_,final_q,reach_pose,true);
+
+  // compute pose error:
+  
+  cost_val = (des_pose_.head(3) - reach_pose.head(3)).squaredNorm();
   return cost_val;
   /*
   //return cost_val;
@@ -140,6 +151,19 @@ vector<double> optProblem::objGradient(vector<double> x) const
 {
 
   vector<double> retval(m_dim,0.0);
+  
+  // get robot state:
+  hand_env_->update_robot_state(x);
+  Eigen::Map<const Eigen::VectorXd> final_q(&x[(timesteps_-1)*hand_dof_],hand_dof_);
+  Eigen::VectorXd reach_pose;
+  robot_kdl_->getFK(finger_,final_q,reach_pose,true);
+
+  // compute pose error:
+  Eigen::VectorXd err_vec = des_pose_.head(3) - reach_pose.head(3);
+
+  // get jacobian
+  Eigen::MatrixXd point_J;
+  robot_kdl_->getJacobian
   /*
   //return retval;
   Eigen::VectorXd q;
