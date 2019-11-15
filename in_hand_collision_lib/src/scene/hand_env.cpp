@@ -11,15 +11,18 @@ bool handEnv::update_robot_state(const vector<double> &q, const bool &arm_static
     robot_q_.insert(robot_q_.end(),arm_q_.begin(),arm_q_.end());
   }
   robot_q_.insert(robot_q_.end(), q.begin(),q.end());
-  // get link poses
+  
+  return true;
+}
+bool handEnv::update_collision_state()
+{
+  Eigen::Map<Eigen::VectorXd> q_eig(robot_q_.data(), robot_q_.size());
   vector<vector<double>> r_poses;
   
-  Eigen::Map<Eigen::VectorXd> q_eig(robot_q_.data(), robot_q_.size());
-
-  //robot_kdl_.getLinkPoses(q_eig,r_poses);
+  // get link poses
+  robot_kdl_.getLinkPoses(q_eig,r_poses);
   // update link poses in collision library
-  //c_check.update_robot_state(r_poses);
-  
+  c_check.update_robot_state(r_poses);
   return true;
 }
 vector<double> handEnv::get_robot_state() const
@@ -38,6 +41,15 @@ bool handEnv::update_arm_state(const vector<double> &q)
   arm_dof_ = q.size();
 }
 
+void handEnv::finger_obj_ccheck(vector<coll_data> &c_data, const int &finger)
+{
+  c_check.hand_object_ccheck(c_data, finger_lidx_[finger],false);
+}
+
+void handEnv::ftip_obj_ccheck(coll_data &c_data, const int &finger)
+{
+  c_check.hand_object_ccheck(c_data, finger_contact_lidx_[finger],true);
+}
 
 void handEnv::get_ftip_contact_pt(vector<double> &in_pose,int ftip_idx, Vector3d &c_pt)
 {
