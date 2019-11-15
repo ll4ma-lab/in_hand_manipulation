@@ -21,7 +21,7 @@ find_package(PCL 1.7 REQUIRED)
 
 find_package(Pagmo REQUIRED)
 
-find_package(Eigen3 3.3 REQUIRED)
+#find_package(Eigen3 3.3 REQUIRED)
 
 #find_package(ompl REQUIRED)
 

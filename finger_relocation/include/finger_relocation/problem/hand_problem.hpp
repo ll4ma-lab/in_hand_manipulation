@@ -30,11 +30,11 @@ public:
   bool updateScene(in_hand_manipulation::handEnv &hand_env);
   
   // functions
-  double objFunction(vector<double> x) const; 
+  double objFunction(const vector<double> x) const; 
   vector<double> inEqConstraints(vector<double> x) const;
   vector<double> EqConstraints(vector<double> x) const;
   vector<double> gradient(vector<double> x) const;
-  vector<double> objGradient(vector<double> x) const;
+  vector<double> objGradient(const vector<double> x) const;
   vector<double> inEqGradient(vector<double> x) const;
   vector<double> eqGradient(vector<double> x) const;
   vector<double> collisionGradient(vector<double> x) const;

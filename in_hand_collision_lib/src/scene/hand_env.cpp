@@ -16,9 +16,9 @@ bool handEnv::update_robot_state(const vector<double> &q, const bool &arm_static
   
   Eigen::Map<Eigen::VectorXd> q_eig(robot_q_.data(), robot_q_.size());
 
-  robot_kdl_.getLinkPoses(q_eig,r_poses);
+  //robot_kdl_.getLinkPoses(q_eig,r_poses);
   // update link poses in collision library
-  c_check.update_robot_state(r_poses);
+  //c_check.update_robot_state(r_poses);
   
   return true;
 }
@@ -28,7 +28,8 @@ vector<double> handEnv::get_robot_state() const
 }
 void handEnv::get_robot_state(Eigen::VectorXd &q_eig)
 {
-  new (&q_eig) Eigen::Map<Eigen::VectorXd>(robot_q_.data(), robot_q_.size());
+  Eigen::Map<Eigen::VectorXd> q_temp(robot_q_.data(), robot_q_.size());
+  q_eig = q_temp;
   //Eigen::Map<Eigen::VectorXd> q (robot_q_.data(), robot_q_.size());
 }
 bool handEnv::update_arm_state(const vector<double> &q)
