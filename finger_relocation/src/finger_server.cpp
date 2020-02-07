@@ -132,11 +132,10 @@ public:
     //tol[opt_problem.m_nic-1]=1e-2;
     prob.set_c_tol(tol);
     
-    algorithm algo{nlopt("slsqp")};
-    /*
+    //    algorithm algo{nlopt("slsqp")};
     pagmo::snopt7 sn_v(false,"/usr/local/lib/");
     
-    //sn_v.set_integer_option("Verify level",-1);
+    sn_v.set_integer_option("Verify level",-1);
     
     //sn_v.set_integer_option("Scale option",0);
     //sn_v.set_integer_option("Violation limit",100);
@@ -146,7 +145,6 @@ public:
     
     sn_v.set_numeric_option("Function precision",1e-10);
     algorithm algo{sn_v};
-    */
     
     algo.set_verbosity(1);
     cout<<"Creating population"<<std::endl; 
@@ -159,7 +157,7 @@ public:
     //pop.set_xf(0,x_in,f_in);
 
     cout<<"Runnnig snopt"<<std::endl;
-    population pop_res=pop;//algo.evolve(pop);
+    population pop_res=algo.evolve(pop);
     cout<<"Final cost:"<<pop_res.champion_f()[0]<<endl;
 
     // get joint trajectory

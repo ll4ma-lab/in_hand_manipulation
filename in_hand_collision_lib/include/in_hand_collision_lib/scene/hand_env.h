@@ -9,7 +9,24 @@ class handEnv : public ll4ma_opt_utils::envUtils
 {
 public:
   handEnv():ll4ma_opt_utils::envUtils() {};
-  handEnv(ros::NodeHandle &n):ll4ma_opt_utils::envUtils(n){};
+  handEnv(ros::NodeHandle &n):ll4ma_opt_utils::envUtils(n)
+  {
+    // load finger link indices:
+    finger_lidx_.resize(4);
+    bool success = true;
+      
+    success &= nh->getParam("finger_0_links",finger_lidx_[0]);
+    success &= nh->getParam("finger_1_links",finger_lidx_[1]);
+    success &= nh->getParam("finger_2_links",finger_lidx_[2]);
+    success &= nh->getParam("finger_3_links",finger_lidx_[3]);
+
+    success &= nh->getParam("finger_contact_links",finger_contact_lidx_);
+
+    if(!success)
+    {
+      exit(1);
+    }
+  };
   
   // functions that change the private variables of this class:
   // robot link functions:
@@ -17,6 +34,12 @@ public:
   bool update_robot_state(const vector<double> &q, const bool &arm_static = true);
 
   bool update_arm_state(const vector<double> &q);
+  bool update_collision_state();
+
+  void finger_obj_ccheck(vector<coll_data> &c_data,const int &finger);
+
+  void ftip_obj_ccheck(coll_data &c_data,const int &finger);
+  
   // environment functions:
   
   //void update_world(PointCloud<PointXYZ>::Ptr env_cloud, PointCloud<PointXYZ>::Ptr obj_cloud);
@@ -70,5 +93,9 @@ private:
   //vector<float> ws_max_bound_;
   vector<double> arm_q_;
   vector<double> robot_q_;
+
+  /// stores the finger links' indices for each finger 
+  vector<vector<int> > finger_lidx_;
+  vector<int> finger_contact_lidx_;
 };
 }

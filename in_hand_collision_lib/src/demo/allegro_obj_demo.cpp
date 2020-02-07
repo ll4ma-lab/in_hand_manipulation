@@ -86,10 +86,12 @@ manipulator_kdl::robotKDL allegro_kdl("robot_description",*nh,hand_base_names, h
     hand_env.update_arm_state(arm_js);
     
     hand_env.update_robot_state(js,false);
+    hand_env.update_collision_state();
     // check collision between hand links
     vector<coll_data> hand_c_data;
-    
-    hand_env.c_check.hand_object_ccheck(hand_c_data);
+
+    hand_env.finger_obj_ccheck(hand_c_data,0);
+    //hand_env.c_check.hand_object_ccheck(hand_c_data);
 
     visualization_msgs::Marker c_pt;
     std_msgs::ColorRGBA m_color;
