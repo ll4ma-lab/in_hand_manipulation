@@ -117,8 +117,12 @@ class TrialList:
                 folder=folder
                 fing=[0,1,3]
                 line_length=len(line)
+                
                 if(line_length>25 and line[25]!=''):
-                    reached=map(float,line[24:24+6])
+                    try:
+                        reached=map(float,line[24:24+6])
+                    except:
+                        continue
                 else:
                     reached=[]
                 if(line_length>30 and line[30]!='[]'):
@@ -131,7 +135,7 @@ class TrialList:
                     exp_pose=[]
                 
                 
-                self.arr.append(ObjectModel(name,grasp,offset,des,fing,csvreader.line_num,f_name,folder,initial_pose,solution,reached,weights,trial_no,length,exp_pose))
+                self.arr.append( ObjectModel(name,grasp,offset,des,fing,csvreader.line_num,f_name,folder,initial_pose,solution,reached,weights,trial_no,length,exp_pose))
 
     def add_aruco_centroid_locations(self,f_name):
         with open(f_name,'r') as csvfile:

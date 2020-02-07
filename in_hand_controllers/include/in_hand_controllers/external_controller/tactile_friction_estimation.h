@@ -1,6 +1,8 @@
 #include <hand_services/external_controller/in_hand_controller_template.h>
 #include <in_hand_controllers/TactileFrictionEstimation.h>
 #include <biotac_sensors/BioTacForce.h>
+#include <biotac_sensors/BioTacTareHand.h>
+
 namespace hand_task_controller
 {
 class tactileController : inHandController
@@ -25,8 +27,10 @@ protected:
   
   // tactile data subscrition:
   ros::Subscriber tactile_sub_;
+  ros::Subscriber tactile_raw_sub_;
   //slip_cb(std_msgs::Int16MultiArray &msg);
 private:
+  biotac_sensors::BioTacTareHand tactile_raw_msg_;
   Eigen::VectorXd old_ftip_pose_;
   double kin_slip_thresh_;
   double cmd_timeout_;
@@ -63,6 +67,9 @@ private:
    * @param msg 
    */
   void tactile_msg_callback(biotac_sensors::BioTacForce msg);
+
+
+  void tactile_raw_msg_callback(biotac_sensors::BioTacTareHand msg);
 
   /// Flag to indicate if a tactile message has been recieved
   bool tactile_msg_=false;

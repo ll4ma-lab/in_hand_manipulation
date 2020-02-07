@@ -99,6 +99,7 @@ def compute_reached_errors(obj):
             des_pose=obj[i].des
             reached_pose=obj[i].reached
             initial_pose=obj[i].initial_pose
+            
             pos_length=np.linalg.norm(des_pose[0:3]-initial_pose[0:3],ord=2)
             R_des=PyKDL.Rotation.RPY(des_pose[3],des_pose[4],des_pose[5])
             R_reach=PyKDL.Rotation.RPY(reached_pose[3],reached_pose[4],reached_pose[5])
@@ -534,11 +535,12 @@ def plot_method():
     plot_convergence_method(obj,[len(obj_0),len(obj_1),len(obj_2),len(obj_3)],names_=['IK-rigid','relaxed-position','relaxed-position-orientation','relaxed-rigidity'])
 
 def plot_reached():
-    obj_1=TrialList('../data/trials/trinkle.csv','',5)
-    obj_2=TrialList('../data/trials/relaxed-position.csv','',5)
+    root_dir = '../../in_hand_manipulation_data/data/in_grasp_manipulation'
+    obj_1=TrialList(root_dir+'/trials/trinkle.csv','',5)
+    obj_2=TrialList(root_dir+'/trials/relaxed-position.csv','',5)
 
-    obj_3=TrialList('../data/trials/relaxed-position-orientation.csv','',5)
-    obj_4=TrialList("../data/trials/relaxed-rigidity.csv",'',5)
+    obj_3=TrialList(root_dir+'/trials/relaxed-position-orientation.csv','',5)
+    obj_4=TrialList(root_dir+'/trials/relaxed-rigidity.csv','',5)
 
     names_=['point contact','relaxed-position','relaxed-position-orientation','relaxed-rigidity']
     #obj_all=obj_1.arr+obj_2.arr+obj_3.arr#+obj_4.arr
@@ -621,6 +623,52 @@ def plot_initial():
 
     plot_convergence_initial(obj)
 
+def compute_human_initial_err(obj):
+    names=[]
+    P_err=[]
+    O_err=[]
+    perc_P_err=[]
+    n = 5 # number of trials:
+    initial_pose=np.array(obj[0].initial_pose)
+    for i in range(len(obj)):
+        if( i % 5 == 0):
+            initial_pose=np.array(obj[i].exp_pose)
+        else:
+            des_pose=np.array(obj[i].des)
+            exp_pose=np.array(obj[i].exp_pose)
+            #initial_pose=np.array(obj[i].initial_pose)
+            #reached_pose=np.array(obj[i].reached)
+            
+            R_des=PyKDL.Rotation.RPY(initial_pose[3],initial_pose[4],initial_pose[5])
+            R_reach=PyKDL.Rotation.RPY(exp_pose[3],exp_pose[4],exp_pose[5])
+
+            
+            des=np.array(R_des.GetQuaternion())
+            reach=np.array(R_reach.GetQuaternion())
+            q_sum=np.linalg.norm(des+reach,ord=2)
+            q_diff=np.linalg.norm(des-reach,ord=2)
+            
+            R_err=100*np.min([q_sum,q_diff])/np.sqrt(2)
+            #position error:
+            pos_err=100*np.linalg.norm(initial_pose[0:3]-exp_pose[0:3],ord=2)
+            pos_perc_err=pos_err/np.linalg.norm(des_pose[0:3]-initial_pose[0:3],ord=2)
+
+            names.append(obj[i].f_name+'_'+str(obj[i].trial))#+str(pos_err))
+            obj[i].err=[pos_err,R_err]
+            #if(R_err < 10.0):
+            P_err.append(pos_err)
+            perc_P_err.append(pos_perc_err)
+            O_err.append(R_err)
+    print len(P_err)
+    print "Position error cm : ",np.median(P_err),np.var(P_err)#, np.min(P_err)
+    #print "Position error % : ",np.mean(perc_P_err),np.max(perc_P_err), np.min(perc_P_err)
+        
+    print "Ori error: ",np.median(O_err),np.var(O_err)#, np.min(O_err)
+
+    return obj,names
+
+            
+
 def compute_robust_err(obj,n,initial_=False):
     names=[]
     P_err=[]
@@ -666,6 +714,12 @@ def plot_robust():
     obj_init,n=compute_robust_err(obj_1,n_trials,initial_=True)
     plot_convergence_method(obj_init+obj_reached,[len(obj_init),len(obj_reached),len(obj_reached),len(obj_reached)],['Initial Pose','Reached pose'])
     
+
+def get_initial_err():
+    root_dir = '../../in_hand_manipulation_data/data/in_grasp_manipulation'
+
+    obj_0=TrialList(root_dir+'/trials/trinkle_init.csv','',5).arr
+    compute_human_initial_err(obj_0)
 
 def plot_pair():
     #obj_0=TrialList("../data/trials/relaxed-full-linear_init.csv",'',5).arr
@@ -804,10 +858,12 @@ if __name__=='__main__':
     '''
     #plot_single()
     #plot_initial()
-    plot_method()
+    #plot_method()
     #plot_reached()#_norm()
     #plot_reached_variance()
     #plot_robust()
     #plot_regression()
     #plot_pair()
     #plot_4f()
+
+    get_initial_err()

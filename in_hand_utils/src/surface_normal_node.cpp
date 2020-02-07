@@ -127,7 +127,7 @@ int main(int argc, char** argv)
     //
     env_utils.c_check.update_obj_pose(pose);
 
-        // read tactile contact points if available:
+    // read tactile contact points if available:
     if(tactile_sensing)
     {
       for(int i=0;i<cpt_frames.size();++i)

@@ -1,3 +1,6 @@
 #+Title: CPP implementation notes:
 * Relaxed-rigidity:
 data_arr=[des_pose,weigths,rigid_finger,finger_arr,position_offsets,orientation_offsets]
+
+** Plotting errors:
+Run python/plot_convergence.py

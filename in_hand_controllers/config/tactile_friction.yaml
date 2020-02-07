@@ -71,6 +71,7 @@ allegro_grasp:
   
   tactile_force_topic: "/TacNet/bt_force" # TODO: make it generic for other sensors too. Currently works with BioTacForce msg from biotac_sensors package.
 
+  tactile_raw_topic: "/biotac_tare_pub"
   fingers: [0,1,2,3] # fingers available with the hand
 
   kinematic_slip_thresh: 3.0 # meters/sec

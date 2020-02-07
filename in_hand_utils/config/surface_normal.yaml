@@ -2,8 +2,8 @@ in_hand_utils:
 
   publish_topic: "in_hand_utils/obj_surface_normals"
 
-  robot_joint_state: "/allegro_hand_right/joint_states"
-  
+  #robot_joint_state: "/allegro_hand_right/joint_states"
+  robot_joint_state: "/tracker/allegro/joint_states"
   object_frame: "object"
   
   robot_description: "robot_description"

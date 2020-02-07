@@ -2,7 +2,7 @@
 
 int main(int argc, char** argv)
 {
-  ros::init(argc,argv,"in_hand_controllers/tactile_friction_estimator");
+  ros::init(argc,argv,"in_hand_controllers_tactile_friction_estimator");
   string ns="allegro_grasp";
   robot_interface::AllegroInterface allegro_int(ns);
   allegro_int.init();

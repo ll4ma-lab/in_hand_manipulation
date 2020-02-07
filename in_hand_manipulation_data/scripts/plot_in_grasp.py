@@ -218,8 +218,9 @@ def waypoint_plots(f_name_):
 
 def compute_errors(f_name_):
     pd_api=pdAPI()
-    f_name='../data/in_grasp_manipulation/'+f_name_+'_exp.csv'
+    f_name='../data/in_grasp_manipulation/'+f_name_+'.csv'
     df=pd_api.read_pd(f_name)
+    print df
     err_api=errorAPI()
     dbot_ar_p=[]
     dbot_ar_o=[]
@@ -256,7 +257,7 @@ if __name__=='__main__':
     #fb_plots('exp_fb.csv')
     #metrics_plots('interpolation_all.csv')
     
-    file_name='exp_2_relaxed-full_solution'
+    file_name='trials/relaxed-rigidity'
     compute_errors(file_name)
     #waypoint_plots(file_name)
     #'''

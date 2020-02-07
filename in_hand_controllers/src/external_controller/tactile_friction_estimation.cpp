@@ -22,6 +22,8 @@ bool tactileController::configureHook()
     // read subscriber topic for tactile force sensing
   string tactile_sub_topic;
   success &= nh_.getParam("tactile_force_topic",tactile_sub_topic);
+  string tactile_raw_sub_topic;
+  success &= nh_.getParam("tactile_raw_topic",tactile_raw_sub_topic);
   
 
   success &= nh_.getParam("cmd_timeout",cmd_timeout_);
@@ -34,6 +36,11 @@ bool tactileController::configureHook()
 
   // create subscriber
   tactile_sub_=nh_.subscribe<biotac_sensors::BioTacForce>(tactile_sub_topic,1,&tactileController::tactile_msg_callback,this);
+
+  
+  // create biotac raw subscriber
+
+  tactile_raw_sub_ =  nh_.subscribe<biotac_sensors::BioTacTareHand>(tactile_raw_sub_topic,1,&tactileController::tactile_raw_msg_callback,this);
 
   return true;
 }
@@ -182,16 +189,18 @@ bool tactileController::estimate_friction(const int &finger, const Eigen::Vector
   log("Estimating Friction");
   Eigen::VectorXd new_cmd_pt=force_pt;//+force_direction;
   Eigen::VectorXd old_cmd=last_jcmd_;
+  //cerr<<"Finger: "<<finger<<endl;
   while(!kinematicSlip(finger,force_direction) && !timeout)
   {
+    //log("slip not detected yet");
     ros::spinOnce();
     current = ros::Time::now();
     robot_interface_->kdl_->getJacobian(finger,q_,J);
     Eigen::VectorXd theta_dot=J.block(0,0,3,J.cols()).transpose()*new_cmd_pt;
     //cerr<<theta_dot.transpose()<<endl;
     Eigen::VectorXd theta_cmd=old_cmd;
-    theta_cmd.segment(finger*4,4)+=theta_dot;
-    //cerr<<theta_cmd.segment(finger*4,4).transpose()<<endl;
+    theta_cmd.segment(finger*4,4)+=theta_dot.segment(finger*4,4);
+    //cerr<<theta_dot.segment(finger*4,4).transpose()<<endl;
     robot_interface_->publishRealRobot(theta_cmd,cm);
     new_cmd_pt+=force_direction*force_mag;
     rate_.sleep();
@@ -261,7 +270,7 @@ bool tactileController::estimation_srv(in_hand_controllers::TactileFrictionEstim
   {
     res.last_jcmd.position[i]=last_jcmd_[i];
   }
-        
+  res.biotac_tare_msg = tactile_raw_msg_;
   //res.last_jcmd.position=last_jcmd_;
   log("Friction estimated");
   return true;
@@ -296,6 +305,16 @@ void tactileController::tactile_msg_callback(biotac_sensors::BioTacForce msg)
     tactile_msg_=true;
       
   }
+
+  
+}
+
+void tactileController::tactile_raw_msg_callback(biotac_sensors::BioTacTareHand msg)
+{
+
+  // read messages from tactile sensor
+  
+  tactile_raw_msg_ = msg;
 
   
 }

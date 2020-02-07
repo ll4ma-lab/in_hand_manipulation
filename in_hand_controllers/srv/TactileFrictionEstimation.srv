@@ -7,3 +7,4 @@ float64[] force_direction
 bool success
 float64[] slip_force
 sensor_msgs/JointState last_jcmd
+biotac_sensors/BioTacTareHand biotac_tare_msg

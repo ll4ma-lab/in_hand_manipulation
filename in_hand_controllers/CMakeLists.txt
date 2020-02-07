@@ -85,7 +85,7 @@ add_service_files(
 ## Generate added messages and services with any dependencies listed here
  generate_messages(
    DEPENDENCIES
-   geometry_msgs   sensor_msgs#   trajectory_msgs
+   geometry_msgs   sensor_msgs biotac_sensors#   trajectory_msgs
  )
 
 ################################################

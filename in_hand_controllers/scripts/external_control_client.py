@@ -14,12 +14,12 @@ class externalHandControl:
             req=rospy.ServiceProxy('/tactile_friction_estimation/get_estimate',TactileFrictionEstimation)
             resp=req(f_idx,last_jcmd,force_mag,force_pt,force_direction)
             if(resp.success):
-                return resp.slip_force,resp.last_jcmd
+                return resp.slip_force,resp.last_jcmd,resp.biotac_tare_msg
             else:
-                return np.zeros(3),last_jcmd
+                return np.zeros(3),last_jcmd,None
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
-        return np.zeros(3),last_jcmd
+        return np.zeros(3),last_jcmd,None
     def update_impedance_grasp(self,last_jcmd,mu_,mu_slip_,f_idx=[0,1,2,3],des_poses=None):
         # enable impedancce grasp controller
 
