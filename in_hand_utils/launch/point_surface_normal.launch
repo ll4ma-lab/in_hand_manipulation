@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+  <rosparam file="$(find in_hand_utils)/config/point_surface_normal.yaml" command="load"/>
+  <rosparam file="$(find ll4ma_scene_description)/scene/table_obj.yaml" command="load"/>
+
+  <group ns="in_hand_utils">
+
+    <node name="surface_normal_node" pkg="in_hand_utils" type="point_surface_normal_node" output="screen"/>
+  </group>
+</launch>

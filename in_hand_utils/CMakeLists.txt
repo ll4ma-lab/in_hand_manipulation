@@ -137,6 +137,10 @@ include_directories(
 # add_executable(${PROJECT_NAME}_node src/in_hand_utils_node.cpp)
 add_executable(surface_normal_node src/surface_normal_node.cpp)
 target_link_libraries(surface_normal_node ${catkin_LIBRARIES})
+
+add_executable(point_surface_normal_node src/point_surface_normal_node.cpp)
+target_link_libraries(point_surface_normal_node ${catkin_LIBRARIES})
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
