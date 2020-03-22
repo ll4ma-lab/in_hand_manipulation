@@ -40,10 +40,11 @@ if __name__=='__main__':
 
     ind=range(len(mu))
     pd_data=pd.DataFrame({'mu':mu,'object':obj_names},index=ind)
-    print p_data['drill-box']
-
-    print pd_data.dtypes
-    ax=sns.boxplot(y="mu", x="object",data=pd_data,orient="v",linewidth=2,whis=10,width=0.5,showfliers=False)
+    #print p_data['drill-box']
+    print pd_data
+    #print pd_data.dtypes
+    ax=sns.boxplot(y="mu", x="object",data=pd_data,orient="v",
+                   linewidth=2,whis=10,width=0.5,showfliers=False)
     ax.set_ylabel('Coefficient of Friction ($\mu$)',fontsize='20',labelpad=0)
     ax.set_xlabel('Object',fontsize='20',labelpad=10)
     ax.tick_params(axis='x', labelsize='20')
