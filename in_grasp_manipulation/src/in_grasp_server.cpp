@@ -459,13 +459,16 @@ public:
 
   prob.set_c_tol(tol);
   pagmo::snopt7 sn_v(false,"/usr/local/lib/");
-  //sn_v.set_numeric_option("Major optimality tolerance",1e-5);
-  sn_v.set_integer_option("Scale option",0);
+  
+  sn_v.set_numeric_option("Major iterations limit",500);
+  sn_v.set_numeric_option("Major optimality tolerance",1e-4);
+
+  //sn_v.set_integer_option("Scale option",0);
 
   sn_v.set_integer_option("Verify level",-1);
-  sn_v.set_numeric_option("Time limit",5);
+  //sn_v.set_numeric_option("Time limit",5);
     
-  sn_v.set_numeric_option("Function precision",1e-10);
+  //sn_v.set_numeric_option("Function precision",1e-10);
 
   algorithm algo{sn_v};
   algo.set_verbosity(500);

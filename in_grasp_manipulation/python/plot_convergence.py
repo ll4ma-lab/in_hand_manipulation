@@ -5,7 +5,7 @@ import PyKDL
 from textwrap import wrap
 
 from object_list import TrajList
-
+import copy
 from object_list import TrialList
 import pandas as pd
 import matplotlib as mpl
@@ -54,14 +54,14 @@ def compute_initial_errors(obj):
             obj[i].init_err=err
 
         
-    return obj,names
+    return obj,namesaff
 
 def compute_errors(obj):
     names=[]
     E_pos=[]
     # Compute errors:
     for i in range(len(obj)):
-        print obj[i].sol
+        #print obj[i].sol
         if(obj[i].sol!=[] and not('2f' in obj[i].name)):
             des_pose=obj[i].des
             reached_pose=obj[i].sol
@@ -79,13 +79,13 @@ def compute_errors(obj):
             
             R_err=100*np.min([q_sum,q_diff])/np.sqrt(2)
             #position error:
-            pos_err=100*np.linalg.norm(des_pose[0:3]-reached_pose[0:3],ord=2)/traj_length
+            pos_err=100*np.linalg.norm(des_pose[0:3]-reached_pose[0:3],ord=2)#/traj_length
             err=[pos_err,R_err]        
             obj[i].err=err
             E_pos.append(pos_err)
         else:
             obj[i].err=[-1.0,-1.0]
-    print np.min(E_pos),np.max(E_pos),np.mean(E_pos)
+    #print np.min(E_pos),np.max(E_pos),np.mean(E_pos)
    
     return obj,names
 
@@ -351,6 +351,26 @@ def plot_convergence_method(obj,n,names_=['IK-rigid','PC','relaxed-position','re
     data['object']=names
     data['method']=method
 
+    # read pandas data for ik-rigid:
+    f_name='../scripts/in_grasp_bih'
+    ik_data=pd.read_csv(f_name)
+    ik_data.rename(columns={'Object':'object','P_err':'position','O_err':'orientation'},inplace=True)
+    for j in range(len(ycb_names.keys())):
+        ik_data.replace(ycb_names.keys()[j],ycb_names[ycb_names.keys()[j]],inplace=True)
+
+    ik_data.replace('ik-rigid','IK-rigid',inplace=True)
+
+    # get error for all objects:
+    # change metrics:
+    ik_data.position=ik_data.position*100#/ik_data.p_dist
+
+    all_ik_data=copy.deepcopy(ik_data)
+    # replace all names to one
+    all_ik_data.object='All\nobjects'
+    data=pd.concat([ik_data,all_ik_data,data])
+    #print data
+    # rename columns
+    
     # Plot using seaborn:
     plt.figure(figsize=(9,4))
     
@@ -365,12 +385,14 @@ def plot_convergence_method(obj,n,names_=['IK-rigid','PC','relaxed-position','re
     #ax=sns.swarmplot(x='position',y='object',data=data,orient="h",hue="method",linewidth=1,palette=singleui,split=True)
     #handles, labels = ax.get_legend_handles_labels()
     handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles[0:4], labels[0:4],loc='lower center', bbox_to_anchor=(0.47, -0.35),ncol=5, fancybox=False, shadow=False)
+    ax.legend(handles[0:4], labels[0:4],loc='lower center', bbox_to_anchor=(0.47, -0.4),ncol=5, fancybox=False, shadow=False,frameon=False)
    
     #ax.get_legend().remove()
 
     #ax.legend(handles[0:4], labels[0:4],loc='upper center', bbox_to_anchor=(0.5, 1.1),ncol=5, fancybox=False, shadow=False)
-    ax.set(ylabel='Position Error %',xlabel='Objects')
+    ax.set(ylabel='Position Error (cm)',xlabel='Objects')
+    ax.tick_params(axis=u'both', which=u'both',length=0)
+
     #plt.ylim(0,5.5)
 
     '''
@@ -383,6 +405,7 @@ def plot_convergence_method(obj,n,names_=['IK-rigid','PC','relaxed-position','re
     #plt.ylim(0,210)
     #ax.get_yaxis().set_minor_locator(mpl.ticker.AutoMinorLocator(n=2))
     #ax.grid(b=True, which='minor', color='0.85', linewidth=0.5)
+
     plt.savefig('position_error_perc.eps', bbox_inches='tight')
     #plt.show()
      # Plot using seaborn:
@@ -497,9 +520,14 @@ def plot_random_method():
     plot_convergence_method(obj,traj_n)
 
 def plot_method():
+    # read objects from pandas data frame
+    # read data from pandas
 
+    
+    #obj_0=
+    
     #obj_0=TrialList('../data/trials/ik-rigid.csv','',5)
-    obj_0=TrajList('../data/trajectories/ik-rigid_solution.csv','').arr
+    #obj_0=TrajList('../data/trajectories/ik-rigid_solution.csv','').arr
     #obj_0=obj_0.get_traj_list(5)
     obj_1=TrialList('../data/trials/relaxed-position.csv','',5)
     obj_1=obj_1.get_traj_list(5)
@@ -512,8 +540,8 @@ def plot_method():
     #traj_n=len(obj_1)
     #obj_all=obj_0+obj_1+obj_2+obj_3
 
-    obj_0,n=compute_errors(obj_0)
-    exit()
+    #obj_0,n=compute_errors(obj_0)
+    #exit()
     #print names_[0]+': '+str(100-100*len(n)/500.0)
     #obj_1=compute_reached_errors_mean(obj_1)
     obj_1,n=compute_errors(obj_1)
@@ -527,12 +555,12 @@ def plot_method():
     obj_3,n=compute_errors(obj_3)
     #print names_[3]+': '+str(100-100*len(n)/500.0)
     #print n
-    obj=obj_0+obj_1+obj_2+obj_3
+    obj=obj_1+obj_2+obj_3
 
     #print len(obj_all)
     #obj,n=compute_errors(obj_all)
-    exit()
-    plot_convergence_method(obj,[len(obj_0),len(obj_1),len(obj_2),len(obj_3)],names_=['IK-rigid','relaxed-position','relaxed-position-orientation','relaxed-rigidity'])
+    #exit()
+    plot_convergence_method(obj,[len(obj_1),len(obj_2),len(obj_3)],names_=['relaxed-position','relaxed-position-orientation','relaxed-rigidity'])
 
 def plot_reached():
     root_dir = '../../in_hand_manipulation_data/data/in_grasp_manipulation'

@@ -101,6 +101,11 @@ set(PAGMO_LIBS Pagmo::pagmo  ${Boost_FILESYSTEM_LIBRARIES}  ${Boost_SYSTEM_LIBRA
 add_library(in_grasp_rr src/problems/in_grasp_rr_const.cpp)
 target_link_libraries(in_grasp_rr ${catkin_LIBRARIES})
 
+# alternative formulations from sys_id_dev (benchmarking); each defines opt_problems::optProblem,
+# so build one as in_grasp_rr (or swap it into in_grasp_server's link line) to use it
+#add_library(in_grasp_rr src/problems/methods/in_grasp_rr_cost.cpp)
+#target_link_libraries(in_grasp_rr ${catkin_LIBRARIES})
+
 #add_library(in_grasp_ik src/problems/methods/in_grasp_ik_rigid.cpp)
 #target_link_libraries(in_grasp_ik ${catkin_LIBRARIES})
 
