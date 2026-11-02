@@ -1,0 +1,35 @@
+# conda env for in_grasp_py:  conda env create -f environment.yml && conda activate ihm
+# Kept separate from gepetto_py10 so these C++ packages stay out of the CUDA/Theseus env.
+# Entries marked "verify" have not been resolved yet (MIGRATION.md M2).
+name: ihm
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  # build
+  - cmake>=3.18
+  - ninja
+  - cxx-compiler
+  - pybind11
+  - scikit-build-core
+  # planner C++ deps
+  - pagmo-devel>=2.19          # verify: built with IPOPT support
+  - ipopt
+  - orocos-kdl                 # verify
+  - urdfdom                    # verify
+  - urdfdom_headers            # verify
+  - eigen
+  - libboost-devel
+  - tbb-devel
+  # pagmo_plugins_nonfree: verify availability on conda-forge; else build from source (M2)
+  # SNOPT 7.4 build (M5): needs a Fortran compiler; SNOPT itself is never installed from here
+  - fortran-compiler
+  # python
+  - numpy
+  - pandas
+  - pytest
+  - pip
+  - pip:
+      - viser>=1.0
+      - yourdfpy>=0.0.53
+      - trimesh

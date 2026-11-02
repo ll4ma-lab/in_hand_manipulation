@@ -1,0 +1,29 @@
+[build-system]
+requires = ["scikit-build-core>=0.10", "pybind11>=2.12"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "in-grasp"
+version = "0.0.1"
+description = "ROS-free Python 3 bindings + viser demos for the relaxed-rigidity in-grasp manipulation planner"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy",
+  "pandas",
+  "trimesh",
+  "yourdfpy>=0.0.53",
+  "viser>=1.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.scikit-build]
+# C++ extension targets (one per method variant) are added in MIGRATION.md M2.
+wheel.packages = ["src/in_grasp"]
+cmake.version = ">=3.18"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

@@ -5,6 +5,8 @@
 
 #+AUTHOR: Balakumar Sundaralingam, LL4MA Lab, University of Utah
 
+*Superseded:* see =readme.md= for the maintained repo guide (Nov 2026 audit) and =MIGRATION.md= for the Python 3 + viser migration. The text below is the original and is partly out of date.
+
 This package contains research code that I am working on as part of my PhD program at the University of Utah.
 Visit my website for more information: https://balakumar-s.github.io
 

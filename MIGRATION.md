@@ -17,7 +17,7 @@ is to run it from Python 3 and drive interactive [viser](https://viser.studio) d
 
 | Milestone | Status | Estimate | Notes |
 |---|---|---|---|
-| M0 Bookkeeping | in progress | ½–1 d | This doc + ROS TODO written |
+| M0 Bookkeeping | **done** (pending commit) | ½–1 d | Docs, `.gitignore`, repo-audit README, `in_grasp_py/` skeleton |
 | M1 Replay viewer (pure Python) | not started | 1–2 d | Can run in parallel with M2 |
 | M2 ROS-free C++ core | not started | 3–5 d | |
 | M3 Python 3 bindings | not started | 2–3 d | |
@@ -122,11 +122,11 @@ Each milestone lists its tasks and the acceptance criteria that mark it done.
 
 ### M0 Bookkeeping (½–1 d)
 - [x] Write this plan and [docs/ROS_MIGRATION_TODO.md](docs/ROS_MIGRATION_TODO.md).
-- [ ] Narrow the root `.gitignore`. Today `*data` silently ignores every new file under `in_hand_manipulation_data/` and any `data/` directory, so `git add` needs `-f`.
-- [ ] Write the repo-audit README: what every package is, what builds, and what's legacy (outstanding request).
-- [ ] Create `in_grasp_py/` skeleton (pyproject, env file, empty package, pytest runs).
+- [x] Narrow the root `.gitignore`. The `*data` rule silently ignored every new file under `in_hand_manipulation_data/` and any `data/` directory; it has been removed. `*.p` and `*.eps` are kept, and Python tooling ignores were added.
+- [x] Write the repo-audit README ([readme.md](readme.md)): what every package is, what builds, and what's legacy. `readme.org` is marked superseded.
+- [x] Create `in_grasp_py/` skeleton: `pyproject.toml` (scikit-build-core), placeholder `CMakeLists.txt`, `environment.yml` (unresolved; env creation moved to M2), empty `in_grasp` package, one import test.
 
-**Done when:** docs merged on `dev/gepetto`, `.gitignore` fixed, and an empty `pytest` passes in the new env.
+**Done when:** docs merged on `dev/gepetto`, `.gitignore` fixed, and the skeleton `pytest` passes. It passes under `gepetto_py10` with `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`, because a broken `dash` plugin in `~/.local` crashes pytest's plugin autoload. The `ihm` env is created in M2.
 
 ### M1 Replay viewer, pure Python, no C++ (1–2 d; parallel with M2)
 - [ ] Add `assets.py`. It loads `allegro.urdf` with yourdfpy:
@@ -366,3 +366,4 @@ These come from the method and stay unless they're explicitly changed.
 
 - 2026-11-02: Plan created (M0). ROS deferred; architecture, milestones, risks and decisions recorded.
 - 2026-11-02: SNOPT source identified (7.4-1.1, `~/Downloads/snopt7.zip`); M5 build steps and the related risk added; open question closed.
+- 2026-11-02: M0 complete: `.gitignore` `*data` rule removed, repo-audit `readme.md` written, `in_grasp_py/` skeleton added (1 test passing).
