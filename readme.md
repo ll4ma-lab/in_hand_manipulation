@@ -1,3 +1,5 @@
+> **Migration in progress (branch `dev/gepetto`):** the in-grasp planner is being ported to Python 3 + viser without ROS. See [MIGRATION.md](MIGRATION.md) for the roadmap and status, and [docs/ROS_MIGRATION_TODO.md](docs/ROS_MIGRATION_TODO.md) for the deferred ROS work.
+
 - [Sub Packages](#orgb12ef74)
   - [Perception](#org6cb2c1a)
   - [Motion Planning](#org988ca2a)
